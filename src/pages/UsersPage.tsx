@@ -114,14 +114,35 @@ export default function UsersPage() {
         if (error) throw error;
         alert('User updated successfully!');
       } else {
-        const { error } = await supabase.rpc('create_user_as_admin', {
+        // Step 1: Create the user in Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.full_name,
+            },
+            emailRedirectTo: undefined, // Disable email confirmation
+          },
+        });
+
+        if (authError) throw authError;
+        if (!authData.user) throw new Error('Failed to create user');
+
+        // Step 2: Create the profile with the specified role
+        const { error: profileError } = await supabase.rpc('create_profile_for_user', {
+          p_user_id: authData.user.id,
           p_email: formData.email,
-          p_password: formData.password,
           p_full_name: formData.full_name,
           p_role: formData.role,
         });
 
-        if (error) throw error;
+        if (profileError) {
+          // If profile creation fails, try to delete the auth user
+          console.error('Profile creation failed:', profileError);
+          throw new Error(`Failed to create user profile: ${profileError.message}`);
+        }
+
         alert('User created successfully! They can now login with their email and password.');
       }
 
