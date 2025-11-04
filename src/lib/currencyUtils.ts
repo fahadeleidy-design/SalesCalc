@@ -1,5 +1,5 @@
 export const formatCurrency = (amount: number, options?: Intl.NumberFormatOptions): string => {
-  return new Intl.NumberFormat('ar-SA', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'SAR',
     minimumFractionDigits: 2,
@@ -9,7 +9,7 @@ export const formatCurrency = (amount: number, options?: Intl.NumberFormatOption
 };
 
 export const formatCurrencyCompact = (amount: number): string => {
-  return new Intl.NumberFormat('ar-SA', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'SAR',
     minimumFractionDigits: 0,
