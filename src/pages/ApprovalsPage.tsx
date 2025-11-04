@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { approveQuotation, rejectQuotation, requestChanges } from '../lib/approvalLogic';
 import type { Database } from '../lib/database.types';
+import { formatCurrency } from '../lib/currencyUtils';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -148,7 +149,7 @@ export default function ApprovalsPage() {
               <FileText className="w-6 h-6 text-coral-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
-              ${quotations.reduce((sum, q) => sum + q.total, 0).toFixed(2)}
+              {formatCurrency(quotations.reduce((sum, q) => sum + q.total, 0))}
             </span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Total Value</h3>
@@ -214,7 +215,7 @@ export default function ApprovalsPage() {
                           <div>
                             <p className="text-sm text-slate-600">Total Amount</p>
                             <p className="font-semibold text-lg text-slate-900">
-                              ${quotation.total.toFixed(2)}
+                              {formatCurrency(quotation.total)}
                             </p>
                           </div>
                           <div>
@@ -285,7 +286,7 @@ export default function ApprovalsPage() {
                   {selectedQuotation.quotation_number} - {selectedQuotation.customer.company_name}
                 </p>
                 <p className="text-lg font-semibold text-slate-900 mt-2">
-                  ${selectedQuotation.total.toFixed(2)}
+                  {formatCurrency(selectedQuotation.total)}
                 </p>
               </div>
 

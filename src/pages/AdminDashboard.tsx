@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, Package, Settings, Activity, FileText, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
 import { supabase } from '../lib/supabase';
+import { formatCurrencyCompact } from '../lib/currencyUtils';
 
 export default function AdminDashboard() {
   const { navigate } = useNavigation();
@@ -156,7 +157,7 @@ export default function AdminDashboard() {
               <DollarSign className="w-6 h-6 text-emerald-600" />
             </div>
             <span className="text-xl font-bold text-slate-900">
-              ${(stats.totalRevenue / 1000).toFixed(0)}K
+              {formatCurrencyCompact(stats.totalRevenue)}
             </span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Revenue</h3>

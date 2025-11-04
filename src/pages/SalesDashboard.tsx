@@ -10,6 +10,7 @@ import {
   CheckCircle,
   ArrowRight,
 } from 'lucide-react';
+import { formatCurrencyCompact, formatCurrency } from '../lib/currencyUtils';
 
 interface DashboardStats {
   totalQuotations: number;
@@ -201,7 +202,7 @@ export default function SalesDashboard() {
               <DollarSign className="w-6 h-6 text-teal-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
-              ${stats.totalValue.toLocaleString()}
+              {formatCurrencyCompact(stats.totalValue)}
             </span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Total Revenue</h3>
@@ -217,7 +218,7 @@ export default function SalesDashboard() {
             <div>
               <h3 className="font-semibold text-slate-900">Sales Target Progress</h3>
               <p className="text-sm text-slate-600">
-                ${stats.totalValue.toLocaleString()} of ${profile?.sales_target.toLocaleString()}
+                {formatCurrencyCompact(stats.totalValue)} of {formatCurrencyCompact(profile?.sales_target || 0)}
               </p>
             </div>
           </div>
@@ -265,7 +266,7 @@ export default function SalesDashboard() {
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <p className="font-semibold text-slate-900">
-                      ${Number(quotation.total).toLocaleString()}
+                      {formatCurrency(Number(quotation.total))}
                     </p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-slate-400" />

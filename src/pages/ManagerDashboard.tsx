@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { CheckCircle, Clock, TrendingUp, Users, DollarSign, ArrowRight } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
+import { formatCurrencyCompact } from '../lib/currencyUtils';
 
 interface TeamMember {
   id: string;
@@ -131,7 +132,7 @@ export default function ManagerDashboard() {
               <TrendingUp className="w-6 h-6 text-coral-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
-              ${teamPipeline.toLocaleString()}
+              {formatCurrencyCompact(teamPipeline)}
             </span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Team Pipeline</h3>
@@ -197,7 +198,7 @@ export default function ManagerDashboard() {
                     <div className="flex items-center gap-1 text-slate-600">
                       <DollarSign className="w-4 h-4" />
                       <span className="font-semibold text-slate-900">
-                        {member.total_value.toLocaleString()}
+                        {formatCurrencyCompact(member.total_value)}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">Total Revenue</p>

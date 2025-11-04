@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
 import { submitQuotationForApproval } from '../../lib/approvalLogic';
+import { formatCurrency } from '../../lib/currencyUtils';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -256,7 +257,7 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
                 </td>
                 <td className="py-3 px-4">
                   <span className="text-sm font-semibold text-slate-900">
-                    ${quotation.total.toFixed(2)}
+                    {formatCurrency(quotation.total)}
                   </span>
                 </td>
                 <td className="py-3 px-4">{getStatusBadge(quotation.status)}</td>

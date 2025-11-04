@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, FileText, Users, Package, X, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '../contexts/NavigationContext';
+import { formatCurrency } from '../lib/currencyUtils';
 
 interface SearchResult {
   id: string;
@@ -83,7 +84,7 @@ export default function GlobalSearch() {
             type: 'quotation',
             title: q.quotation_number,
             subtitle: (q.customer as any)?.company_name || 'Unknown Customer',
-            metadata: `${q.status} • $${Number(q.total).toFixed(2)}`,
+            metadata: `${q.status} • ${formatCurrency(Number(q.total))}`,
           });
         });
       }

@@ -3,6 +3,7 @@ import { X, Save, DollarSign } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
+import { formatCurrency } from '../../lib/currencyUtils';
 
 type CustomItemRequest = Database['public']['Tables']['custom_item_requests']['Row'] & {
   quotation: Database['public']['Tables']['quotations']['Row'];
@@ -191,8 +192,8 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
               </div>
               {price && request.quotation_item.quantity > 1 && (
                 <p className="mt-2 text-sm text-slate-600">
-                  Total: ${(parseFloat(price) * request.quotation_item.quantity).toFixed(2)} (
-                  {request.quotation_item.quantity} × ${parseFloat(price).toFixed(2)})
+                  Total: {formatCurrency(parseFloat(price) * request.quotation_item.quantity)} (
+                  {request.quotation_item.quantity} × {formatCurrency(parseFloat(price))})
                 </p>
               )}
             </div>

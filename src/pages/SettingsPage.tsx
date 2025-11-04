@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Edit2, Save, X, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { formatCurrencyCompact } from '../lib/currencyUtils';
 
 interface DiscountRule {
   id: string;
@@ -132,13 +133,9 @@ export default function SettingsPage() {
     }
   };
 
-  const formatCurrency = (value: number | null) => {
+  const formatCurrencyValue = (value: number | null) => {
     if (value === null) return '∞';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(value);
+    return formatCurrencyCompact(value);
   };
 
   if (loading) {
@@ -183,8 +180,8 @@ export default function SettingsPage() {
               {discountRules.map((rule, index) => (
                 <tr key={rule.id} className="border-b border-slate-100">
                   <td className="py-3 px-4 text-sm text-slate-900">
-                    {formatCurrency(rule.min_quotation_value)} -{' '}
-                    {formatCurrency(rule.max_quotation_value)}
+                    {formatCurrencyValue(rule.min_quotation_value)} -{' '}
+                    {formatCurrencyValue(rule.max_quotation_value)}
                   </td>
                   <td className="py-3 px-4">
                     {editingDiscount === rule.id ? (
@@ -411,7 +408,7 @@ export default function SettingsPage() {
                       {tier.tier_name}
                     </td>
                     <td className="py-3 px-4 text-sm text-slate-900">
-                      {formatCurrency(tier.min_amount)} - {formatCurrency(tier.max_amount)}
+                      {formatCurrencyValue(tier.min_amount)} - {formatCurrencyValue(tier.max_amount)}
                     </td>
                     <td className="py-3 px-4 text-sm text-slate-900">
                       {tier.commission_percentage}%

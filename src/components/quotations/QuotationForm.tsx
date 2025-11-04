@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
 import CustomItemRequestModal, { type CustomItemData } from './CustomItemRequestModal';
+import { formatCurrency } from '../../lib/currencyUtils';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
 type Product = Database['public']['Tables']['products']['Row'];
@@ -498,7 +499,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                           />
                         </td>
                         <td className="py-3 px-4 text-sm font-medium text-slate-900">
-                          ${item.line_total.toFixed(2)}
+                          {formatCurrency(item.line_total)}
                         </td>
                         <td className="py-3 px-4">
                           <button
@@ -520,7 +521,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
             <div className="max-w-sm ml-auto space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Subtotal:</span>
-                <span className="font-medium text-slate-900">${totals.subtotal.toFixed(2)}</span>
+                <span className="font-medium text-slate-900">{formatCurrency(totals.subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm items-center">
                 <span className="text-slate-600">Discount:</span>
@@ -538,18 +539,18 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   />
                   <span className="text-slate-900">%</span>
                   <span className="font-medium text-slate-900">
-                    -${totals.discountAmount.toFixed(2)}
+                    -{formatCurrency(totals.discountAmount)}
                   </span>
                 </div>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Tax ({formData.tax_percentage}%):</span>
-                <span className="font-medium text-slate-900">${totals.taxAmount.toFixed(2)}</span>
+                <span className="font-medium text-slate-900">{formatCurrency(totals.taxAmount)}</span>
               </div>
               <div className="border-t border-slate-300 pt-2 flex justify-between">
                 <span className="font-semibold text-slate-900">Total:</span>
                 <span className="font-bold text-lg text-slate-900">
-                  ${totals.total.toFixed(2)}
+                  {formatCurrency(totals.total)}
                 </span>
               </div>
             </div>
@@ -656,7 +657,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                       </div>
                       <div className="text-right ml-4">
                         <div className="font-semibold text-slate-900">
-                          ${product.unit_price.toFixed(2)}
+                          {formatCurrency(product.unit_price)}
                         </div>
                         <div className="text-sm text-slate-500">per {product.unit}</div>
                       </div>

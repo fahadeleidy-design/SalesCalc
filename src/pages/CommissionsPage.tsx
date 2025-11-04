@@ -3,6 +3,7 @@ import { DollarSign, TrendingUp, Calendar, FileText, CheckCircle } from 'lucide-
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
+import { formatCurrency } from '../lib/currencyUtils';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -115,7 +116,7 @@ export default function CommissionsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSelectedPeriod('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors SAR{
               selectedPeriod === 'all'
                 ? 'bg-coral-600 text-white'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -125,7 +126,7 @@ export default function CommissionsPage() {
           </button>
           <button
             onClick={() => setSelectedPeriod('month')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors SAR{
               selectedPeriod === 'month'
                 ? 'bg-coral-600 text-white'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -135,7 +136,7 @@ export default function CommissionsPage() {
           </button>
           <button
             onClick={() => setSelectedPeriod('quarter')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors SAR{
               selectedPeriod === 'quarter'
                 ? 'bg-coral-600 text-white'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -154,7 +155,7 @@ export default function CommissionsPage() {
             </div>
           </div>
           <h3 className="text-sm font-medium text-slate-600 mb-1">Total Earned</h3>
-          <p className="text-2xl font-bold text-slate-900">${totalEarned.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalEarned)}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -164,7 +165,7 @@ export default function CommissionsPage() {
             </div>
           </div>
           <h3 className="text-sm font-medium text-slate-600 mb-1">This Month</h3>
-          <p className="text-2xl font-bold text-slate-900">${thisMonth.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-slate-900">{formatCurrency(thisMonth)}</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -176,8 +177,8 @@ export default function CommissionsPage() {
           <h3 className="text-sm font-medium text-slate-600 mb-1">Avg Commission</h3>
           <p className="text-2xl font-bold text-slate-900">
             {commissions.length > 0
-              ? `$${(totalEarned / commissions.length).toFixed(2)}`
-              : '$0.00'}
+              ? formatCurrency(totalEarned / commissions.length)
+              : formatCurrency(0)}
           </p>
         </div>
 
@@ -196,23 +197,23 @@ export default function CommissionsPage() {
         <h3 className="font-semibold text-slate-900 mb-4">Commission Rate Structure</h3>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-            <p className="text-xs text-slate-600 mb-1">$0 - $10K</p>
+            <p className="text-xs text-slate-600 mb-1">SAR 0 - SAR 10K</p>
             <p className="text-2xl font-bold text-slate-900">2%</p>
           </div>
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-            <p className="text-xs text-slate-600 mb-1">$10K - $20K</p>
+            <p className="text-xs text-slate-600 mb-1">SAR 10K - SAR 20K</p>
             <p className="text-2xl font-bold text-slate-900">2.5%</p>
           </div>
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-            <p className="text-xs text-slate-600 mb-1">$20K - $50K</p>
+            <p className="text-xs text-slate-600 mb-1">SAR 20K - SAR 50K</p>
             <p className="text-2xl font-bold text-slate-900">3%</p>
           </div>
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-            <p className="text-xs text-slate-600 mb-1">$50K - $100K</p>
+            <p className="text-xs text-slate-600 mb-1">SAR 50K - SAR 100K</p>
             <p className="text-2xl font-bold text-slate-900">4%</p>
           </div>
           <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-            <p className="text-xs text-green-700 mb-1">$100K+</p>
+            <p className="text-xs text-green-700 mb-1">SAR 100K+</p>
             <p className="text-2xl font-bold text-green-900">5%</p>
           </div>
         </div>
@@ -273,13 +274,13 @@ export default function CommissionsPage() {
                       {commission.customer_name}
                     </td>
                     <td className="py-3 px-4 text-sm font-semibold text-slate-900">
-                      ${commission.deal_value.toFixed(2)}
+                      {formatCurrency(commission.deal_value)}
                     </td>
                     <td className="py-3 px-4 text-sm text-slate-900">
                       {commission.commission_rate}%
                     </td>
                     <td className="py-3 px-4 text-sm font-bold text-green-600">
-                      ${commission.commission_amount.toFixed(2)}
+                      {formatCurrency(commission.commission_amount)}
                     </td>
                     <td className="py-3 px-4">
                       <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { formatCurrencyCompact } from '../lib/currencyUtils';
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -167,13 +168,8 @@ export default function ReportsPage() {
     return Array.from(statusMap.entries()).map(([status, count]) => ({ status, count }));
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  const formatCurrencyValue = (amount: number) => {
+    return formatCurrencyCompact(amount);
   };
 
   const getStatusLabel = (status: string) => {
@@ -251,7 +247,7 @@ export default function ReportsPage() {
           </div>
           <h3 className="text-sm font-medium text-slate-600 mb-1">Total Revenue</h3>
           <p className="text-2xl font-bold text-slate-900">
-            {formatCurrency(analytics.totalRevenue)}
+            {formatCurrencyValue(analytics.totalRevenue)}
           </p>
         </div>
 
@@ -285,7 +281,7 @@ export default function ReportsPage() {
           </div>
           <h3 className="text-sm font-medium text-slate-600 mb-1">Avg Deal Size</h3>
           <p className="text-2xl font-bold text-slate-900">
-            {formatCurrency(analytics.averageDealSize)}
+            {formatCurrencyValue(analytics.averageDealSize)}
           </p>
         </div>
       </div>
@@ -315,7 +311,7 @@ export default function ReportsPage() {
                       }}
                     >
                       <span className="text-xs font-semibold text-white">
-                        {formatCurrency(item.revenue)}
+                        {formatCurrencyValue(item.revenue)}
                       </span>
                     </div>
                   </div>
@@ -385,7 +381,7 @@ export default function ReportsPage() {
                       </td>
                       <td className="py-2 px-2 text-sm text-center text-slate-700">{rep.won}</td>
                       <td className="py-2 px-2 text-sm text-right font-semibold text-green-600">
-                        {formatCurrency(rep.revenue)}
+                        {formatCurrencyValue(rep.revenue)}
                       </td>
                     </tr>
                   ))}
@@ -411,7 +407,7 @@ export default function ReportsPage() {
                     <p className="text-xs text-slate-600">{product.count} units sold</p>
                   </div>
                   <span className="text-sm font-bold text-green-600">
-                    {formatCurrency(product.revenue)}
+                    {formatCurrencyValue(product.revenue)}
                   </span>
                 </div>
               ))}
