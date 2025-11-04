@@ -37,13 +37,8 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
     try {
       let query = supabase
         .from('quotations')
-        .select('*, customer:customers(*), sales_rep:profiles(*)');
-
-      if (profile.role === 'sales') {
-        query = query.eq('sales_rep_id', profile.id);
-      }
-
-      query = query.order('created_at', { ascending: false });
+        .select('*, customer:customers(*), sales_rep:profiles(*)')
+        .order('created_at', { ascending: false });
 
       const { data, error } = await query;
 
@@ -255,6 +250,7 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
               </th>
               <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Customer</th>
               <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Title</th>
+              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Sales Rep</th>
               <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Total</th>
               <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Status</th>
               <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Date</th>
@@ -262,78 +258,93 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
             </tr>
           </thead>
           <tbody>
-            {filteredQuotations.map((quotation) => (
-              <tr key={quotation.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="py-3 px-4">
-                  <span className="text-sm font-medium text-slate-900">
-                    {quotation.quotation_number}
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="text-sm">
-                    <div className="font-medium text-slate-900">
-                      {quotation.customer?.company_name}
+            {filteredQuotations.map((quotation) => {
+              const isOwnQuotation = quotation.sales_rep_id === profile?.id;
+
+              return (
+                <tr key={quotation.id} className="border-b border-slate-100 hover:bg-slate-50">
+                  <td className="py-3 px-4">
+                    <span className="text-sm font-medium text-slate-900">
+                      {quotation.quotation_number}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="text-sm">
+                      <div className="font-medium text-slate-900">
+                        {quotation.customer?.company_name}
+                      </div>
+                      <div className="text-slate-500">{quotation.customer?.contact_person}</div>
                     </div>
-                    <div className="text-slate-500">{quotation.customer?.contact_person}</div>
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-sm text-slate-900">{quotation.title}</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-sm font-semibold text-slate-900">
-                    {formatCurrency(quotation.total)}
-                  </span>
-                </td>
-                <td className="py-3 px-4">{getStatusBadge(quotation.status)}</td>
-                <td className="py-3 px-4">
-                  <span className="text-sm text-slate-600">
-                    {new Date(quotation.created_at).toLocaleDateString()}
-                  </span>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onView(quotation.id)}
-                      className="p-1.5 text-slate-600 hover:bg-slate-100 rounded"
-                      title="View"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    {(quotation.status === 'draft' || quotation.status === 'changes_requested') &&
-                      profile?.role === 'sales' && (
-                        <>
-                          <button
-                            onClick={() => onEdit(quotation.id)}
-                            className="p-1.5 text-orange-500 hover:bg-orange-50 rounded"
-                            title="Edit"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleSubmit(quotation.id)}
-                            disabled={submitting === quotation.id}
-                            className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
-                            title="Submit for Approval"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                        </>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-sm text-slate-900">{quotation.title}</span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="text-sm">
+                      <div className="font-medium text-slate-900">
+                        {quotation.sales_rep?.full_name || 'Unknown'}
+                      </div>
+                      {isOwnQuotation && profile?.role === 'sales' && (
+                        <span className="text-xs text-orange-600">(You)</span>
                       )}
-                    {profile?.role === 'admin' && (
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-sm font-semibold text-slate-900">
+                      {formatCurrency(quotation.total)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">{getStatusBadge(quotation.status)}</td>
+                  <td className="py-3 px-4">
+                    <span className="text-sm text-slate-600">
+                      {new Date(quotation.created_at).toLocaleDateString()}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleDelete(quotation.id)}
-                        disabled={deleting === quotation.id}
-                        className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
-                        title="Delete"
+                        onClick={() => onView(quotation.id)}
+                        className="p-1.5 text-slate-600 hover:bg-slate-100 rounded"
+                        title="View"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Eye className="w-4 h-4" />
                       </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      {(quotation.status === 'draft' || quotation.status === 'changes_requested') &&
+                        profile?.role === 'sales' &&
+                        isOwnQuotation && (
+                          <>
+                            <button
+                              onClick={() => onEdit(quotation.id)}
+                              className="p-1.5 text-orange-500 hover:bg-orange-50 rounded"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleSubmit(quotation.id)}
+                              disabled={submitting === quotation.id}
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
+                              title="Submit for Approval"
+                            >
+                              <Send className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      {profile?.role === 'admin' && (
+                        <button
+                          onClick={() => handleDelete(quotation.id)}
+                          disabled={deleting === quotation.id}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
