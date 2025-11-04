@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Eye, Edit2, Send, CheckCircle, XCircle, Clock, Search } from 'lucide-react';
+import { FileText, Eye, Edit2, Send, CheckCircle, XCircle, Clock, Search, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
@@ -24,6 +24,7 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     loadQuotations();
@@ -52,6 +53,30 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
       console.error('Error loading quotations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (quotationId: string) => {
+    if (!confirm('Are you sure you want to delete this quotation? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleting(quotationId);
+    try {
+      const { error } = await supabase
+        .from('quotations')
+        .delete()
+        .eq('id', quotationId);
+
+      if (error) throw error;
+
+      alert('Quotation deleted successfully');
+      loadQuotations();
+    } catch (error: any) {
+      console.error('Error deleting quotation:', error);
+      alert('Failed to delete quotation: ' + error.message);
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -295,6 +320,16 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
                           </button>
                         </>
                       )}
+                    {profile?.role === 'admin' && (
+                      <button
+                        onClick={() => handleDelete(quotation.id)}
+                        disabled={deleting === quotation.id}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
