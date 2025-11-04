@@ -12,6 +12,8 @@ type QuotationItem = Database['public']['Tables']['quotation_items']['Insert'] &
   product?: Product;
   tempId?: string;
   customItemRequest?: CustomItemData;
+  modifications?: string;
+  needs_engineering_review?: boolean;
 };
 
 interface QuotationFormProps {
@@ -239,8 +241,10 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         discount_percentage: item.discount_percentage,
         discount_amount: item.discount_amount,
         line_total: item.line_total,
-        custom_item_status: item.is_custom ? item.custom_item_status : null,
+        custom_item_status: item.is_custom ? item.custom_item_status : (item.needs_engineering_review ? 'pending' : null),
         notes: item.notes || null,
+        modifications: item.modifications || null,
+        needs_engineering_review: item.needs_engineering_review || false,
         sort_order: index,
       }));
 
@@ -254,16 +258,32 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
       if (insertedItems) {
         const customItemRequests = items
           .map((item, index) => {
-            if (item.is_custom && item.customItemRequest && insertedItems[index]) {
-              return {
-                quotation_item_id: insertedItems[index].id,
-                quotation_id: savedQuotationId!,
-                requested_by: profile.id,
-                description: item.customItemRequest.description,
-                specifications: item.customItemRequest.specifications,
-                attachments: [],
-                status: 'pending' as const,
-              };
+            if (insertedItems[index]) {
+              if (item.is_custom && item.customItemRequest) {
+                return {
+                  quotation_item_id: insertedItems[index].id,
+                  quotation_id: savedQuotationId!,
+                  requested_by: profile.id,
+                  description: item.customItemRequest.description,
+                  specifications: item.customItemRequest.specifications,
+                  attachments: [],
+                  status: 'pending' as const,
+                };
+              } else if (item.modifications && item.modifications.trim().length > 0) {
+                return {
+                  quotation_item_id: insertedItems[index].id,
+                  quotation_id: savedQuotationId!,
+                  requested_by: profile.id,
+                  description: `Modified ${item.product?.name || 'Product'}: ${item.modifications}`,
+                  specifications: {
+                    original_product: item.product?.name || '',
+                    original_sku: item.product?.sku || '',
+                    modifications: item.modifications,
+                  },
+                  attachments: [],
+                  status: 'pending' as const,
+                };
+              }
             }
             return null;
           })
@@ -400,38 +420,17 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
             </div>
 
             <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                      Item
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                      Qty
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                      Unit Price
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                      Disc %
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                      Total
-                    </th>
-                    <th className="w-20"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500">
-                        No items added yet. Click "Add Product" to get started.
-                      </td>
-                    </tr>
-                  ) : (
-                    items.map((item, index) => (
-                      <tr key={item.tempId || item.id} className="border-t border-slate-100">
-                        <td className="py-3 px-4">
+              <div className="space-y-4">
+                {items.length === 0 ? (
+                  <div className="py-8 text-center text-slate-500 border border-slate-200 rounded-lg">
+                    No items added yet. Click "Add Product" to get started.
+                  </div>
+                ) : (
+                  items.map((item, index) => (
+                    <div key={item.tempId || item.id} className="border border-slate-200 rounded-lg p-4 bg-white">
+                      <div className="grid grid-cols-12 gap-4 items-start">
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Item</label>
                           {item.is_custom ? (
                             <div>
                               <div className="text-sm font-medium text-slate-900">
@@ -459,8 +458,9 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                               <div className="text-slate-500">{item.product?.sku}</div>
                             </div>
                           )}
-                        </td>
-                        <td className="py-3 px-4">
+                        </div>
+                        <div className="col-span-3 md:col-span-2">
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Qty</label>
                           <input
                             type="number"
                             value={item.quantity}
@@ -469,10 +469,11 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             }
                             min="0"
                             step="0.01"
-                            className="w-20 px-2 py-1 border border-slate-300 rounded text-sm"
+                            className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
                           />
-                        </td>
-                        <td className="py-3 px-4">
+                        </div>
+                        <div className="col-span-3 md:col-span-2">
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Unit Price</label>
                           <input
                             type="number"
                             value={item.unit_price}
@@ -481,11 +482,12 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             }
                             min="0"
                             step="0.01"
-                            className="w-24 px-2 py-1 border border-slate-300 rounded text-sm"
+                            className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
                             disabled={item.is_custom && item.custom_item_status === 'pending'}
                           />
-                        </td>
-                        <td className="py-3 px-4">
+                        </div>
+                        <div className="col-span-3 md:col-span-2">
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Disc %</label>
                           <input
                             type="number"
                             value={item.discount_percentage}
@@ -495,25 +497,50 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             min="0"
                             max="100"
                             step="0.1"
-                            className="w-16 px-2 py-1 border border-slate-300 rounded text-sm"
+                            className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
                           />
-                        </td>
-                        <td className="py-3 px-4 text-sm font-medium text-slate-900">
-                          {formatCurrency(item.line_total)}
-                        </td>
-                        <td className="py-3 px-4">
+                        </div>
+                        <div className="col-span-3 md:col-span-1">
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">Total</label>
+                          <div className="text-sm font-medium text-slate-900 py-1">
+                            {formatCurrency(item.line_total)}
+                          </div>
+                        </div>
+                        <div className="col-span-12 md:col-span-1 flex items-end justify-end md:justify-center">
                           <button
                             onClick={() => removeItem(index)}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                        </div>
+                      </div>
+                      {!item.is_custom && (
+                        <div className="mt-3 pt-3 border-t border-slate-100">
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">
+                            Modifications / Special Requirements
+                            {item.modifications && (
+                              <span className="ml-2 text-amber-600">
+                                (Will be sent to Engineering for pricing)
+                              </span>
+                            )}
+                          </label>
+                          <textarea
+                            value={item.modifications || ''}
+                            onChange={(e) => {
+                              updateItem(index, 'modifications', e.target.value);
+                              updateItem(index, 'needs_engineering_review', e.target.value.trim().length > 0);
+                            }}
+                            rows={2}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
+                            placeholder="Enter any modifications or special requirements for this item..."
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
