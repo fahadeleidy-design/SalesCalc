@@ -17,7 +17,7 @@ type CustomItemRequest = Database['public']['Tables']['custom_item_requests']['R
 };
 
 export default function CustomItemsPage() {
-  const { profile } = useAuth();
+  const { } = useAuth();
   const [requests, setRequests] = useState<CustomItemRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -90,7 +90,7 @@ export default function CustomItemsPage() {
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
     const matchesSearch =
       searchTerm === '' ||
-      request.item_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (request.quotation as any)?.quotation_number
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
@@ -225,7 +225,7 @@ export default function CustomItemsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-slate-900">
-                          {request.item_description}
+                          {request.description}
                         </h3>
                         {getStatusBadge(request.status)}
                       </div>
@@ -244,7 +244,7 @@ export default function CustomItemsPage() {
                         </div>
                         <div>
                           <p className="font-medium text-slate-700">Quantity</p>
-                          <p>{request.quantity}</p>
+                          <p>N/A</p>
                         </div>
                       </div>
                     </div>

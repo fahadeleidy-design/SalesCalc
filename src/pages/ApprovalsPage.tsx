@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, CheckCircle, XCircle, MessageSquare, Clock, Eye } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, MessageSquare, Clock, } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { approveQuotation, rejectQuotation, requestChanges } from '../lib/approvalLogic';

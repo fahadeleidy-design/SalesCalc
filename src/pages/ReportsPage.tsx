@@ -4,7 +4,7 @@ import {
   DollarSign,
   Users,
   FileText,
-  Calendar,
+
   BarChart3,
   PieChart,
   Target,
@@ -29,7 +29,7 @@ interface AnalyticsData {
 }
 
 export default function ReportsPage() {
-  const { profile } = useAuth();
+  const { } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalRevenue: 0,
     totalQuotations: 0,

@@ -208,6 +208,19 @@ export interface Database {
           deal_won_at: string | null;
           created_at: string;
           updated_at: string;
+          quotation_items?: {
+            id: string;
+            product_id: string | null;
+            is_custom: boolean;
+            custom_description: string | null;
+            quantity: number;
+            unit_price: number;
+            discount_percentage: number;
+            discount_amount: number;
+            line_total: number;
+            custom_item_status: CustomItemStatus | null;
+            notes: string | null;
+          }[];
         };
         Insert: {
           id?: string;
@@ -589,6 +602,73 @@ export interface Database {
           description?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      email_logs: {
+        Row: {
+          id: string;
+          recipient: string;
+          subject: string;
+          body: string;
+          type: string;
+          quotation_number: string | null;
+          sent_at: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient: string;
+          subject: string;
+          body: string;
+          type: string;
+          quotation_number?: string | null;
+          sent_at?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipient?: string;
+          subject?: string;
+          body?: string;
+          type?: string;
+          quotation_number?: string | null;
+          sent_at?: string;
+          status?: string;
+          created_at?: string;
+        };
+      };
+      quotation_attachments: {
+        Row: {
+          id: string;
+          quotation_id: string;
+          file_name: string;
+          file_path: string;
+          file_size: number;
+          file_type: string;
+          uploaded_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          quotation_id: string;
+          file_name: string;
+          file_path: string;
+          file_size?: number;
+          file_type: string;
+          uploaded_by: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          quotation_id?: string;
+          file_name?: string;
+          file_path?: string;
+          file_size?: number;
+          file_type?: string;
+          uploaded_by?: string;
+          created_at?: string;
         };
       };
     };

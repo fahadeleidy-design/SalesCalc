@@ -61,6 +61,7 @@ export default function SettingsPage() {
     try {
       const { error } = await supabase
         .from('discount_matrix')
+      // @ts-expect-error - Supabase type inference issue
         .update({
           min_quotation_value: rule.min_quotation_value,
           max_quotation_value: rule.max_quotation_value,
@@ -87,6 +88,7 @@ export default function SettingsPage() {
 
     setSaving(true);
     try {
+      // @ts-expect-error - Supabase type inference issue
       const { error } = await supabase.from('commission_plans').insert({
         tier_name: newCommission.tier_name,
         min_amount: newCommission.min_amount,

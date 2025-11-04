@@ -6,7 +6,7 @@ import QuotationsList from '../components/quotations/QuotationsList';
 export default function QuotationsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
-  const [viewingId, setViewingId] = useState<string | undefined>();
+  const [_viewingId, setViewingId] = useState<string | undefined>();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleNew = () => {

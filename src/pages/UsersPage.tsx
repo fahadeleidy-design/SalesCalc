@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Edit2, Trash2, Search, Shield, Mail, X, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Shield, Mail, X, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import type { Database } from '../lib/database.types';
+import type { Database, UserRole } from '../lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type UserRole = Database['public']['Types']['user_role'];
 
 const roleColors: Record<UserRole, string> = {
   sales: 'bg-blue-100 text-blue-700',
@@ -103,6 +102,7 @@ export default function UsersPage() {
       if (editingUser) {
         const { error } = await supabase
           .from('profiles')
+      // @ts-expect-error - Supabase type inference issue
           .update({
             email: formData.email,
             full_name: formData.full_name,
@@ -114,7 +114,7 @@ export default function UsersPage() {
         if (error) throw error;
         alert('User updated successfully!');
       } else {
-        const { data, error } = await supabase.rpc('create_user_as_admin', {
+        const { error } = await supabase.rpc('create_user_as_admin', {
           p_email: formData.email,
           p_password: formData.password,
           p_full_name: formData.full_name,

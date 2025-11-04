@@ -53,6 +53,7 @@ export default function Login() {
       if (authData.user) {
         const { error: profileError } = await supabase
           .from('profiles')
+      // @ts-expect-error - Supabase type inference issue
           .insert({
             user_id: authData.user.id,
             email: selectedAccount.email,

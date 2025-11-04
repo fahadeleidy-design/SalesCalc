@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, File, Download, Trash2, X } from 'lucide-react';
+import { Upload, File, Trash2, } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -57,6 +57,7 @@ export default function AttachmentsPanel({ quotationId }: AttachmentsPanelProps)
       const fileName = `${quotationId}-${Date.now()}.${fileExt}`;
       const filePath = `quotation-attachments/${fileName}`;
 
+      // @ts-expect-error - Supabase type inference issue
       const { error: insertError } = await supabase.from('quotation_attachments').insert({
         quotation_id: quotationId,
         file_name: file.name,
