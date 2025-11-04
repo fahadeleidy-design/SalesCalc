@@ -9,8 +9,28 @@ import {
   Clock,
   CheckCircle,
   ArrowRight,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
 } from 'lucide-react';
 import { formatCurrencyCompact, formatCurrency } from '../lib/currencyUtils';
+import { useNavigation } from '../contexts/NavigationContext';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 interface DashboardStats {
   totalQuotations: number;
@@ -19,6 +39,8 @@ interface DashboardStats {
   dealsWon: number;
   totalValue: number;
   targetProgress: number;
+  monthlyGrowth: number;
+  conversionRate: number;
 }
 
 interface RecentQuotation {
@@ -33,8 +55,21 @@ interface RecentQuotation {
   };
 }
 
+interface MonthlyData {
+  month: string;
+  value: number;
+  quotations: number;
+}
+
+interface StatusData {
+  name: string;
+  value: number;
+  color: string;
+}
+
 export default function SalesDashboard() {
   const { profile } = useAuth();
+  const { navigate } = useNavigation();
   const [stats, setStats] = useState<DashboardStats>({
     totalQuotations: 0,
     pendingQuotations: 0,
@@ -42,12 +77,20 @@ export default function SalesDashboard() {
     dealsWon: 0,
     totalValue: 0,
     targetProgress: 0,
+    monthlyGrowth: 0,
+    conversionRate: 0,
   });
   const [recentQuotations, setRecentQuotations] = useState<RecentQuotation[]>([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [statusData, setStatusData] = useState<StatusData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState('6months');
 
   const fetchDashboardData = async () => {
     if (!profile) return;
+
+    const months = dateRange === '3months' ? 3 : dateRange === '12months' ? 12 : 6;
+    const startDate = startOfMonth(subMonths(new Date(), months - 1));
 
     const { data: quotations } = await supabase
       .from('quotations')
@@ -63,8 +106,8 @@ export default function SalesDashboard() {
         )
       `)
       .eq('sales_rep_id', profile.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      .gte('created_at', startDate.toISOString())
+      .order('created_at', { ascending: false });
 
     const { count: totalCount } = await supabase
       .from('quotations')
@@ -85,7 +128,7 @@ export default function SalesDashboard() {
 
     const { data: wonDeals } = await supabase
       .from('quotations')
-      .select('total')
+      .select('total, created_at')
       .eq('sales_rep_id', profile.id)
       .eq('status', 'deal_won');
 
@@ -94,6 +137,67 @@ export default function SalesDashboard() {
       ? (totalValue / profile.sales_target) * 100
       : 0;
 
+    // Calculate monthly growth
+    const currentMonthStart = startOfMonth(new Date());
+    const lastMonthStart = startOfMonth(subMonths(new Date(), 1));
+    const lastMonthEnd = endOfMonth(subMonths(new Date(), 1));
+
+    const currentMonthDeals = wonDeals?.filter((d: any) =>
+      new Date(d.created_at) >= currentMonthStart
+    ).reduce((sum: number, q: any) => sum + Number(q.total), 0) || 0;
+
+    const lastMonthDeals = wonDeals?.filter((d: any) => {
+      const date = new Date(d.created_at);
+      return date >= lastMonthStart && date <= lastMonthEnd;
+    }).reduce((sum: number, q: any) => sum + Number(q.total), 0) || 0;
+
+    const monthlyGrowth = lastMonthDeals > 0
+      ? ((currentMonthDeals - lastMonthDeals) / lastMonthDeals) * 100
+      : 0;
+
+    // Calculate conversion rate
+    const conversionRate = totalCount && totalCount > 0
+      ? ((wonDeals?.length || 0) / totalCount) * 100
+      : 0;
+
+    // Process monthly data
+    const monthlyMap = new Map<string, { value: number; quotations: number }>();
+    for (let i = 0; i < months; i++) {
+      const month = subMonths(new Date(), months - 1 - i);
+      const key = format(month, 'MMM yyyy');
+      monthlyMap.set(key, { value: 0, quotations: 0 });
+    }
+
+    wonDeals?.forEach((deal: any) => {
+      const month = format(new Date(deal.created_at), 'MMM yyyy');
+      if (monthlyMap.has(month)) {
+        const existing = monthlyMap.get(month)!;
+        monthlyMap.set(month, {
+          value: existing.value + Number(deal.total),
+          quotations: existing.quotations + 1,
+        });
+      }
+    });
+
+    const monthlyDataArray: MonthlyData[] = Array.from(monthlyMap.entries()).map(([month, data]) => ({
+      month,
+      value: data.value,
+      quotations: data.quotations,
+    }));
+
+    // Process status data
+    const statusMap = new Map<string, number>();
+    quotations?.forEach((q: any) => {
+      const status = q.status;
+      statusMap.set(status, (statusMap.get(status) || 0) + 1);
+    });
+
+    const statusDataArray: StatusData[] = Array.from(statusMap.entries()).map(([status, count]) => ({
+      name: getStatusLabel(status),
+      value: count,
+      color: getStatusChartColor(status),
+    }));
+
     setStats({
       totalQuotations: totalCount || 0,
       pendingQuotations: pendingCount || 0,
@@ -101,9 +205,13 @@ export default function SalesDashboard() {
       dealsWon: wonDeals?.length || 0,
       totalValue,
       targetProgress,
+      monthlyGrowth,
+      conversionRate,
     });
 
-    setRecentQuotations((quotations as any) || []);
+    setRecentQuotations(quotations?.slice(0, 5) as any || []);
+    setMonthlyData(monthlyDataArray);
+    setStatusData(statusDataArray);
     setLoading(false);
   };
 
@@ -111,8 +219,7 @@ export default function SalesDashboard() {
     if (profile) {
       fetchDashboardData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile]);
+  }, [profile, dateRange]);
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -127,6 +234,21 @@ export default function SalesDashboard() {
       deal_won: 'bg-teal-100 text-teal-700',
     };
     return colors[status] || 'bg-slate-100 text-slate-700';
+  };
+
+  const getStatusChartColor = (status: string) => {
+    const colors: Record<string, string> = {
+      draft: '#94a3b8',
+      pending_manager: '#eab308',
+      pending_ceo: '#f97316',
+      approved: '#22c55e',
+      pending_finance: '#f97316',
+      finance_approved: '#10b981',
+      changes_requested: '#ef4444',
+      rejected: '#dc2626',
+      deal_won: '#14b8a6',
+    };
+    return colors[status] || '#94a3b8';
   };
 
   const getStatusLabel = (status: string) => {
@@ -159,7 +281,10 @@ export default function SalesDashboard() {
           <h1 className="text-2xl font-bold text-slate-900">Sales Dashboard</h1>
           <p className="text-slate-600 mt-1">Welcome back, {profile?.full_name}</p>
         </div>
-        <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors">
+        <button
+          onClick={() => navigate('/quotations')}
+          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors shadow-sm"
+        >
           <Plus className="w-4 h-4" />
           New Quotation
         </button>
@@ -174,6 +299,12 @@ export default function SalesDashboard() {
             <span className="text-2xl font-bold text-slate-900">{stats.totalQuotations}</span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Total Quotations</h3>
+          <div className="mt-2 flex items-center gap-1 text-xs">
+            <span className={`flex items-center gap-1 ${stats.conversionRate >= 20 ? 'text-green-600' : 'text-orange-600'}`}>
+              {stats.conversionRate >= 20 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {stats.conversionRate.toFixed(1)}% conversion
+            </span>
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -184,6 +315,7 @@ export default function SalesDashboard() {
             <span className="text-2xl font-bold text-slate-900">{stats.pendingQuotations}</span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Pending Approval</h3>
+          <p className="text-xs text-slate-500 mt-2">Awaiting review</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -194,6 +326,7 @@ export default function SalesDashboard() {
             <span className="text-2xl font-bold text-slate-900">{stats.dealsWon}</span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Deals Won</h3>
+          <p className="text-xs text-slate-500 mt-2">Closed successfully</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -206,6 +339,12 @@ export default function SalesDashboard() {
             </span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Total Revenue</h3>
+          <div className="mt-2 flex items-center gap-1 text-xs">
+            <span className={`flex items-center gap-1 ${stats.monthlyGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {stats.monthlyGrowth >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {Math.abs(stats.monthlyGrowth).toFixed(1)}% vs last month
+            </span>
+          </div>
         </div>
       </div>
 
@@ -228,15 +367,76 @@ export default function SalesDashboard() {
         </div>
         <div className="w-full bg-slate-100 rounded-full h-3">
           <div
-            className="bg-gradient-to-r from-blue-600 to-teal-600 h-3 rounded-full transition-all duration-500"
+            className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full transition-all duration-500"
             style={{ width: `${Math.min(stats.targetProgress, 100)}%` }}
           />
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold text-slate-900">Revenue Trend</h3>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                className="text-sm border border-slate-300 rounded px-2 py-1 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              >
+                <option value="3months">3 Months</option>
+                <option value="6months">6 Months</option>
+                <option value="12months">12 Months</option>
+              </select>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="month" stroke="#64748b" style={{ fontSize: '12px' }} />
+              <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
+                formatter={(value: number) => formatCurrency(value)}
+              />
+              <Line type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2} dot={{ fill: '#f97316', r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h3 className="font-semibold text-slate-900 mb-6">Quotations by Status</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={statusData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {statusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-200">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
           <h3 className="font-semibold text-slate-900">Recent Quotations</h3>
+          <button
+            onClick={() => navigate('/quotations')}
+            className="text-sm text-orange-500 hover:text-orange-600 font-medium transition-colors"
+          >
+            View All
+          </button>
         </div>
         <div className="divide-y divide-slate-200">
           {recentQuotations.length === 0 ? (
@@ -250,6 +450,7 @@ export default function SalesDashboard() {
               <div
                 key={quotation.id}
                 className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between"
+                onClick={() => navigate('/quotations')}
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
