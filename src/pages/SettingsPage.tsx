@@ -141,7 +141,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
   }
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                     ) : (
                       <button
                         onClick={() => setEditingDiscount(rule.id)}
-                        className="p-1 text-coral-600 hover:bg-coral-50 rounded"
+                        className="p-1 text-orange-500 hover:bg-orange-50 rounded"
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -270,7 +270,7 @@ export default function SettingsPage() {
           {!showCommissionForm && (
             <button
               onClick={() => setShowCommissionForm(true)}
-              className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               <Plus className="w-4 h-4" />
               Add Tier

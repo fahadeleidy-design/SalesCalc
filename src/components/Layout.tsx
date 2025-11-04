@@ -143,7 +143,7 @@ export default function Layout({ children }: LayoutProps) {
                 onClick={() => handleNavClick(item.path)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   isActive
-                    ? 'bg-coral-50 text-coral-700 font-medium'
+                    ? 'bg-orange-50 text-orange-600 font-medium'
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >

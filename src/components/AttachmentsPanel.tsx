@@ -116,7 +116,7 @@ export default function AttachmentsPanel({ quotationId }: AttachmentsPanelProps)
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-coral-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
       </div>
     );
   }
@@ -125,7 +125,7 @@ export default function AttachmentsPanel({ quotationId }: AttachmentsPanelProps)
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-slate-900">Attachments</h3>
-        <label className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors">
+        <label className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
           {uploading ? 'Uploading...' : 'Upload File'}
           <input
@@ -177,7 +177,7 @@ export default function AttachmentsPanel({ quotationId }: AttachmentsPanelProps)
         </div>
       )}
 
-      <div className="bg-coral-50 border border-blue-200 rounded-lg p-3">
+      <div className="bg-orange-50 border border-blue-200 rounded-lg p-3">
         <p className="text-xs text-blue-800">
           <strong>Note:</strong> Supported file types: PDF, Word, Excel, Images. Maximum file size: 5MB
         </p>

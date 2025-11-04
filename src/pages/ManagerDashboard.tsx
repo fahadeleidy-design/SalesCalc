@@ -93,7 +93,7 @@ export default function ManagerDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
   }
@@ -128,8 +128,8 @@ export default function ManagerDashboard() {
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="bg-coral-50 p-3 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-coral-600" />
+            <div className="bg-orange-50 p-3 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-orange-500" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
               {formatCurrencyCompact(teamPipeline)}

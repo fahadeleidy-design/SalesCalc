@@ -154,7 +154,7 @@ export default function GlobalSearch() {
   const getIcon = (type: string) => {
     switch (type) {
       case 'quotation':
-        return <FileText className="w-5 h-5 text-coral-600" />;
+        return <FileText className="w-5 h-5 text-orange-500" />;
       case 'customer':
         return <Users className="w-5 h-5 text-teal-600" />;
       case 'product':
@@ -209,7 +209,7 @@ export default function GlobalSearch() {
         <div className="flex-1 overflow-y-auto p-2">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-coral-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
             </div>
           ) : results.length === 0 ? (
             <div className="text-center py-12">
@@ -240,7 +240,7 @@ export default function GlobalSearch() {
                   onClick={() => handleResultClick(result)}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${
                     index === selectedIndex
-                      ? 'bg-coral-50 border border-blue-200'
+                      ? 'bg-orange-50 border border-blue-200'
                       : 'hover:bg-slate-50'
                   }`}
                 >

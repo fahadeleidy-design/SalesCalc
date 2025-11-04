@@ -120,7 +120,7 @@ export default function ApprovalsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
   }
@@ -145,8 +145,8 @@ export default function ApprovalsPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="bg-coral-50 p-3 rounded-lg">
-              <FileText className="w-6 h-6 text-coral-600" />
+            <div className="bg-orange-50 p-3 rounded-lg">
+              <FileText className="w-6 h-6 text-orange-500" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
               {formatCurrency(quotations.reduce((sum, q) => sum + q.total, 0))}
@@ -187,8 +187,8 @@ export default function ApprovalsPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-start gap-4">
-                      <div className="bg-coral-50 p-3 rounded-lg">
-                        <FileText className="w-6 h-6 text-coral-600" />
+                      <div className="bg-orange-50 p-3 rounded-lg">
+                        <FileText className="w-6 h-6 text-orange-500" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -304,7 +304,7 @@ export default function ApprovalsPage() {
                       ? 'Explain why this quotation is being rejected...'
                       : 'Describe what changes are needed...'
                   }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 />
               </div>
 

@@ -120,7 +120,7 @@ export default function SalesDashboard() {
       pending_manager: 'bg-yellow-100 text-yellow-700',
       pending_ceo: 'bg-orange-100 text-orange-700',
       approved: 'bg-green-100 text-green-700',
-      pending_finance: 'bg-coral-100 text-coral-700',
+      pending_finance: 'bg-orange-100 text-orange-600',
       finance_approved: 'bg-emerald-100 text-emerald-700',
       changes_requested: 'bg-red-100 text-red-700',
       rejected: 'bg-red-100 text-red-700',
@@ -147,7 +147,7 @@ export default function SalesDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
   }
@@ -159,7 +159,7 @@ export default function SalesDashboard() {
           <h1 className="text-2xl font-bold text-slate-900">Sales Dashboard</h1>
           <p className="text-slate-600 mt-1">Welcome back, {profile?.full_name}</p>
         </div>
-        <button className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2 rounded-lg transition-colors">
+        <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors">
           <Plus className="w-4 h-4" />
           New Quotation
         </button>
@@ -168,8 +168,8 @@ export default function SalesDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="bg-coral-50 p-3 rounded-lg">
-              <FileText className="w-6 h-6 text-coral-600" />
+            <div className="bg-orange-50 p-3 rounded-lg">
+              <FileText className="w-6 h-6 text-orange-500" />
             </div>
             <span className="text-2xl font-bold text-slate-900">{stats.totalQuotations}</span>
           </div>
@@ -212,8 +212,8 @@ export default function SalesDashboard() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="bg-coral-50 p-2 rounded-lg">
-              <Target className="w-5 h-5 text-coral-600" />
+            <div className="bg-orange-50 p-2 rounded-lg">
+              <Target className="w-5 h-5 text-orange-500" />
             </div>
             <div>
               <h3 className="font-semibold text-slate-900">Sales Target Progress</h3>
@@ -222,7 +222,7 @@ export default function SalesDashboard() {
               </p>
             </div>
           </div>
-          <span className="text-2xl font-bold text-coral-600">
+          <span className="text-2xl font-bold text-orange-500">
             {stats.targetProgress.toFixed(1)}%
           </span>
         </div>

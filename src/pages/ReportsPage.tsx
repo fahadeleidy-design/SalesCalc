@@ -182,7 +182,7 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
       </div>
     );
   }
@@ -253,8 +253,8 @@ export default function ReportsPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="bg-coral-50 p-3 rounded-lg">
-              <FileText className="w-6 h-6 text-coral-600" />
+            <div className="bg-orange-50 p-3 rounded-lg">
+              <FileText className="w-6 h-6 text-orange-500" />
             </div>
           </div>
           <h3 className="text-sm font-medium text-slate-600 mb-1">Total Quotations</h3>
@@ -289,7 +289,7 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center gap-2 mb-4">
-            <BarChart3 className="w-5 h-5 text-coral-600" />
+            <BarChart3 className="w-5 h-5 text-orange-500" />
             <h3 className="font-semibold text-slate-900">Monthly Revenue Trend</h3>
           </div>
           {analytics.monthlyRevenue.length === 0 ? (
@@ -346,7 +346,7 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Users className="w-5 h-5 text-coral-600" />
+            <Users className="w-5 h-5 text-orange-500" />
             <h3 className="font-semibold text-slate-900">Sales Rep Performance</h3>
           </div>
           {analytics.salesRepPerformance.length === 0 ? (

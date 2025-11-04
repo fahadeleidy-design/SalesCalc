@@ -112,7 +112,7 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500 transition-colors"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
               placeholder="you@example.com"
               required
             />
@@ -127,7 +127,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500 transition-colors"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
               placeholder="Enter your password"
               required
             />
@@ -136,7 +136,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-coral-600 hover:bg-coral-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
@@ -148,7 +148,7 @@ export default function Login() {
               <p className="text-sm text-slate-600 mb-3">Don't have demo accounts yet?</p>
               <button
                 onClick={() => setShowSignup(true)}
-                className="text-coral-600 hover:text-coral-700 font-medium text-sm transition-colors"
+                className="text-orange-500 hover:text-orange-600 font-medium text-sm transition-colors"
               >
                 Create Demo Accounts →
               </button>
@@ -174,7 +174,7 @@ export default function Login() {
                     key={account.email}
                     className={`flex items-start p-3 border rounded-lg cursor-pointer transition-all ${
                       selectedAccount.email === account.email
-                        ? 'border-coral-600 bg-coral-50'
+                        ? 'border-orange-500 bg-orange-50'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -197,7 +197,7 @@ export default function Login() {
               <button
                 onClick={handleCreateAccount}
                 disabled={loading}
-                className="w-full bg-coral-600 hover:bg-coral-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Creating...' : `Create ${selectedAccount.role} account`}
               </button>
