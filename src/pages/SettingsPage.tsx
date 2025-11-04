@@ -315,7 +315,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Min Deal Value ($)
+                  Min Deal Value (SAR)
                 </label>
                 <input
                   type="number"
@@ -332,7 +332,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Max Deal Value ($) - Leave empty for unlimited
+                  Max Deal Value (SAR) - Leave empty for unlimited
                 </label>
                 <input
                   type="number"

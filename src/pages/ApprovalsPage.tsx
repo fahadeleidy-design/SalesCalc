@@ -221,8 +221,7 @@ export default function ApprovalsPage() {
                           <div>
                             <p className="text-sm text-slate-600">Discount</p>
                             <p className="font-medium text-slate-900">
-                              {quotation.discount_percentage}% ($
-                              {quotation.discount_amount.toFixed(2)})
+                              {quotation.discount_percentage}% ({formatCurrency(quotation.discount_amount)})
                             </p>
                           </div>
                         </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package, Plus, Edit2, Trash2, Search, DollarSign, Tag, Upload, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
+import { formatCurrency } from '../lib/currencyUtils';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
@@ -352,9 +353,8 @@ export default function ProductsPage() {
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                   <span className="text-sm text-slate-600">Unit Price</span>
                   <div className="flex items-center gap-1">
-                    <DollarSign className="w-4 h-4 text-slate-600" />
                     <span className="font-semibold text-slate-900">
-                      {product.unit_price.toFixed(2)}
+                      {formatCurrency(product.unit_price)}
                     </span>
                     <span className="text-xs text-slate-500">/ {product.unit}</span>
                   </div>

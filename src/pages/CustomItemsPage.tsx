@@ -3,6 +3,7 @@ import { Wrench, Clock, CheckCircle, FileText, Search, DollarSign } from 'lucide
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
+import { formatCurrency } from '../lib/currencyUtils';
 
 type CustomItemRequest = Database['public']['Tables']['custom_item_requests']['Row'] & {
   quotation: {
@@ -255,7 +256,7 @@ export default function CustomItemsPage() {
                         <div className="flex items-center gap-1 justify-end text-slate-600">
                           <DollarSign className="w-4 h-4" />
                           <span className="text-xl font-bold text-slate-900">
-                            {request.engineering_price.toFixed(2)}
+                            {formatCurrency(request.engineering_price)}
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 mt-1">Unit Price</p>
