@@ -521,7 +521,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             Modifications / Special Requirements
                             {item.modifications && (
                               <span className="ml-2 text-amber-600">
-                                (Will be sent to Engineering for pricing)
+                                {quotationId ? '(Sent to Engineering for pricing)' : '(Will be sent to Engineering for pricing)'}
                               </span>
                             )}
                           </label>
@@ -532,8 +532,13 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                               updateItem(index, 'needs_engineering_review', e.target.value.trim().length > 0);
                             }}
                             rows={2}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
-                            placeholder="Enter any modifications or special requirements for this item..."
+                            disabled={!!quotationId}
+                            className={`w-full px-3 py-2 border rounded-lg text-sm ${
+                              quotationId
+                                ? 'bg-slate-50 border-slate-200 text-slate-600 cursor-not-allowed'
+                                : 'border-slate-300 focus:ring-2 focus:ring-coral-500 focus:border-coral-500'
+                            }`}
+                            placeholder={quotationId ? '' : 'Enter any modifications or special requirements for this item...'}
                           />
                         </div>
                       )}
