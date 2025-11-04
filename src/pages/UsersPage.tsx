@@ -6,7 +6,7 @@ import type { Database, UserRole } from '../lib/database.types';
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
 const roleColors: Record<UserRole, string> = {
-  sales: 'bg-blue-100 text-blue-700',
+  sales: 'bg-coral-100 text-coral-700',
   engineering: 'bg-teal-100 text-teal-700',
   manager: 'bg-purple-100 text-purple-700',
   ceo: 'bg-red-100 text-red-700',
@@ -153,7 +153,7 @@ export default function UsersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
       </div>
     );
   }
@@ -167,7 +167,7 @@ export default function UsersPage() {
         </div>
         <button
           onClick={handleAdd}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
         >
           <Plus className="w-5 h-5" />
           Add User
@@ -199,7 +199,7 @@ export default function UsersPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by name, email, or role..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
             />
           </div>
         </div>
@@ -226,8 +226,8 @@ export default function UsersPage() {
                 <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="bg-blue-100 w-10 h-10 rounded-full flex items-center justify-center">
-                        <span className="text-blue-700 font-semibold text-sm">
+                      <div className="bg-coral-100 w-10 h-10 rounded-full flex items-center justify-center">
+                        <span className="text-coral-700 font-semibold text-sm">
                           {user.full_name?.charAt(0).toUpperCase()}
                         </span>
                       </div>
@@ -256,7 +256,7 @@ export default function UsersPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEdit(user)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-1 text-coral-600 hover:bg-coral-50 rounded"
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -305,7 +305,7 @@ export default function UsersPage() {
                   type="text"
                   value={formData.full_name}
                   onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   required
                 />
               </div>
@@ -316,7 +316,7 @@ export default function UsersPage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   required
                   disabled={!!editingUser}
                 />
@@ -331,7 +331,7 @@ export default function UsersPage() {
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                     required={!editingUser}
                     minLength={6}
                     placeholder="Minimum 6 characters"
@@ -344,7 +344,7 @@ export default function UsersPage() {
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   required
                 >
                   <option value="sales">Sales</option>
@@ -359,7 +359,7 @@ export default function UsersPage() {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 >
                   <Save className="w-4 h-4" />
                   {editingUser ? 'Update User' : 'Create User'}

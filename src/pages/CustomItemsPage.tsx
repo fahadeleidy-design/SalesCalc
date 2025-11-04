@@ -107,7 +107,7 @@ export default function CustomItemsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
       </div>
     );
   }
@@ -142,8 +142,8 @@ export default function CustomItemsPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600" />
+            <div className="bg-coral-50 p-3 rounded-lg">
+              <FileText className="w-6 h-6 text-coral-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">{requests.length}</span>
           </div>
@@ -160,7 +160,7 @@ export default function CustomItemsPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by description, quotation, or customer..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
             />
           </div>
           <div className="flex gap-2">
@@ -168,7 +168,7 @@ export default function CustomItemsPage() {
               onClick={() => setStatusFilter('all')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === 'all'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-coral-600 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -178,7 +178,7 @@ export default function CustomItemsPage() {
               onClick={() => setStatusFilter('pending')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === 'pending'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-coral-600 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -188,7 +188,7 @@ export default function CustomItemsPage() {
               onClick={() => setStatusFilter('priced')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === 'priced'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-coral-600 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -219,8 +219,8 @@ export default function CustomItemsPage() {
               <div key={request.id} className="p-6 hover:bg-slate-50 transition-colors">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start gap-4 flex-1">
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <Wrench className="w-6 h-6 text-blue-600" />
+                    <div className="bg-coral-50 p-3 rounded-lg">
+                      <Wrench className="w-6 h-6 text-coral-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
@@ -279,7 +279,7 @@ export default function CustomItemsPage() {
                 )}
 
                 {request.engineering_notes && (
-                  <div className="bg-blue-50 rounded-lg p-4 mb-3">
+                  <div className="bg-coral-50 rounded-lg p-4 mb-3">
                     <p className="text-sm font-medium text-blue-900 mb-1">Engineering Notes:</p>
                     <p className="text-sm text-blue-800">{request.engineering_notes}</p>
                   </div>

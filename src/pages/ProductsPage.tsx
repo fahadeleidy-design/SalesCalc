@@ -212,7 +212,7 @@ export default function ProductsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
       </div>
     );
   }
@@ -256,7 +256,7 @@ export default function ProductsPage() {
               });
               setShowModal(true);
             }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
           >
             <Plus className="w-5 h-5" />
             Add Product
@@ -264,13 +264,13 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-coral-50 border border-blue-200 rounded-lg p-4">
         <h3 className="font-semibold text-blue-900 mb-2">CSV Import Format</h3>
         <p className="text-sm text-blue-800 mb-2">Your CSV file should have the following columns:</p>
         <code className="block bg-white px-3 py-2 rounded text-xs text-slate-900 overflow-x-auto">
           SKU,Name,Description,Category,Unit,Unit Price,Active
         </code>
-        <p className="text-xs text-blue-700 mt-2">
+        <p className="text-xs text-coral-700 mt-2">
           Example: PROD001,"Office Chair","Ergonomic chair","Furniture",unit,299.99,Yes
         </p>
       </div>
@@ -284,7 +284,7 @@ export default function ProductsPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search products..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
             />
           </div>
         </div>
@@ -312,13 +312,13 @@ export default function ProductsPage() {
               className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <Package className="w-6 h-6 text-blue-600" />
+                <div className="bg-coral-50 p-3 rounded-lg">
+                  <Package className="w-6 h-6 text-coral-600" />
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleEdit(product)}
-                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                    className="p-1.5 text-coral-600 hover:bg-coral-50 rounded"
                     title="Edit"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -393,7 +393,7 @@ export default function ProductsPage() {
                     type="text"
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                     required
                   />
                 </div>
@@ -406,7 +406,7 @@ export default function ProductsPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                     required
                   />
                 </div>
@@ -419,7 +419,7 @@ export default function ProductsPage() {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   />
                 </div>
 
@@ -429,7 +429,7 @@ export default function ProductsPage() {
                     type="text"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   />
                 </div>
 
@@ -438,7 +438,7 @@ export default function ProductsPage() {
                   <select
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   >
                     <option value="unit">Unit</option>
                     <option value="box">Box</option>
@@ -461,7 +461,7 @@ export default function ProductsPage() {
                       min="0"
                       value={formData.unit_price}
                       onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
-                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                       required
                     />
                   </div>
@@ -474,7 +474,7 @@ export default function ProductsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, is_active: e.target.value === 'active' })
                     }
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -492,7 +492,7 @@ export default function ProductsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  className="px-6 py-2.5 bg-coral-600 hover:bg-coral-700 text-white rounded-lg font-medium transition-colors"
                 >
                   {editingProduct ? 'Update Product' : 'Add Product'}
                 </button>

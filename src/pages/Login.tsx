@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Building2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const demoAccounts = [
@@ -93,11 +92,8 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-blue-600 p-3 rounded-xl mb-4">
-            <Building2 className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">Special Offices</h1>
-          <p className="text-slate-600 mt-1">Sales Quotation System</p>
+          <img src="/logo.svg" alt="Special Offices" className="h-16 w-auto mb-4" />
+          <p className="text-slate-600 mt-2">Sales Quotation System</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -116,7 +112,7 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500 transition-colors"
               placeholder="you@example.com"
               required
             />
@@ -131,7 +127,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500 transition-colors"
               placeholder="Enter your password"
               required
             />
@@ -140,7 +136,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-coral-600 hover:bg-coral-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
@@ -152,7 +148,7 @@ export default function Login() {
               <p className="text-sm text-slate-600 mb-3">Don't have demo accounts yet?</p>
               <button
                 onClick={() => setShowSignup(true)}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+                className="text-coral-600 hover:text-coral-700 font-medium text-sm transition-colors"
               >
                 Create Demo Accounts →
               </button>
@@ -178,7 +174,7 @@ export default function Login() {
                     key={account.email}
                     className={`flex items-start p-3 border rounded-lg cursor-pointer transition-all ${
                       selectedAccount.email === account.email
-                        ? 'border-blue-600 bg-blue-50'
+                        ? 'border-coral-600 bg-coral-50'
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -201,7 +197,7 @@ export default function Login() {
               <button
                 onClick={handleCreateAccount}
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-coral-600 hover:bg-coral-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Creating...' : `Create ${selectedAccount.role} account`}
               </button>

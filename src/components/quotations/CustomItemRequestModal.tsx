@@ -73,7 +73,7 @@ export default function CustomItemRequestModal({ onClose, onSubmit }: CustomItem
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Describe the custom item you need pricing for..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
             />
           </div>
 
@@ -84,7 +84,7 @@ export default function CustomItemRequestModal({ onClose, onSubmit }: CustomItem
               </label>
               <button
                 onClick={addSpecification}
-                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                className="flex items-center gap-1 text-sm text-coral-600 hover:text-coral-700"
               >
                 <Plus className="w-4 h-4" />
                 Add Specification
@@ -99,14 +99,14 @@ export default function CustomItemRequestModal({ onClose, onSubmit }: CustomItem
                     value={spec.key}
                     onChange={(e) => updateSpecification(index, 'key', e.target.value)}
                     placeholder="Property (e.g., Material)"
-                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500 text-sm"
                   />
                   <input
                     type="text"
                     value={spec.value}
                     onChange={(e) => updateSpecification(index, 'value', e.target.value)}
                     placeholder="Value (e.g., Stainless Steel)"
-                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500 text-sm"
                   />
                   <button
                     onClick={() => removeSpecification(index)}
@@ -128,11 +128,11 @@ export default function CustomItemRequestModal({ onClose, onSubmit }: CustomItem
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="Any additional information for the engineering team..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
             />
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-coral-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
               <strong>Note:</strong> This custom item will be sent to the Engineering team for
               pricing. You won't be able to submit this quotation for approval until all custom
@@ -150,7 +150,7 @@ export default function CustomItemRequestModal({ onClose, onSubmit }: CustomItem
           </button>
           <button
             onClick={handleSubmit}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
           >
             <Save className="w-5 h-5" />
             Add Custom Item

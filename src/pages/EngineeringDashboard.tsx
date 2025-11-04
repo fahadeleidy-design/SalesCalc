@@ -90,8 +90,8 @@ export default function EngineeringDashboard() {
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <Wrench className="w-6 h-6 text-blue-600" />
+            <div className="bg-coral-50 p-3 rounded-lg">
+              <Wrench className="w-6 h-6 text-coral-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
               {requests.filter((r) => r.priced_by).length}
@@ -108,7 +108,7 @@ export default function EngineeringDashboard() {
         <div className="divide-y divide-slate-200">
           {loading ? (
             <div className="px-6 py-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600 mx-auto"></div>
             </div>
           ) : requests.length === 0 ? (
             <div className="px-6 py-12 text-center">
@@ -129,8 +129,8 @@ export default function EngineeringDashboard() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-start gap-3">
-                      <div className="bg-blue-50 p-2 rounded-lg mt-1">
-                        <FileText className="w-5 h-5 text-blue-600" />
+                      <div className="bg-coral-50 p-2 rounded-lg mt-1">
+                        <FileText className="w-5 h-5 text-coral-600" />
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-slate-900 mb-1">{request.description}</p>
@@ -167,7 +167,7 @@ export default function EngineeringDashboard() {
                   </div>
                   <button
                     onClick={() => setSelectedRequest(request)}
-                    className="ml-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    className="ml-4 px-4 py-2 bg-coral-600 hover:bg-coral-700 text-white rounded-lg text-sm font-medium transition-colors"
                   >
                     Price Item
                   </button>

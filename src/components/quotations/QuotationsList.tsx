@@ -111,7 +111,7 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
       },
       pending_finance: {
         label: 'Pending Finance',
-        className: 'bg-blue-100 text-blue-700',
+        className: 'bg-coral-100 text-coral-700',
         icon: <Clock className="w-3 h-3" />,
       },
       finance_approved: {
@@ -167,7 +167,7 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
       </div>
     );
   }
@@ -199,13 +199,13 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search quotations..."
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
         >
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
@@ -279,7 +279,7 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
                         <>
                           <button
                             onClick={() => onEdit(quotation.id)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                            className="p-1.5 text-coral-600 hover:bg-coral-50 rounded"
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />

@@ -112,10 +112,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-slate-50">
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-lg">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-semibold text-slate-900">Special Offices</span>
+          <img src="/logo.svg" alt="Special Offices" className="h-8" />
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -132,13 +129,7 @@ export default function Layout({ children }: LayoutProps) {
       >
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <Building2 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-slate-900">Special Offices</h1>
-              <p className="text-xs text-slate-600">Sales System</p>
-            </div>
+            <img src="/logo.svg" alt="Special Offices" className="h-12 w-auto" />
           </div>
         </div>
 
@@ -152,7 +143,7 @@ export default function Layout({ children }: LayoutProps) {
                 onClick={() => handleNavClick(item.path)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
                   isActive
-                    ? 'bg-blue-50 text-blue-700 font-medium'
+                    ? 'bg-coral-50 text-coral-700 font-medium'
                     : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >

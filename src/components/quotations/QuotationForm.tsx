@@ -299,7 +299,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
         </div>
       </div>
     );
@@ -326,7 +326,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
               <select
                 value={formData.customer_id}
                 onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
               >
                 <option value="">Select Customer</option>
                 {customers.map((customer) => (
@@ -346,7 +346,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g., Office Furniture Package"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
               />
             </div>
 
@@ -358,7 +358,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 type="date"
                 value={formData.valid_until}
                 onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
               />
             </div>
 
@@ -372,7 +372,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 onChange={(e) =>
                   setFormData({ ...formData, tax_percentage: parseFloat(e.target.value) })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
               />
             </div>
           </div>
@@ -383,7 +383,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowProductSelector(true)}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Add Product
@@ -562,7 +562,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                 placeholder="Customer-visible notes"
               />
             </div>
@@ -576,7 +576,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   setFormData({ ...formData, terms_and_conditions: e.target.value })
                 }
                 rows={3}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                 placeholder="Payment terms, delivery, etc."
               />
             </div>
@@ -588,7 +588,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 value={formData.internal_notes}
                 onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
                 rows={3}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                 placeholder="Not visible to customer"
               />
             </div>
@@ -605,7 +605,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
             <Save className="w-5 h-5" />
             {saving ? 'Saving...' : 'Save Quotation'}
@@ -633,7 +633,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   placeholder="Search products..."
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   autoFocus
                 />
               </div>
@@ -644,7 +644,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   <button
                     key={product.id}
                     onClick={() => addProduct(product)}
-                    className="w-full text-left p-4 border border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                    className="w-full text-left p-4 border border-slate-200 rounded-lg hover:border-blue-500 hover:bg-coral-50 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

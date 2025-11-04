@@ -43,7 +43,7 @@ export default function QuotationsPage() {
         </div>
         <button
           onClick={handleNew}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
         >
           <Plus className="w-5 h-5" />
           New Quotation

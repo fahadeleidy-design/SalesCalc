@@ -185,7 +185,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
                   placeholder="0.00"
                   step="0.01"
                   min="0"
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-medium"
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500 text-lg font-medium"
                   autoFocus
                 />
               </div>
@@ -206,12 +206,12 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
                 placeholder="Add any notes about materials, lead time, technical considerations..."
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
               />
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-coral-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
               <strong>Note:</strong> Once submitted, this price will automatically update the
               quotation and the sales rep will be notified that pricing is complete.
@@ -229,7 +229,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
             <Save className="w-5 h-5" />
             {saving ? 'Submitting...' : 'Submit Price'}

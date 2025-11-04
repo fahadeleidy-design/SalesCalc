@@ -100,7 +100,7 @@ export default function CommissionsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
       </div>
     );
   }
@@ -117,7 +117,7 @@ export default function CommissionsPage() {
             onClick={() => setSelectedPeriod('all')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedPeriod === 'all'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-coral-600 text-white'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
@@ -127,7 +127,7 @@ export default function CommissionsPage() {
             onClick={() => setSelectedPeriod('month')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedPeriod === 'month'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-coral-600 text-white'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
@@ -137,7 +137,7 @@ export default function CommissionsPage() {
             onClick={() => setSelectedPeriod('quarter')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedPeriod === 'quarter'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-coral-600 text-white'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
@@ -159,8 +159,8 @@ export default function CommissionsPage() {
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <Calendar className="w-6 h-6 text-blue-600" />
+            <div className="bg-coral-50 p-3 rounded-lg">
+              <Calendar className="w-6 h-6 text-coral-600" />
             </div>
           </div>
           <h3 className="text-sm font-medium text-slate-600 mb-1">This Month</h3>

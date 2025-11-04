@@ -60,11 +60,11 @@ export default function NotificationsPage() {
       case 'changes_requested':
         return <MessageSquare className="w-5 h-5 text-amber-600" />;
       case 'custom_item_priced':
-        return <CheckCircle className="w-5 h-5 text-blue-600" />;
+        return <CheckCircle className="w-5 h-5 text-coral-600" />;
       case 'deal_won':
         return <CheckCircle className="w-5 h-5 text-teal-600" />;
       default:
-        return <FileText className="w-5 h-5 text-blue-600" />;
+        return <FileText className="w-5 h-5 text-coral-600" />;
     }
   };
 
@@ -80,7 +80,7 @@ export default function NotificationsPage() {
       case 'changes_requested':
         return 'bg-amber-50';
       default:
-        return 'bg-blue-50';
+        return 'bg-coral-50';
     }
   };
 
@@ -99,7 +99,7 @@ export default function NotificationsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
       </div>
     );
   }
@@ -120,7 +120,7 @@ export default function NotificationsPage() {
         {unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="text-sm text-coral-600 hover:text-coral-700 font-medium"
           >
             Mark all as read
           </button>
@@ -141,7 +141,7 @@ export default function NotificationsPage() {
             <div
               key={notification.id}
               className={`p-6 hover:bg-slate-50 transition-colors cursor-pointer ${
-                !notification.is_read ? 'bg-blue-50/30' : ''
+                !notification.is_read ? 'bg-coral-50/30' : ''
               }`}
               onClick={() => !notification.is_read && markAsRead(notification.id)}
             >
@@ -153,7 +153,7 @@ export default function NotificationsPage() {
                   <div className="flex items-start justify-between mb-1">
                     <h3 className="font-semibold text-slate-900">{notification.title}</h3>
                     {!notification.is_read && (
-                      <span className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2"></span>
+                      <span className="w-2 h-2 bg-coral-600 rounded-full flex-shrink-0 mt-2"></span>
                     )}
                   </div>
                   <p className="text-sm text-slate-600 mb-2">{notification.message}</p>

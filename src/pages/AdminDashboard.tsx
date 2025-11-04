@@ -67,7 +67,7 @@ export default function AdminDashboard() {
   };
 
   const getActionIcon = (action: string) => {
-    if (action.includes('created')) return <FileText className="w-4 h-4 text-blue-600" />;
+    if (action.includes('created')) return <FileText className="w-4 h-4 text-coral-600" />;
     if (action.includes('approved')) return <Activity className="w-4 h-4 text-green-600" />;
     if (action.includes('rejected')) return <AlertCircle className="w-4 h-4 text-red-600" />;
     return <Activity className="w-4 h-4 text-slate-600" />;
@@ -87,7 +87,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
       </div>
     );
   }
@@ -102,8 +102,8 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div className="bg-coral-50 p-3 rounded-lg">
+              <Users className="w-6 h-6 text-coral-600" />
             </div>
             <span className="text-2xl font-bold text-slate-900">{stats.totalUsers}</span>
           </div>
@@ -172,8 +172,8 @@ export default function AdminDashboard() {
               className="w-full text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-2 rounded">
-                  <Users className="w-5 h-5 text-blue-600" />
+                <div className="bg-coral-100 p-2 rounded">
+                  <Users className="w-5 h-5 text-coral-600" />
                 </div>
                 <div>
                   <p className="font-medium text-slate-900">Manage Customers</p>

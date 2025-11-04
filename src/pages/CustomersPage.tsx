@@ -123,7 +123,7 @@ export default function CustomersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-coral-600"></div>
       </div>
     );
   }
@@ -150,7 +150,7 @@ export default function CustomersPage() {
             });
             setShowModal(true);
           }}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
         >
           <Plus className="w-5 h-5" />
           Add Customer
@@ -166,7 +166,7 @@ export default function CustomersPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search customers..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
             />
           </div>
         </div>
@@ -194,13 +194,13 @@ export default function CustomersPage() {
               className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <Building className="w-6 h-6 text-blue-600" />
+                <div className="bg-coral-50 p-3 rounded-lg">
+                  <Building className="w-6 h-6 text-coral-600" />
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleEdit(customer)}
-                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                    className="p-1.5 text-coral-600 hover:bg-coral-50 rounded"
                     title="Edit"
                   >
                     <Edit2 className="w-4 h-4" />
@@ -265,7 +265,7 @@ export default function CustomersPage() {
                     type="text"
                     value={formData.company_name}
                     onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                     required
                   />
                 </div>
@@ -278,7 +278,7 @@ export default function CustomersPage() {
                     type="text"
                     value={formData.contact_person}
                     onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                     required
                   />
                 </div>
@@ -291,7 +291,7 @@ export default function CustomersPage() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                     required
                   />
                 </div>
@@ -302,7 +302,7 @@ export default function CustomersPage() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   />
                 </div>
 
@@ -312,7 +312,7 @@ export default function CustomersPage() {
                     type="text"
                     value={formData.tax_id}
                     onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   />
                 </div>
 
@@ -322,7 +322,7 @@ export default function CustomersPage() {
                     type="text"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   />
                 </div>
 
@@ -332,7 +332,7 @@ export default function CustomersPage() {
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   />
                 </div>
 
@@ -342,7 +342,7 @@ export default function CustomersPage() {
                     type="text"
                     value={formData.country}
                     onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
                   />
                 </div>
               </div>
@@ -357,7 +357,7 @@ export default function CustomersPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  className="px-6 py-2.5 bg-coral-600 hover:bg-coral-700 text-white rounded-lg font-medium transition-colors"
                 >
                   {editingCustomer ? 'Update Customer' : 'Add Customer'}
                 </button>
