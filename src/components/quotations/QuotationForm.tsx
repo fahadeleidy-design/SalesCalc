@@ -511,9 +511,10 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                         <div className="col-span-12 md:col-span-1 flex items-end justify-end md:justify-center">
                           <button
                             onClick={() => removeItem(index)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Remove item"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
@@ -674,7 +675,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   <button
                     key={product.id}
                     onClick={() => addProduct(product)}
-                    className="w-full text-left p-4 border border-slate-200 rounded-lg hover:border-blue-500 hover:bg-coral-50 transition-colors"
+                    className="w-full text-left p-4 border border-slate-200 rounded-lg hover:border-coral-500 hover:bg-coral-50 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
