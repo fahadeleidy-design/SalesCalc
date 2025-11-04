@@ -115,6 +115,8 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
       discount_percentage: 0,
       discount_amount: 0,
       line_total: product.unit_price,
+      modifications: '',
+      needs_engineering_review: false,
       product,
     };
     setItems([...items, newItem]);
@@ -519,9 +521,9 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                         <div className="mt-3 pt-3 border-t border-slate-100">
                           <label className="text-xs font-medium text-slate-600 mb-1 block">
                             Modifications / Special Requirements
-                            {item.modifications && (
+                            {item.modifications && item.modifications.trim().length > 0 && (
                               <span className="ml-2 text-amber-600">
-                                {quotationId ? '(Sent to Engineering for pricing)' : '(Will be sent to Engineering for pricing)'}
+                                (Will be sent to Engineering for pricing)
                               </span>
                             )}
                           </label>
@@ -532,13 +534,8 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                               updateItem(index, 'needs_engineering_review', e.target.value.trim().length > 0);
                             }}
                             rows={2}
-                            disabled={!!quotationId}
-                            className={`w-full px-3 py-2 border rounded-lg text-sm ${
-                              quotationId
-                                ? 'bg-slate-50 border-slate-200 text-slate-600 cursor-not-allowed'
-                                : 'border-slate-300 focus:ring-2 focus:ring-coral-500 focus:border-coral-500'
-                            }`}
-                            placeholder={quotationId ? '' : 'Enter any modifications or special requirements for this item...'}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-coral-500 focus:border-coral-500"
+                            placeholder="Enter any modifications or special requirements for this item..."
                           />
                         </div>
                       )}
