@@ -36,14 +36,14 @@ export default function QuotationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Quotations</h1>
           <p className="text-slate-600 mt-1">Manage sales quotations and proposals</p>
         </div>
         <button
           onClick={handleNew}
-          className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
+          className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm hover:shadow-md whitespace-nowrap"
         >
           <Plus className="w-5 h-5" />
           New Quotation
