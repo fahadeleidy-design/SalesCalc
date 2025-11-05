@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, FileText, User, Calendar, DollarSign, Package } from 'lucide-react';
+import { X, FileText, User, Calendar, DollarSign, Package, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Database } from '../../lib/database.types';
 import { formatCurrency } from '../../lib/currencyUtils';
+import { generateQuotationPDF } from '../../lib/enhancedPdfExport';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -70,6 +71,43 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
     }
   };
 
+  const handleExportPDF = async () => {
+    if (!quotation) return;
+
+    try {
+      const { data: settings } = await supabase
+        .from('system_settings')
+        .select('company_name, company_logo_url')
+        .single();
+
+      await generateQuotationPDF(
+        {
+          quotation_number: quotation.quotation_number,
+          title: quotation.title,
+          created_at: quotation.created_at,
+          valid_until: quotation.valid_until,
+          status: quotation.status,
+          customer: quotation.customer,
+          sales_rep: quotation.sales_rep,
+          items: quotation.quotation_items,
+          subtotal: quotation.subtotal,
+          discount_percentage: quotation.discount_percentage,
+          discount_amount: quotation.discount_amount,
+          tax_percentage: quotation.tax_percentage,
+          tax_amount: quotation.tax_amount,
+          total: quotation.total,
+          notes: quotation.notes,
+          terms_and_conditions: quotation.terms_and_conditions,
+        },
+        settings?.company_name,
+        settings?.company_logo_url
+      );
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const styles = {
       draft: 'bg-slate-100 text-slate-700',
@@ -132,6 +170,13 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
           </div>
           <div className="flex items-center gap-3">
             {getStatusBadge(quotation.status)}
+            <button
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export PDF
+            </button>
             <button
               onClick={onClose}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"

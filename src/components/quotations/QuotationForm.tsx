@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Search, AlertCircle } from 'lucide-react';
+import { X, Save, Plus, Trash2, Search, AlertCircle, Building2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
 import CustomItemRequestModal, { type CustomItemData } from './CustomItemRequestModal';
+import CustomerQuickAddModal from '../customers/CustomerQuickAddModal';
 import { formatCurrency } from '../../lib/currencyUtils';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
@@ -30,7 +31,9 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
   const [products, setProducts] = useState<Product[]>([]);
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [showCustomItemModal, setShowCustomItemModal] = useState(false);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [productSearch, setProductSearch] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -52,9 +55,10 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const [customersResult, productsResult] = await Promise.all([
+      const [customersResult, productsResult, settingsResult] = await Promise.all([
         supabase.from('customers').select('*').order('company_name'),
         supabase.from('products').select('*').eq('is_active', true).order('name'),
+        supabase.from('system_settings').select('*').single(),
       ]);
 
       if (customersResult.data) setCustomers(customersResult.data);
@@ -68,6 +72,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         setFormData(prev => ({
           ...prev,
           valid_until: validUntil.toISOString().split('T')[0],
+          terms_and_conditions: settingsResult.data?.default_terms_and_conditions || '',
         }));
       }
     } catch (error) {
@@ -347,18 +352,60 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Customer *
               </label>
-              <select
-                value={formData.customer_id}
-                onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              >
-                <option value="">Select Customer</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.company_name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  onFocus={() => setCustomerSearch('')}
+                  placeholder="Search or type to add new customer..."
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+                {customerSearch && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {customers
+                      .filter((customer) =>
+                        customer.company_name
+                          .toLowerCase()
+                          .includes(customerSearch.toLowerCase())
+                      )
+                      .map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, customer_id: customer.id });
+                            setCustomerSearch(customer.company_name);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-orange-50 transition-colors"
+                        >
+                          <div className="font-medium text-slate-900">
+                            {customer.company_name}
+                          </div>
+                          <div className="text-sm text-slate-600">{customer.email}</div>
+                        </button>
+                      ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomerModal(true);
+                        setCustomerSearch('');
+                      }}
+                      className="w-full text-left px-4 py-3 bg-orange-50 hover:bg-orange-100 transition-colors border-t border-orange-200"
+                    >
+                      <div className="flex items-center gap-2 text-orange-600 font-medium">
+                        <Plus className="w-4 h-4" />
+                        Add New Customer
+                      </div>
+                    </button>
+                  </div>
+                )}
+                {!customerSearch && formData.customer_id && (
+                  <div className="mt-2 text-sm text-slate-600">
+                    Selected: {customers.find((c) => c.id === formData.customer_id)?.company_name}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -711,6 +758,18 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         <CustomItemRequestModal
           onClose={() => setShowCustomItemModal(false)}
           onSubmit={handleCustomItemSubmit}
+        />
+      )}
+
+      {showCustomerModal && (
+        <CustomerQuickAddModal
+          onClose={() => setShowCustomerModal(false)}
+          onCustomerAdded={(customerId, customerName) => {
+            setFormData({ ...formData, customer_id: customerId });
+            setCustomerSearch(customerName);
+            setShowCustomerModal(false);
+            loadInitialData();
+          }}
         />
       )}
     </div>

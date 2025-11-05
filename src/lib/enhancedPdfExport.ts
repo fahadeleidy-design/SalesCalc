@@ -40,19 +40,40 @@ interface QuotationData {
   terms_and_conditions: string | null;
 }
 
-export async function generateQuotationPDF(quotation: QuotationData): Promise<void> {
+export async function generateQuotationPDF(
+  quotation: QuotationData,
+  companyName?: string,
+  logoUrl?: string | null
+): Promise<void> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 20;
 
-  // Header - Company Logo Area (placeholder)
+  // Header - Company Logo Area
   doc.setFillColor(249, 115, 22); // Orange color
   doc.rect(0, 0, pageWidth, 15, 'F');
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('SPECIAL OFFICES', pageWidth / 2, 10, { align: 'center' });
+  doc.text(companyName || 'SPECIAL OFFICES', pageWidth / 2, 10, { align: 'center' });
+
+  // Add logo if provided
+  if (logoUrl) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = logoUrl;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        setTimeout(reject, 5000); // 5 second timeout
+      });
+      doc.addImage(img, 'PNG', 14, 2, 40, 11);
+    } catch (error) {
+      console.warn('Failed to load logo:', error);
+    }
+  }
 
   doc.setTextColor(0, 0, 0);
   yPos = 25;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Save, X, Plus, Trash2 } from 'lucide-react';
+import { Edit2, Save, X, Plus, Trash2, Upload, Building2, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatCurrencyCompact } from '../lib/currencyUtils';
 
@@ -20,13 +20,22 @@ interface CommissionTier {
   is_active: boolean;
 }
 
+interface SystemSettings {
+  id: string;
+  company_name: string;
+  company_logo_url: string | null;
+  default_terms_and_conditions: string;
+}
+
 export default function SettingsPage() {
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
   const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<string | null>(null);
   const [showCommissionForm, setShowCommissionForm] = useState(false);
+  const [editingBranding, setEditingBranding] = useState(false);
   const [newCommission, setNewCommission] = useState({
     tier_name: '',
     min_amount: 0,
@@ -40,17 +49,19 @@ export default function SettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const [discountResult, commissionResult] = await Promise.all([
+      const [discountResult, commissionResult, settingsResult] = await Promise.all([
         supabase.from('discount_matrix').select('*').order('min_quotation_value'),
         supabase
           .from('commission_plans')
           .select('*')
           .is('sales_rep_id', null)
           .order('min_amount'),
+        supabase.from('system_settings').select('*').single(),
       ]);
 
       if (discountResult.data) setDiscountRules(discountResult.data);
       if (commissionResult.data) setCommissionTiers(commissionResult.data);
+      if (settingsResult.data) setSystemSettings(settingsResult.data);
     } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
@@ -133,6 +144,32 @@ export default function SettingsPage() {
     }
   };
 
+  const updateSystemSettings = async () => {
+    if (!systemSettings) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('system_settings')
+        .update({
+          company_name: systemSettings.company_name,
+          company_logo_url: systemSettings.company_logo_url,
+          default_terms_and_conditions: systemSettings.default_terms_and_conditions,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', systemSettings.id);
+
+      if (error) throw error;
+      setEditingBranding(false);
+      alert('Settings updated successfully!');
+    } catch (error: any) {
+      console.error('Error updating settings:', error);
+      alert('Failed to update settings: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const formatCurrencyValue = (value: number | null) => {
     if (value === null) return '∞';
     return formatCurrencyCompact(value);
@@ -151,6 +188,137 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
         <p className="text-slate-600 mt-1">Configure system parameters and preferences</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-orange-500" />
+            <h3 className="font-semibold text-slate-900">Company Branding & Terms</h3>
+          </div>
+          {!editingBranding ? (
+            <button
+              onClick={() => setEditingBranding(true)}
+              className="flex items-center gap-2 text-orange-500 hover:bg-orange-50 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Edit2 className="w-4 h-4" />
+              Edit
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={updateSystemSettings}
+                disabled={saving}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={() => {
+                  setEditingBranding(false);
+                  loadSettings();
+                }}
+                className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Company Name
+            </label>
+            {editingBranding ? (
+              <input
+                type="text"
+                value={systemSettings?.company_name || ''}
+                onChange={(e) =>
+                  setSystemSettings(
+                    systemSettings ? { ...systemSettings, company_name: e.target.value } : null
+                  )
+                }
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                placeholder="Your Company Name"
+              />
+            ) : (
+              <p className="text-slate-900">{systemSettings?.company_name}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Company Logo URL
+            </label>
+            {editingBranding ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={systemSettings?.company_logo_url || ''}
+                  onChange={(e) =>
+                    setSystemSettings(
+                      systemSettings
+                        ? { ...systemSettings, company_logo_url: e.target.value }
+                        : null
+                    )
+                  }
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                  placeholder="https://example.com/logo.png"
+                />
+                <p className="text-xs text-slate-500">
+                  Enter a public URL to your company logo (recommended size: 200x80px)
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                {systemSettings?.company_logo_url ? (
+                  <img
+                    src={systemSettings.company_logo_url}
+                    alt="Company Logo"
+                    className="h-12 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <p className="text-slate-500 text-sm">No logo set</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+              <FileText className="w-4 h-4" />
+              Default Terms & Conditions
+            </label>
+            {editingBranding ? (
+              <textarea
+                value={systemSettings?.default_terms_and_conditions || ''}
+                onChange={(e) =>
+                  setSystemSettings(
+                    systemSettings
+                      ? { ...systemSettings, default_terms_and_conditions: e.target.value }
+                      : null
+                  )
+                }
+                rows={10}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono"
+                placeholder="Enter default terms and conditions..."
+              />
+            ) : (
+              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans">
+                  {systemSettings?.default_terms_and_conditions}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
