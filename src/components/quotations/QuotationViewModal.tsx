@@ -33,8 +33,8 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
           .from('quotations')
           .select(`
             *,
-            customer:customer_id(*),
-            sales_rep:sales_rep_id(*)
+            customer:customers!quotations_customer_id_fkey(*),
+            sales_rep:profiles!quotations_sales_rep_id_fkey(*)
           `)
           .eq('id', quotationId)
           .single(),
@@ -42,13 +42,20 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
           .from('quotation_items')
           .select(`
             *,
-            product:product_id(*)
+            product:products!quotation_items_product_id_fkey(*)
           `)
           .eq('quotation_id', quotationId)
           .order('created_at', { ascending: true })
       ]);
 
-      if (quotationResult.error) throw quotationResult.error;
+      if (quotationResult.error) {
+        console.error('Quotation query error:', quotationResult.error);
+        throw quotationResult.error;
+      }
+
+      if (itemsResult.error) {
+        console.error('Items query error:', itemsResult.error);
+      }
 
       const quotationData = {
         ...quotationResult.data,
