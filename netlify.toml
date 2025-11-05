@@ -5,10 +5,8 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA redirect - only redirect if file doesn't exist
+# SPA redirect - serve index.html for all routes
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
-  conditions = {Role = ["public"]}
