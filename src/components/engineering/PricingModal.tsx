@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { X, Save, DollarSign } from 'lucide-react';
+import { X, Save, DollarSign, Eye } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
 import { formatCurrency } from '../../lib/currencyUtils';
+import FileUpload, { UploadedFile } from './FileUpload';
+import QuotationViewModal from '../quotations/QuotationViewModal';
 
 type CustomItemRequest = Database['public']['Tables']['custom_item_requests']['Row'] & {
   quotation: Database['public']['Tables']['quotations']['Row'];
@@ -22,6 +24,10 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
   const [price, setPrice] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [showQuotationView, setShowQuotationView] = useState(false);
+
+  const existingAttachments = request.engineering_attachments as UploadedFile[] || [];
 
   const specifications = request.specifications as Record<string, string> || {};
 
@@ -47,6 +53,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
           status: 'priced',
           engineering_price: numericPrice,
           engineering_notes: notes || null,
+          engineering_attachments: uploadedFiles,
           priced_by: profile.id,
           priced_at: new Date().toISOString(),
         })
@@ -114,9 +121,18 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl m-4 max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-900">Price Custom Item</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowQuotationView(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+              View Full Quotation
+            </button>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
@@ -210,6 +226,14 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
+
+            <div className="mt-4">
+              <FileUpload
+                onFilesChange={setUploadedFiles}
+                existingFiles={existingAttachments}
+                maxFiles={10}
+              />
+            </div>
           </div>
 
           <div className="bg-orange-50 border border-blue-200 rounded-lg p-4">
@@ -237,6 +261,13 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
           </button>
         </div>
       </div>
+
+      {showQuotationView && (
+        <QuotationViewModal
+          quotationId={request.quotation_id}
+          onClose={() => setShowQuotationView(false)}
+        />
+      )}
     </div>
   );
 }

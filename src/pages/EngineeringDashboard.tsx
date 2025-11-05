@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Wrench, Clock, CheckCircle, FileText } from 'lucide-react';
+import { Wrench, Clock, CheckCircle, FileText, Eye } from 'lucide-react';
 import PricingModal from '../components/engineering/PricingModal';
+import QuotationViewModal from '../components/quotations/QuotationViewModal';
 import type { Database } from '../lib/database.types';
 
 type CustomItemRequest = Database['public']['Tables']['custom_item_requests']['Row'] & {
@@ -15,6 +16,7 @@ export default function EngineeringDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<CustomItemRequest | null>(null);
   const [completedToday, setCompletedToday] = useState(0);
+  const [viewingQuotationId, setViewingQuotationId] = useState<string | undefined>();
 
   const fetchCustomItemRequests = async () => {
     const today = new Date();
@@ -162,6 +164,14 @@ export default function EngineeringDashboard() {
                             {new Date(request.created_at).toLocaleDateString()}
                           </span>
                         </div>
+
+                        <button
+                          onClick={() => setViewingQuotationId(request.quotation_id)}
+                          className="mt-2 flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View Full Quotation
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -177,6 +187,13 @@ export default function EngineeringDashboard() {
           )}
         </div>
       </div>
+
+      {viewingQuotationId && (
+        <QuotationViewModal
+          quotationId={viewingQuotationId}
+          onClose={() => setViewingQuotationId(undefined)}
+        />
+      )}
 
       {selectedRequest && (
         <PricingModal
