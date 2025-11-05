@@ -1,7 +1,5 @@
-const CACHE_NAME = 'salescalc-v1';
+const CACHE_NAME = 'salescalc-v2'; // Increment version to force update
 const urlsToCache = [
-  '/',
-  '/index.html',
   '/logo.svg',
   '/manifest.json'
 ];
@@ -36,11 +34,54 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
+  // Always fetch from network for Supabase
   if (url.origin.includes('supabase.co')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
+  // Network-first strategy for HTML files (including index.html)
+  if (event.request.headers.get('accept').includes('text/html') || 
+      url.pathname === '/' || 
+      url.pathname === '/index.html' ||
+      url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Return fresh response, don't cache HTML
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache only if offline
+          return caches.match('/index.html');
+        })
+    );
+    return;
+  }
+
+  // Network-first for JavaScript and CSS (with cache fallback)
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if offline
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Cache-first for other assets (images, fonts, etc.)
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
