@@ -28,19 +28,34 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
   const loadQuotation = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('quotations')
-        .select(`
-          *,
-          customer:customer_id(*),
-          sales_rep:sales_rep_id(*),
-          quotation_items(*, product:product_id(*))
-        `)
-        .eq('id', quotationId)
-        .single();
+      const [quotationResult, itemsResult] = await Promise.all([
+        supabase
+          .from('quotations')
+          .select(`
+            *,
+            customer:customer_id(*),
+            sales_rep:sales_rep_id(*)
+          `)
+          .eq('id', quotationId)
+          .single(),
+        supabase
+          .from('quotation_items')
+          .select(`
+            *,
+            product:product_id(*)
+          `)
+          .eq('quotation_id', quotationId)
+          .order('created_at', { ascending: true })
+      ]);
 
-      if (error) throw error;
-      setQuotation(data as any);
+      if (quotationResult.error) throw quotationResult.error;
+
+      const quotationData = {
+        ...quotationResult.data,
+        quotation_items: itemsResult.data || []
+      };
+
+      setQuotation(quotationData as any);
     } catch (error) {
       console.error('Error loading quotation:', error);
     } finally {
