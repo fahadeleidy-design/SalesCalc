@@ -12,9 +12,11 @@ import {
   TrendingUp,
   TrendingDown,
   Calendar,
+  Eye,
 } from 'lucide-react';
 import { formatCurrencyCompact, formatCurrency } from '../lib/currencyUtils';
 import { useNavigation } from '../contexts/NavigationContext';
+import QuotationViewModal from '../components/quotations/QuotationViewModal';
 import {
   LineChart,
   Line,
@@ -81,6 +83,7 @@ export default function SalesDashboard() {
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [statusData, setStatusData] = useState<StatusData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingId, setViewingId] = useState<string | undefined>();
   const [dateRange, setDateRange] = useState('6months');
 
   const fetchDashboardData = async () => {
@@ -446,8 +449,7 @@ export default function SalesDashboard() {
             recentQuotations.map((quotation) => (
               <div
                 key={quotation.id}
-                className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer flex items-center justify-between"
-                onClick={() => navigate('/quotations')}
+                className="px-6 py-4 hover:bg-slate-50 transition-colors flex items-center justify-between"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -467,13 +469,26 @@ export default function SalesDashboard() {
                       {formatCurrency(Number(quotation.total))}
                     </p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-slate-400" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewingId(quotation.id);
+                    }}
+                    className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                    title="View Details"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {viewingId && (
+        <QuotationViewModal quotationId={viewingId} onClose={() => setViewingId(undefined)} />
+      )}
     </div>
   );
 }

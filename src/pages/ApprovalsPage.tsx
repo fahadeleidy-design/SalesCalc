@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { FileText, CheckCircle, XCircle, MessageSquare, Clock, } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, MessageSquare, Clock, Eye } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { approveQuotation, rejectQuotation, requestChanges } from '../lib/approvalLogic';
 import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
+import QuotationViewModal from '../components/quotations/QuotationViewModal';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -20,6 +21,7 @@ export default function ApprovalsPage() {
   const [actionType, setActionType] = useState<'approve' | 'reject' | 'changes' | null>(null);
   const [comments, setComments] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [viewingId, setViewingId] = useState<string | undefined>();
 
   useEffect(() => {
     loadQuotations();
@@ -239,6 +241,14 @@ export default function ApprovalsPage() {
 
                   <div className="flex items-center gap-2 ml-4">
                     <button
+                      onClick={() => setViewingId(quotation.id)}
+                      className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View
+                    </button>
+                    <button
                       onClick={() => openActionModal(quotation, 'approve')}
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
@@ -361,6 +371,10 @@ export default function ApprovalsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {viewingId && (
+        <QuotationViewModal quotationId={viewingId} onClose={() => setViewingId(undefined)} />
       )}
     </div>
   );

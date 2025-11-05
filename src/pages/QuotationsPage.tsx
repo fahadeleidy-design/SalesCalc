@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import QuotationForm from '../components/quotations/QuotationForm';
 import QuotationsList from '../components/quotations/QuotationsList';
+import QuotationViewModal from '../components/quotations/QuotationViewModal';
 
 export default function QuotationsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
-  const [_viewingId, setViewingId] = useState<string | undefined>();
+  const [viewingId, setViewingId] = useState<string | undefined>();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleNew = () => {
@@ -21,6 +22,10 @@ export default function QuotationsPage() {
 
   const handleView = (id: string) => {
     setViewingId(id);
+  };
+
+  const handleCloseView = () => {
+    setViewingId(undefined);
   };
 
   const handleClose = () => {
@@ -56,6 +61,10 @@ export default function QuotationsPage() {
 
       {showForm && (
         <QuotationForm quotationId={editingId} onClose={handleClose} onSave={handleSave} />
+      )}
+
+      {viewingId && (
+        <QuotationViewModal quotationId={viewingId} onClose={handleCloseView} />
       )}
     </div>
   );
