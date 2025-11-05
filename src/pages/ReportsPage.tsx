@@ -65,8 +65,8 @@ export default function ReportsPage() {
         return;
       }
 
-      const wonQuotations = quotations.filter((q) => q.status === 'deal_won');
-      const totalRevenue = wonQuotations.reduce((sum, q) => sum + Number(q.total), 0);
+      const wonQuotations = quotations.filter((q: any) => q.status === 'deal_won');
+      const totalRevenue = wonQuotations.reduce((sum, q: any) => sum + Number(q.total), 0);
       const totalQuotations = quotations.length;
       const conversionRate =
         totalQuotations > 0 ? (wonQuotations.length / totalQuotations) * 100 : 0;
@@ -116,7 +116,7 @@ export default function ReportsPage() {
       .slice(-6);
   };
 
-  const calculateTopProducts = async (dateFilter: string | null) => {
+  const calculateTopProducts = async (_dateFilter: string | null) => {
     let query = supabase.from('quotation_items').select('product_id, quantity, price, product:products(name)');
 
     const { data: items } = await query;

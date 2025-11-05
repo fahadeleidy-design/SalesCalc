@@ -63,9 +63,9 @@ export default function GlobalSearch() {
           .limit(5),
         supabase
           .from('customers')
-          .select('id, company_name, contact_name, email')
+          .select('id, company_name, contact_person, email')
           .or(
-            `company_name.ilike.%${searchTerm}%,contact_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
+            `company_name.ilike.%${searchTerm}%,contact_person.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`
           )
           .limit(5),
         supabase
@@ -90,19 +90,19 @@ export default function GlobalSearch() {
       }
 
       if (customersData.data) {
-        customersData.data.forEach((c) => {
+        customersData.data.forEach((c: any) => {
           allResults.push({
             id: c.id,
             type: 'customer',
             title: c.company_name,
-            subtitle: c.contact_name || '',
+            subtitle: c.contact_person || '',
             metadata: c.email || '',
           });
         });
       }
 
       if (productsData.data) {
-        productsData.data.forEach((p) => {
+        productsData.data.forEach((p: any) => {
           allResults.push({
             id: p.id,
             type: 'product',

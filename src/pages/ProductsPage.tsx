@@ -57,13 +57,13 @@ export default function ProductsPage() {
       if (editingProduct) {
         const { error } = await supabase
           .from('products')
-          .update(productData)
+          .update(productData as any)
           .eq('id', editingProduct.id);
 
         if (error) throw error;
         alert('Product updated successfully');
       } else {
-        const { error } = await supabase.from('products').insert([productData]);
+        const { error } = await supabase.from('products').insert([productData as any]);
 
         if (error) throw error;
         alert('Product added successfully');
@@ -130,7 +130,6 @@ export default function ProductsPage() {
         return;
       }
 
-      const headers = lines[0].split(',').map(h => h.trim());
       const productsToImport: any[] = [];
 
       for (let i = 1; i < lines.length; i++) {
@@ -158,7 +157,7 @@ export default function ProductsPage() {
       }
 
       try {
-        const { error } = await supabase.from('products').insert(productsToImport);
+        const { error } = await supabase.from('products').insert(productsToImport as any);
 
         if (error) throw error;
 

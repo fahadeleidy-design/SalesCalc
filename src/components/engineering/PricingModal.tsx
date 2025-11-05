@@ -72,7 +72,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
         .eq('quotation_id', request.quotation_id);
 
       if (allItems) {
-        const subtotal = allItems.reduce((sum, item) => sum + item.line_total, 0);
+        const subtotal = allItems.reduce((sum, item: any) => sum + item.line_total, 0);
 
         const { data: quotation } = await supabase
           .from('quotations')
@@ -81,9 +81,9 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
           .single();
 
         if (quotation) {
-          const discountAmount = (subtotal * quotation.discount_percentage) / 100;
+          const discountAmount = (subtotal * (quotation as any).discount_percentage) / 100;
           const afterDiscount = subtotal - discountAmount;
-          const taxAmount = (afterDiscount * quotation.tax_percentage) / 100;
+          const taxAmount = (afterDiscount * (quotation as any).tax_percentage) / 100;
           const total = afterDiscount + taxAmount;
 
           await supabase

@@ -3,6 +3,7 @@ import type { Database } from './database.types';
 
 type QuotationStatus = Database['public']['Tables']['quotations']['Row']['status'];
 type Quotation = Database['public']['Tables']['quotations']['Row'];
+type QuotationItem = Database['public']['Tables']['quotation_items']['Row'];
 
 interface DiscountMatrixRule {
   min_quotation_value: number;
@@ -43,7 +44,7 @@ export async function validateQuotationForSubmission(
   }
 
   const pendingCustomItems = quotation.quotation_items?.filter(
-    (item: any) => item.is_custom && item.custom_item_status === 'pending'
+    (item) => item.is_custom && item.custom_item_status === 'pending'
   );
 
   if (pendingCustomItems && pendingCustomItems.length > 0) {
@@ -83,20 +84,26 @@ export async function getDiscountMatrixRule(
   }
 
   for (const rule of rules) {
-    const minValue = parseFloat(rule.min_quotation_value as any);
-    const maxValue = rule.max_quotation_value ? parseFloat(rule.max_quotation_value as any) : null;
+    const minValue = parseFloat(String(rule.min_quotation_value));
+    const maxValue = rule.max_quotation_value ? parseFloat(String(rule.max_quotation_value)) : null;
 
     if (quotationValue >= minValue && (maxValue === null || quotationValue < maxValue)) {
       return {
         min_quotation_value: minValue,
         max_quotation_value: maxValue,
-        max_discount_percentage: parseFloat(rule.max_discount_percentage as any),
+        max_discount_percentage: parseFloat(String(rule.max_discount_percentage)),
         requires_ceo_approval: rule.requires_ceo_approval,
       };
     }
   }
 
-  return rules[rules.length - 1] as any;
+  const lastRule = rules[rules.length - 1];
+  return {
+    min_quotation_value: parseFloat(String(lastRule.min_quotation_value)),
+    max_quotation_value: lastRule.max_quotation_value ? parseFloat(String(lastRule.max_quotation_value)) : null,
+    max_discount_percentage: parseFloat(String(lastRule.max_discount_percentage)),
+    requires_ceo_approval: lastRule.requires_ceo_approval,
+  };
 }
 
 export async function determineNextApprovalStatus(
@@ -273,7 +280,7 @@ export async function approveQuotation(
   await supabase.from('quotation_approvals').insert({
     quotation_id: quotationId,
     approver_id: approverId,
-    approver_role: approverRole as any,
+    approver_role: approverRole,
     action: 'approved',
     comments,
     previous_status: previousStatus,
@@ -322,7 +329,7 @@ export async function rejectQuotation(
 
   const { error: updateError } = await supabase
     .from('quotations')
-    .update({ status: nextStatus })
+    .update({ status: nextStatus } as any)
     .eq('id', quotationId);
 
   if (updateError) {
@@ -332,7 +339,7 @@ export async function rejectQuotation(
   await supabase.from('quotation_approvals').insert({
     quotation_id: quotationId,
     approver_id: approverId,
-    approver_role: approverRole as any,
+    approver_role: approverRole,
     action: 'rejected',
     comments,
     previous_status: previousStatus,
@@ -381,7 +388,7 @@ export async function requestChanges(
 
   const { error: updateError } = await supabase
     .from('quotations')
-    .update({ status: nextStatus })
+    .update({ status: nextStatus } as any)
     .eq('id', quotationId);
 
   if (updateError) {
@@ -391,12 +398,12 @@ export async function requestChanges(
   await supabase.from('quotation_approvals').insert({
     quotation_id: quotationId,
     approver_id: approverId,
-    approver_role: approverRole as any,
+    approver_role: approverRole,
     action: 'changes_requested',
     comments,
     previous_status: previousStatus,
     new_status: nextStatus,
-  });
+  } as any);
 
   const { data: salesRep } = await supabase
     .from('quotations')
@@ -406,14 +413,14 @@ export async function requestChanges(
 
   if (salesRep) {
     await supabase.from('notifications').insert({
-      user_id: salesRep.sales_rep_id,
+      user_id: (salesRep as any).sales_rep_id,
       type: 'changes_requested',
       title: 'Changes Requested',
       message: `${approverRole} has requested changes to quotation ${quotation.quotation_number}`,
       link: `/quotations`,
       related_quotation_id: quotationId,
       is_read: false,
-    });
+    } as any);
   }
 
   return { success: true };

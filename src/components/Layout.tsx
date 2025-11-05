@@ -2,7 +2,6 @@ import { ReactNode, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import {
-  Building2,
   LayoutDashboard,
   FileText,
   Users,

@@ -90,17 +90,18 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
     }
 
     if (data) {
+      const quotationData = data as any;
       setFormData({
-        customer_id: data.customer_id,
-        title: data.title,
-        valid_until: data.valid_until || '',
-        notes: data.notes || '',
-        terms_and_conditions: data.terms_and_conditions || '',
-        internal_notes: data.internal_notes || '',
-        discount_percentage: data.discount_percentage,
-        tax_percentage: data.tax_percentage,
+        customer_id: quotationData.customer_id,
+        title: quotationData.title,
+        valid_until: quotationData.valid_until || '',
+        notes: quotationData.notes || '',
+        terms_and_conditions: quotationData.terms_and_conditions || '',
+        internal_notes: quotationData.internal_notes || '',
+        discount_percentage: quotationData.discount_percentage,
+        tax_percentage: quotationData.tax_percentage,
       });
-      setItems(data.quotation_items || []);
+      setItems(quotationData.quotation_items || []);
     }
   };
 
@@ -215,7 +216,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
       if (quotationId) {
         const { error } = await supabase
           .from('quotations')
-          .update(quotationData)
+          .update(quotationData as any)
           .eq('id', quotationId);
 
         if (error) throw error;
@@ -225,12 +226,12 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         const quotationNumber = `QUO-${Date.now()}`;
         const { data, error } = await supabase
           .from('quotations')
-          .insert({ ...quotationData, quotation_number: quotationNumber })
+          .insert({ ...quotationData, quotation_number: quotationNumber } as any)
           .select()
           .single();
 
         if (error) throw error;
-        savedQuotationId = data.id;
+        savedQuotationId = (data as any).id;
       }
 
       const itemsToInsert = items.map((item, index) => ({
@@ -252,7 +253,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
 
       const { data: insertedItems, error: itemsError } = await supabase
         .from('quotation_items')
-        .insert(itemsToInsert)
+        .insert(itemsToInsert as any)
         .select();
 
       if (itemsError) throw itemsError;
@@ -263,7 +264,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
             if (insertedItems[index]) {
               if (item.is_custom && item.customItemRequest) {
                 return {
-                  quotation_item_id: insertedItems[index].id,
+                  quotation_item_id: (insertedItems[index] as any).id,
                   quotation_id: savedQuotationId!,
                   requested_by: profile.id,
                   description: item.customItemRequest.description,
@@ -273,7 +274,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 };
               } else if (item.modifications && item.modifications.trim().length > 0) {
                 return {
-                  quotation_item_id: insertedItems[index].id,
+                  quotation_item_id: (insertedItems[index] as any).id,
                   quotation_id: savedQuotationId!,
                   requested_by: profile.id,
                   description: `Modified ${item.product?.name || 'Product'}: ${item.modifications}`,
@@ -294,7 +295,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         if (customItemRequests.length > 0) {
           const { error: requestsError } = await supabase
             .from('custom_item_requests')
-            .insert(customItemRequests);
+            .insert(customItemRequests as any);
 
           if (requestsError) throw requestsError;
         }

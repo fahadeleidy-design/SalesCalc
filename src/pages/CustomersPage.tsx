@@ -52,13 +52,13 @@ export default function CustomersPage() {
       if (editingCustomer) {
         const { error } = await supabase
           .from('customers')
-          .update(formData)
+          .update(formData as any)
           .eq('id', editingCustomer.id);
 
         if (error) throw error;
         alert('Customer updated successfully');
       } else {
-        const { error } = await supabase.from('customers').insert([formData]);
+        const { error } = await supabase.from('customers').insert([formData as any]);
 
         if (error) throw error;
         alert('Customer added successfully');

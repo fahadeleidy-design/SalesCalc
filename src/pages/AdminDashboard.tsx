@@ -48,7 +48,7 @@ export default function AdminDashboard() {
           .limit(10),
       ]);
 
-      const revenue = revenueResult.data?.reduce((sum, q) => sum + Number(q.total), 0) || 0;
+      const revenue = revenueResult.data?.reduce((sum, q: any) => sum + Number(q.total), 0) || 0;
 
       setStats({
         totalUsers: usersResult.count || 0,

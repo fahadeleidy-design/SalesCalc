@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, CheckCircle, AlertCircle, Info, FileText, MessageSquare } from 'lucide-react';
+import { Bell, CheckCircle, AlertCircle, FileText, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
@@ -34,7 +34,7 @@ export default function NotificationsPage() {
   };
 
   const markAsRead = async (id: string) => {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    await supabase.from('notifications').update({ is_read: true } as any).eq('id', id);
     loadNotifications();
   };
 
@@ -43,7 +43,7 @@ export default function NotificationsPage() {
 
     await supabase
       .from('notifications')
-      .update({ is_read: true })
+      .update({ is_read: true } as any)
       .eq('user_id', profile.id)
       .eq('is_read', false);
 

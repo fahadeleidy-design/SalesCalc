@@ -51,7 +51,7 @@ export default function ManagerDashboard() {
     setPendingCount(pendingResult.count || 0);
     setApprovedToday(approvedResult.count || 0);
 
-    const pipeline = pipelineResult.data?.reduce((sum, q) => sum + Number(q.total), 0) || 0;
+    const pipeline = pipelineResult.data?.reduce((sum, q: any) => sum + Number(q.total), 0) || 0;
     setTeamPipeline(pipeline);
 
     if (salesRepsResult.data) {
@@ -61,20 +61,20 @@ export default function ManagerDashboard() {
             supabase
               .from('quotations')
               .select('total')
-              .eq('sales_rep_id', rep.id),
+              .eq('sales_rep_id', (rep as any).id),
 
             supabase
               .from('quotations')
               .select('total')
-              .eq('sales_rep_id', rep.id)
+              .eq('sales_rep_id', (rep as any).id)
               .eq('status', 'deal_won')
           ]);
 
           return {
-            id: rep.id,
-            full_name: rep.full_name,
+            id: (rep as any).id,
+            full_name: (rep as any).full_name,
             quotation_count: quotationsResult.data?.length || 0,
-            total_value: wonResult.data?.reduce((sum, q) => sum + Number(q.total), 0) || 0,
+            total_value: wonResult.data?.reduce((sum, q: any) => sum + Number(q.total), 0) || 0,
             won_deals: wonResult.data?.length || 0,
           };
         })

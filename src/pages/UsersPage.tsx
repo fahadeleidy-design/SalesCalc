@@ -135,7 +135,7 @@ export default function UsersPage() {
           p_email: formData.email,
           p_full_name: formData.full_name,
           p_role: formData.role,
-        });
+        } as any);
 
         if (profileError) {
           // If profile creation fails, try to delete the auth user

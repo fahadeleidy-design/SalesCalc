@@ -320,10 +320,6 @@ export async function generateQuotationsReport(
 
   // Summary Statistics
   const totalValue = quotations.reduce((sum, q) => sum + q.total, 0);
-  const statusCounts = quotations.reduce((acc, q) => {
-    acc[q.status] = (acc[q.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');

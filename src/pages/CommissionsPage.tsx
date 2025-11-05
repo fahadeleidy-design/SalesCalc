@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Calendar, FileText, CheckCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, CheckCircle, Calendar } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
 
-type Quotation = Database['public']['Tables']['quotations']['Row'] & {
-  customer: Database['public']['Tables']['customers']['Row'];
-};
+
 
 interface CommissionData {
   quotation_id: string;
