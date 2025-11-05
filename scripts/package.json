@@ -1,0 +1,12 @@
+{
+  "name": "salescalc-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Utility scripts for SalesCalc",
+  "scripts": {
+    "create-users": "node create-production-users.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}

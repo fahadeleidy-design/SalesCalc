@@ -51,29 +51,43 @@ function AppContent() {
   };
 
   const getPageContent = () => {
+    // Role-based access control
+    const hasAccess = (allowedRoles: string[]) => {
+      return allowedRoles.includes(profile.role);
+    };
+
+    const UnauthorizedPage = () => (
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+          <p className="text-slate-600">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+
     switch (currentPath) {
       case '/dashboard':
         return getDashboardForRole();
       case '/quotations':
-        return <QuotationsPage />;
+        return hasAccess(['sales']) ? <QuotationsPage /> : <UnauthorizedPage />;
       case '/custom-items':
-        return <CustomItemsPage />;
+        return hasAccess(['engineering']) ? <CustomItemsPage /> : <UnauthorizedPage />;
       case '/approvals':
-        return <ApprovalsPage />;
+        return hasAccess(['manager', 'ceo', 'finance']) ? <ApprovalsPage /> : <UnauthorizedPage />;
       case '/customers':
-        return <CustomersPage />;
+        return hasAccess(['sales', 'manager', 'admin']) ? <CustomersPage /> : <UnauthorizedPage />;
       case '/products':
-        return <ProductsPage />;
+        return hasAccess(['admin']) ? <ProductsPage /> : <UnauthorizedPage />;
       case '/commissions':
-        return <CommissionsPage />;
+        return hasAccess(['sales', 'admin']) ? <CommissionsPage /> : <UnauthorizedPage />;
       case '/settings':
-        return <SettingsPage />;
+        return hasAccess(['admin']) ? <SettingsPage /> : <UnauthorizedPage />;
       case '/notifications':
         return <NotificationsPage />;
       case '/reports':
-        return <ReportsPage />;
+        return hasAccess(['admin', 'manager', 'ceo']) ? <ReportsPage /> : <UnauthorizedPage />;
       case '/users':
-        return <UsersPage />;
+        return hasAccess(['admin']) ? <UsersPage /> : <UnauthorizedPage />;
       default:
         return getDashboardForRole();
     }
