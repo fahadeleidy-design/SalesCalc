@@ -532,8 +532,14 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                           <textarea
                             value={item.modifications || ''}
                             onChange={(e) => {
-                              updateItem(index, 'modifications', e.target.value);
-                              updateItem(index, 'needs_engineering_review', e.target.value.trim().length > 0);
+                              const newValue = e.target.value;
+                              const updatedItems = [...items];
+                              updatedItems[index] = {
+                                ...updatedItems[index],
+                                modifications: newValue,
+                                needs_engineering_review: newValue.trim().length > 0,
+                              };
+                              setItems(updatedItems);
                             }}
                             rows={2}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
