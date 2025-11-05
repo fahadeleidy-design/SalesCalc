@@ -32,9 +32,9 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
         .from('quotations')
         .select(`
           *,
-          customer:customers(*),
-          sales_rep:profiles(*),
-          quotation_items(*, product:products(*))
+          customer:customer_id(*),
+          sales_rep:sales_rep_id(*),
+          quotation_items(*, product:product_id(*))
         `)
         .eq('id', quotationId)
         .single();
@@ -76,11 +76,13 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
     );
   }
 
-  if (!quotation) {
+  if (!quotation || !quotation.customer || !quotation.sales_rep) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg p-8">
-          <p className="text-slate-600">Quotation not found</p>
+          <p className="text-slate-600">
+            {!quotation ? 'Quotation not found' : 'Loading quotation data...'}
+          </p>
           <button onClick={onClose} className="mt-4 px-4 py-2 bg-slate-200 rounded">
             Close
           </button>
