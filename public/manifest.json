@@ -1,0 +1,36 @@
+{
+  "name": "SalesCalc - Smart Sales Management",
+  "short_name": "SalesCalc",
+  "description": "AI-powered sales quotation and approval management platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#f97316",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Quotation",
+      "short_name": "New Quote",
+      "description": "Create a new quotation",
+      "url": "/quotations?action=new",
+      "icons": [{ "src": "/logo.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/logo.svg", "sizes": "96x96" }]
+    }
+  ]
+}

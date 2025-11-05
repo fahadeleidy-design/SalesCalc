@@ -157,6 +157,8 @@ export async function submitQuotationForApproval(
 
   const { status: nextStatus, requiresCEO } = await determineNextApprovalStatus(quotation);
 
+  await callAIPredictionService(quotationId, quotation);
+
   const { error: updateError } = await supabase
     .from('quotations')
     .update({
@@ -198,6 +200,34 @@ export async function submitQuotationForApproval(
     nextStatus,
     requiresCEO,
   };
+}
+
+async function callAIPredictionService(quotationId: string, quotation: Quotation) {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/predict-approval-path`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
+        quotationId,
+        quotationValue: quotation.total,
+        discountPercentage: quotation.discount_percentage,
+        salesRepId: quotation.sales_rep_id,
+        customerId: quotation.customer_id,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('AI prediction service failed:', await response.text());
+    }
+  } catch (error) {
+    console.error('Error calling AI prediction service:', error);
+  }
 }
 
 async function createNotificationsForSubmission(
