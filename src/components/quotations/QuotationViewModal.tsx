@@ -29,43 +29,68 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
   const loadQuotation = async () => {
     setLoading(true);
     try {
-      const [quotationResult, itemsResult] = await Promise.all([
+      // First, get the quotation
+      const { data: quotationData, error: quotationError } = await supabase
+        .from('quotations')
+        .select('*')
+        .eq('id', quotationId)
+        .single();
+
+      if (quotationError) {
+        console.error('Quotation query error:', quotationError);
+        throw quotationError;
+      }
+
+      if (!quotationData) {
+        throw new Error('Quotation not found');
+      }
+
+      // Then get the related data
+      const [customerResult, salesRepResult, itemsResult] = await Promise.all([
         supabase
-          .from('quotations')
-          .select(`
-            *,
-            customer:customers!quotations_customer_id_fkey(*),
-            sales_rep:profiles!quotations_sales_rep_id_fkey(*)
-          `)
-          .eq('id', quotationId)
+          .from('customers')
+          .select('*')
+          .eq('id', quotationData.customer_id)
+          .single(),
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', quotationData.sales_rep_id)
           .single(),
         supabase
           .from('quotation_items')
           .select(`
             *,
-            product:products!quotation_items_product_id_fkey(*)
+            product:products(*)
           `)
           .eq('quotation_id', quotationId)
           .order('created_at', { ascending: true })
       ]);
 
-      if (quotationResult.error) {
-        console.error('Quotation query error:', quotationResult.error);
-        throw quotationResult.error;
+      if (customerResult.error) {
+        console.error('Customer query error:', customerResult.error);
+      }
+
+      if (salesRepResult.error) {
+        console.error('Sales rep query error:', salesRepResult.error);
       }
 
       if (itemsResult.error) {
         console.error('Items query error:', itemsResult.error);
       }
 
-      const quotationData = {
-        ...quotationResult.data,
+      const fullQuotationData = {
+        ...quotationData,
+        customer: customerResult.data,
+        sales_rep: salesRepResult.data,
         quotation_items: itemsResult.data || []
       };
 
-      setQuotation(quotationData as any);
+      console.log('Loaded quotation:', fullQuotationData);
+      setQuotation(fullQuotationData as any);
     } catch (error) {
       console.error('Error loading quotation:', error);
+      alert('Failed to load quotation: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -136,14 +161,12 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
     );
   }
 
-  if (!quotation || !quotation.customer || !quotation.sales_rep) {
+  if (!quotation) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-8">
-          <p className="text-slate-600">
-            {!quotation ? 'Quotation not found' : 'Loading quotation data...'}
-          </p>
-          <button onClick={onClose} className="mt-4 px-4 py-2 bg-slate-200 rounded">
+        <div className="bg-white rounded-lg p-8 text-center">
+          <p className="text-slate-600 mb-4">Quotation not found</p>
+          <button onClick={onClose} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg">
             Close
           </button>
         </div>
@@ -194,9 +217,9 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
                 <div className="mt-1 flex items-center gap-2">
                   <User className="w-4 h-4 text-slate-400" />
                   <div>
-                    <p className="font-medium text-slate-900">{quotation.customer.company_name}</p>
-                    <p className="text-sm text-slate-600">{quotation.customer.contact_name}</p>
-                    <p className="text-sm text-slate-500">{quotation.customer.email}</p>
+                    <p className="font-medium text-slate-900">{quotation.customer?.company_name || 'N/A'}</p>
+                    <p className="text-sm text-slate-600">{quotation.customer?.contact_person || 'N/A'}</p>
+                    <p className="text-sm text-slate-500">{quotation.customer?.email || 'N/A'}</p>
                   </div>
                 </div>
               </div>
@@ -206,8 +229,8 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
                 <div className="mt-1 flex items-center gap-2">
                   <User className="w-4 h-4 text-slate-400" />
                   <div>
-                    <p className="font-medium text-slate-900">{quotation.sales_rep.full_name}</p>
-                    <p className="text-sm text-slate-500">{quotation.sales_rep.email}</p>
+                    <p className="font-medium text-slate-900">{quotation.sales_rep?.full_name || 'N/A'}</p>
+                    <p className="text-sm text-slate-500">{quotation.sales_rep?.email || 'N/A'}</p>
                   </div>
                 </div>
               </div>
