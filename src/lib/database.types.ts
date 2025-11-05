@@ -285,6 +285,7 @@ export interface Database {
           line_total: number;
           custom_item_status: CustomItemStatus | null;
           notes: string | null;
+          modifications: string | null;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -302,6 +303,7 @@ export interface Database {
           line_total: number;
           custom_item_status?: CustomItemStatus | null;
           notes?: string | null;
+          modifications?: string | null;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
@@ -319,6 +321,7 @@ export interface Database {
           line_total?: number;
           custom_item_status?: CustomItemStatus | null;
           notes?: string | null;
+          modifications?: string | null;
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
