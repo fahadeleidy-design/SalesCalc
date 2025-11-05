@@ -41,7 +41,7 @@ const navigationItems: NavItem[] = [
     label: 'Quotations',
     icon: FileText,
     path: '/quotations',
-    roles: ['sales', 'manager', 'ceo', 'finance'],
+    roles: ['sales'],
   },
   {
     label: 'Custom Items',
