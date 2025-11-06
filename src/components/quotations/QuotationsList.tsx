@@ -336,7 +336,12 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleSubmit(quotation.id)}
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSubmit(quotation.id);
+                              }}
                               disabled={submitting === quotation.id}
                               className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
                               title="Submit for Approval"
