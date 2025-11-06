@@ -1,12 +1,16 @@
 {
   "name": "SalesCalc - Smart Sales Management",
   "short_name": "SalesCalc",
-  "description": "AI-powered sales quotation and approval management platform",
+  "description": "AI-powered sales quotation and approval management platform with real-time collaboration",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#f8fafc",
-  "theme_color": "#f97316",
-  "orientation": "portrait-primary",
+  "theme_color": "#3b82f6",
+  "orientation": "any",
+  "dir": "ltr",
+  "lang": "en-US",
   "icons": [
     {
       "src": "/logo.svg",
@@ -15,7 +19,7 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "productivity"],
+  "categories": ["business", "productivity", "finance"],
   "screenshots": [],
   "shortcuts": [
     {
@@ -28,9 +32,54 @@
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "View your dashboard",
+      "description": "View analytics dashboard",
       "url": "/dashboard",
       "icons": [{ "src": "/logo.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Approvals",
+      "short_name": "Approvals",
+      "description": "View pending approvals",
+      "url": "/approvals",
+      "icons": [{ "src": "/logo.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "View sales analytics",
+      "url": "/analytics",
+      "icons": [{ "src": "/logo.svg", "sizes": "96x96" }]
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": ["application/pdf", "image/*"]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+salescalc",
+      "url": "/?quotation=%s"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "iarc_rating_id": "",
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  }
 }
