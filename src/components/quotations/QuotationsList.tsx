@@ -81,17 +81,21 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
     
     if (!profile) {
       console.error('❌ No profile found');
+      alert('Error: No profile found!');
       return;
     }
 
-    const confirmed = confirm(
-      'Submit this quotation for approval? This will route it to the appropriate approver based on discount rules.'
-    );
+    // Temporarily skip confirmation for testing
+    alert('Submit button clicked! Quotation ID: ' + quotationId);
+    
+    // const confirmed = confirm(
+    //   'Submit this quotation for approval? This will route it to the appropriate approver based on discount rules.'
+    // );
 
-    if (!confirmed) {
-      console.log('⏸️ User cancelled submission');
-      return;
-    }
+    // if (!confirmed) {
+    //   console.log('⏸️ User cancelled submission');
+    //   return;
+    // }
 
     console.log('⏳ Starting submission process...');
     setSubmitting(quotationId);
