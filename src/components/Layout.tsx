@@ -15,6 +15,7 @@ import {
   CheckCircle,
   DollarSign,
   BarChart3,
+  Target,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -71,7 +72,13 @@ const navigationItems: NavItem[] = [
     label: 'Commissions',
     icon: DollarSign,
     path: '/commissions',
-    roles: ['sales', 'admin'],
+    roles: ['sales', 'manager', 'ceo', 'finance', 'admin'],
+  },
+  {
+    label: 'Targets',
+    icon: Target,
+    path: '/targets',
+    roles: ['manager', 'ceo'],
   },
   {
     label: 'Reports',

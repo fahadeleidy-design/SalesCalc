@@ -12,6 +12,7 @@ import ApprovalsPage from './pages/ApprovalsPage';
 import CustomersPage from './pages/CustomersPage';
 import ProductsPage from './pages/ProductsPage';
 import CommissionsPage from './pages/CommissionsPage';
+import TargetsPage from './pages/TargetsPage';
 import SettingsPage from './pages/SettingsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsPage from './pages/ReportsPage';
@@ -79,7 +80,9 @@ function AppContent() {
       case '/products':
         return hasAccess(['admin']) ? <ProductsPage /> : <UnauthorizedPage />;
       case '/commissions':
-        return hasAccess(['sales', 'admin']) ? <CommissionsPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'manager', 'ceo', 'finance', 'admin']) ? <CommissionsPage /> : <UnauthorizedPage />;
+      case '/targets':
+        return hasAccess(['manager', 'ceo']) ? <TargetsPage /> : <UnauthorizedPage />;
       case '/settings':
         return hasAccess(['admin']) ? <SettingsPage /> : <UnauthorizedPage />;
       case '/notifications':
