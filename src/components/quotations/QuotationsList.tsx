@@ -76,31 +76,46 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
   };
 
   const handleSubmit = async (quotationId: string) => {
-    if (!profile) return;
+    console.log('🚀 handleSubmit called with quotationId:', quotationId);
+    console.log('👤 Current profile:', profile);
+    
+    if (!profile) {
+      console.error('❌ No profile found');
+      return;
+    }
 
     const confirmed = confirm(
       'Submit this quotation for approval? This will route it to the appropriate approver based on discount rules.'
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      console.log('⏸️ User cancelled submission');
+      return;
+    }
 
+    console.log('⏳ Starting submission process...');
     setSubmitting(quotationId);
     try {
+      console.log('📤 Calling submitQuotationForApproval...');
       const result = await submitQuotationForApproval(quotationId, profile.id);
+      console.log('📥 Submission result:', result);
 
       if (result.success) {
         const statusMessage = result.requiresCEO
           ? 'Quotation submitted for CEO approval'
           : 'Quotation submitted for Manager approval';
+        console.log('✅ Success:', statusMessage);
         alert(statusMessage);
         loadQuotations();
       } else {
+        console.error('❌ Submission failed:', result.error);
         alert('Failed to submit quotation: ' + result.error);
       }
     } catch (error: any) {
-      console.error('Error submitting quotation:', error);
+      console.error('💥 Error submitting quotation:', error);
       alert('Failed to submit quotation: ' + error.message);
     } finally {
+      console.log('🏁 Submission process complete');
       setSubmitting(null);
     }
   };
