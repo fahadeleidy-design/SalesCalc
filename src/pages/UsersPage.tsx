@@ -108,12 +108,30 @@ export default function UsersPage() {
     }
 
     try {
-      const { error } = await supabase.auth.admin.updateUserById(
-        resetPasswordUser.user_id,
-        { password: newPassword }
-      );
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
 
-      if (error) throw error;
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-user-password`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: resetPasswordUser.user_id,
+          newPassword: newPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to reset password');
+      }
 
       alert('Password reset successfully!');
       setShowPasswordResetModal(false);
