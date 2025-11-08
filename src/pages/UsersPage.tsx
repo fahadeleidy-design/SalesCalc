@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Shield, Mail, X, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Shield, Mail, X, Save, Key } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database, UserRole } from '../lib/database.types';
 
@@ -20,6 +20,9 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<Profile | null>(null);
+  const [newPassword, setNewPassword] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -82,6 +85,43 @@ export default function UsersPage() {
     } catch (error: any) {
       console.error('Error deleting user:', error);
       alert('Failed to delete user: ' + error.message);
+    }
+  };
+
+  const handleResetPassword = (user: Profile) => {
+    setResetPasswordUser(user);
+    setNewPassword('');
+    setShowPasswordResetModal(true);
+  };
+
+  const handlePasswordResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!resetPasswordUser || !newPassword) {
+      alert('Please enter a new password');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(
+        resetPasswordUser.user_id,
+        { password: newPassword }
+      );
+
+      if (error) throw error;
+
+      alert('Password reset successfully!');
+      setShowPasswordResetModal(false);
+      setResetPasswordUser(null);
+      setNewPassword('');
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      alert('Failed to reset password: ' + error.message);
     }
   };
 
@@ -283,6 +323,13 @@ export default function UsersPage() {
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => handleResetPassword(user)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        title="Reset Password"
+                      >
+                        <Key className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(user.id)}
                         className="p-1 text-red-600 hover:bg-red-50 rounded"
                         title="Delete"
@@ -391,6 +438,78 @@ export default function UsersPage() {
                     setShowModal(false);
                     setEditingUser(null);
                     setFormData({ email: '', password: '', full_name: '', role: 'sales' });
+                  }}
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showPasswordResetModal && resetPasswordUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <Key className="w-5 h-5 text-blue-600" />
+                Reset Password
+              </h2>
+              <button
+                onClick={() => {
+                  setShowPasswordResetModal(false);
+                  setResetPasswordUser(null);
+                  setNewPassword('');
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordResetSubmit} className="p-6 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-800">
+                  Resetting password for: <strong>{resetPasswordUser.full_name}</strong>
+                </p>
+                <p className="text-xs text-blue-600 mt-1">{resetPasswordUser.email}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  New Password *
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  minLength={6}
+                  placeholder="Minimum 6 characters"
+                  autoFocus
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  The user will be able to login with this new password immediately.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Key className="w-4 h-4" />
+                  Reset Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordResetModal(false);
+                    setResetPasswordUser(null);
+                    setNewPassword('');
                   }}
                   className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium transition-colors"
                 >
