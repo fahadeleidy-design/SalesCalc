@@ -9,7 +9,7 @@ interface SetTargetsFormProps {
 }
 
 export function SetTargetsForm({ salesReps, onClose }: SetTargetsFormProps) {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const createSalesTarget = useCreateSalesTarget();
   const createTeamTarget = useCreateTeamTarget();
 
@@ -46,7 +46,7 @@ export function SetTargetsForm({ salesReps, onClose }: SetTargetsFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) return;
+    if (!profile) return;
 
     const endDate = calculateEndDate(startDate, periodType);
 
@@ -58,7 +58,7 @@ export function SetTargetsForm({ salesReps, onClose }: SetTargetsFormProps) {
 
       await createSalesTarget.mutateAsync({
         sales_rep_id: selectedRep,
-        manager_id: user.id,
+        manager_id: profile.id,
         period_type: periodType,
         period_start: startDate,
         period_end: endDate,
@@ -67,7 +67,7 @@ export function SetTargetsForm({ salesReps, onClose }: SetTargetsFormProps) {
       });
     } else {
       await createTeamTarget.mutateAsync({
-        manager_id: user.id,
+        manager_id: profile.id,
         period_type: periodType,
         period_start: startDate,
         period_end: endDate,
