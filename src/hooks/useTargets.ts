@@ -10,7 +10,7 @@ export interface SalesTarget {
   period_start: string;
   period_end: string;
   target_amount: number;
-  status: 'pending_approval' | 'approved' | 'rejected';
+  status: 'pending_ceo' | 'approved' | 'rejected';
   notes?: string;
   approved_by?: string;
   approved_at?: string;
@@ -28,7 +28,7 @@ export interface TeamTarget {
   period_start: string;
   period_end: string;
   target_amount: number;
-  status: 'pending_approval' | 'approved' | 'rejected';
+  status: 'pending_ceo' | 'approved' | 'rejected';
   notes?: string;
   approved_by?: string;
   approved_at?: string;
@@ -88,22 +88,28 @@ export function usePendingTargets() {
         supabase
           .from('sales_targets')
           .select('*, sales_rep:profiles!sales_targets_sales_rep_id_fkey(full_name, email), manager:profiles!sales_targets_manager_id_fkey(full_name, email)')
-          .eq('status', 'pending_approval')
+          .eq('status', 'pending_ceo')
           .order('created_at', { ascending: false }),
         supabase
           .from('team_targets')
           .select('*, manager:profiles!team_targets_manager_id_fkey(full_name, email)')
-          .eq('status', 'pending_approval')
+          .eq('status', 'pending_ceo')
           .order('created_at', { ascending: false }),
       ]);
 
       if (salesTargets.error) throw salesTargets.error;
       if (teamTargets.error) throw teamTargets.error;
 
-      return {
-        salesTargets: salesTargets.data || [],
-        teamTargets: teamTargets.data || [],
-      };
+      // Combine both arrays with a type marker
+      const combined = [
+        ...(salesTargets.data || []).map(t => ({ ...t, targetType: 'sales' as const })),
+        ...(teamTargets.data || []).map(t => ({ ...t, targetType: 'team' as const })),
+      ];
+
+      // Sort by created_at descending
+      combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return combined;
     },
   });
 }

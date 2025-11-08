@@ -4,7 +4,7 @@ import { usePendingTargets, useApproveTarget, useRejectTarget } from '../../hook
 import { useAuth } from '../../contexts/AuthContext';
 
 export function TargetApprovalList() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const { data: pendingTargets, isLoading } = usePendingTargets();
   const approveTarget = useApproveTarget();
   const rejectTarget = useRejectTarget();
@@ -12,19 +12,19 @@ export function TargetApprovalList() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const handleApprove = async (targetId: string) => {
-    if (!user) return;
+  const handleApprove = async (targetId: string, targetType: 'sales' | 'team') => {
+    if (!profile) return;
     if (confirm('Are you sure you want to approve this target?')) {
-      await approveTarget.mutateAsync({ targetId, ceoId: user.id });
+      await approveTarget.mutateAsync({ targetId, targetType, ceoId: profile.id });
     }
   };
 
-  const handleReject = async (targetId: string) => {
+  const handleReject = async (targetId: string, targetType: 'sales' | 'team') => {
     if (!rejectionReason.trim()) {
       alert('Please provide a reason for rejection');
       return;
     }
-    await rejectTarget.mutateAsync({ targetId, reason: rejectionReason });
+    await rejectTarget.mutateAsync({ targetId, targetType, reason: rejectionReason });
     setRejectingId(null);
     setRejectionReason('');
   };
@@ -159,7 +159,7 @@ export function TargetApprovalList() {
                   />
                   <div className="flex gap-2 mt-3">
                     <button
-                      onClick={() => handleReject(target.id)}
+                      onClick={() => handleReject(target.id, target.targetType)}
                       disabled={rejectTarget.isPending}
                       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                     >
@@ -179,7 +179,7 @@ export function TargetApprovalList() {
               ) : (
                 <div className="flex gap-3 mt-4">
                   <button
-                    onClick={() => handleApprove(target.id)}
+                    onClick={() => handleApprove(target.id, target.targetType)}
                     disabled={approveTarget.isPending}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                   >
