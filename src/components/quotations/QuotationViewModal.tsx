@@ -163,12 +163,16 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
   const getStatusBadge = (status: string) => {
     const styles = {
       draft: 'bg-slate-100 text-slate-700',
+      pending_pricing: 'bg-blue-100 text-blue-700',
       pending_manager: 'bg-yellow-100 text-yellow-700',
       pending_ceo: 'bg-orange-100 text-orange-700',
       pending_finance: 'bg-blue-100 text-blue-700',
       approved: 'bg-green-100 text-green-700',
       rejected: 'bg-red-100 text-red-700',
       changes_requested: 'bg-purple-100 text-purple-700',
+      finance_approved: 'bg-emerald-100 text-emerald-700',
+      deal_won: 'bg-teal-100 text-teal-700',
+      deal_lost: 'bg-gray-100 text-gray-700',
     };
 
     return (
@@ -314,7 +318,11 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {quotation.quotation_items.map((item) => (
-                    <tr key={item.id}>
+                    <tr key={item.id} className={
+                      (item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing'
+                        ? 'bg-blue-50'
+                        : ''
+                    }>
                       <td className="py-3 px-4">
                         <div className="flex items-start gap-3">
                           {!item.is_custom && item.product?.image_url && (
@@ -325,14 +333,22 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
                             />
                           )}
                           <div className="flex-1">
-                            <p className="font-medium text-slate-900">
-                              {item.is_custom ? item.custom_description : item.product?.name}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-slate-900">
+                                {item.is_custom ? item.custom_description : item.product?.name}
+                              </p>
+                              {(item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing' && (
+                                <span className="inline-flex items-center gap-1 text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                                  <Clock className="w-3 h-3" />
+                                  Needs Pricing
+                                </span>
+                              )}
+                            </div>
                             {item.is_custom && (
                               <span className="text-xs text-amber-600 font-medium">Custom Item</span>
                             )}
                             {item.modifications && (
-                              <div className="mt-1 text-xs text-slate-600 bg-amber-50 p-2 rounded">
+                              <div className="mt-1 text-xs text-slate-600 bg-amber-50 p-2 rounded border border-amber-200">
                                 <span className="font-medium">Modifications:</span> {item.modifications}
                               </div>
                             )}
@@ -409,13 +425,30 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
             </div>
           )}
 
-          {(quotation.pricing_submitted_at || quotation.pricing_completed_at || auditLogs.length > 0) && (
+          {(quotation.status === 'pending_pricing' || quotation.pricing_submitted_at || quotation.pricing_completed_at || auditLogs.length > 0) && (
             <div>
               <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">
                 <Clock className="w-4 h-4 inline mr-1" />
                 Pricing & Audit Trail
               </label>
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 space-y-3">
+                {quotation.status === 'pending_pricing' && (
+                  <div className="flex items-start gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-blue-600 mt-0.5 animate-pulse" />
+                    <div>
+                      <p className="font-medium text-blue-900">⏳ Awaiting Engineering Pricing</p>
+                      <p className="text-blue-700">
+                        This quotation contains custom items or modifications that require engineering review and pricing.
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Items needing pricing: {quotation.quotation_items.filter(
+                          item => item.is_custom || (item.modifications && item.modifications.trim().length > 0)
+                        ).length}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {quotation.pricing_submitted_at && (
                   <div className="flex items-start gap-2 text-sm">
                     <Clock className="w-4 h-4 text-blue-600 mt-0.5" />
