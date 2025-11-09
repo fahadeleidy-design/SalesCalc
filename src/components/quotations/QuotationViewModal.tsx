@@ -316,21 +316,30 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
                   {quotation.quotation_items.map((item) => (
                     <tr key={item.id}>
                       <td className="py-3 px-4">
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {item.is_custom ? item.custom_description : item.product?.name}
-                          </p>
-                          {item.is_custom && (
-                            <span className="text-xs text-amber-600 font-medium">Custom Item</span>
+                        <div className="flex items-start gap-3">
+                          {!item.is_custom && item.product?.image_url && (
+                            <img
+                              src={item.product.image_url}
+                              alt={item.product.name}
+                              className="w-16 h-16 object-cover rounded border border-slate-200 flex-shrink-0"
+                            />
                           )}
-                          {item.modifications && (
-                            <div className="mt-1 text-xs text-slate-600 bg-amber-50 p-2 rounded">
-                              <span className="font-medium">Modifications:</span> {item.modifications}
-                            </div>
-                          )}
-                          {item.notes && (
-                            <p className="text-xs text-slate-500 mt-1">{item.notes}</p>
-                          )}
+                          <div className="flex-1">
+                            <p className="font-medium text-slate-900">
+                              {item.is_custom ? item.custom_description : item.product?.name}
+                            </p>
+                            {item.is_custom && (
+                              <span className="text-xs text-amber-600 font-medium">Custom Item</span>
+                            )}
+                            {item.modifications && (
+                              <div className="mt-1 text-xs text-slate-600 bg-amber-50 p-2 rounded">
+                                <span className="font-medium">Modifications:</span> {item.modifications}
+                              </div>
+                            )}
+                            {item.notes && (
+                              <p className="text-xs text-slate-500 mt-1">{item.notes}</p>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right text-slate-900">{item.quantity}</td>

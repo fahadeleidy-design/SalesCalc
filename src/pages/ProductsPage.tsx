@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, Edit2, Trash2, Search, DollarSign, Tag, Upload, Download } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, Search, DollarSign, Tag, Upload, Download, Image as ImageIcon, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
@@ -24,6 +24,9 @@ export default function ProductsPage() {
     cost_price: '',
     is_active: true,
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const canEditCost = profile?.role === 'finance' || profile?.role === 'admin';
   const canViewCost = profile?.role === 'finance' || profile?.role === 'admin' || profile?.role === 'ceo';
@@ -46,6 +49,47 @@ export default function ProductsPage() {
     setLoading(false);
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (productId: string): Promise<string | null> => {
+    if (!imageFile) return null;
+
+    try {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${productId}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, imageFile, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -54,16 +98,20 @@ export default function ProductsPage() {
       return;
     }
 
-    const productData: any = {
-      ...formData,
-      unit_price: parseFloat(formData.unit_price),
-    };
-
-    if (canEditCost && formData.cost_price) {
-      productData.cost_price = parseFloat(formData.cost_price);
-    }
+    setUploading(true);
 
     try {
+      const productData: any = {
+        ...formData,
+        unit_price: parseFloat(formData.unit_price),
+      };
+
+      if (canEditCost && formData.cost_price) {
+        productData.cost_price = parseFloat(formData.cost_price);
+      }
+
+      let productId = editingProduct?.id;
+
       if (editingProduct) {
         const { error } = await supabase
           .from('products')
@@ -71,16 +119,34 @@ export default function ProductsPage() {
           .eq('id', editingProduct.id);
 
         if (error) throw error;
-        alert('Product updated successfully');
       } else {
-        const { error } = await supabase.from('products').insert([productData as any]);
+        const { data, error } = await supabase
+          .from('products')
+          .insert([productData as any])
+          .select()
+          .single();
 
         if (error) throw error;
-        alert('Product added successfully');
+        productId = data.id;
       }
+
+      // Upload image if selected
+      if (imageFile && productId) {
+        const imageUrl = await uploadImage(productId);
+        if (imageUrl) {
+          await supabase
+            .from('products')
+            .update({ image_url: imageUrl })
+            .eq('id', productId);
+        }
+      }
+
+      alert(editingProduct ? 'Product updated successfully' : 'Product added successfully');
 
       setShowModal(false);
       setEditingProduct(null);
+      setImageFile(null);
+      setImagePreview(null);
       setFormData({
         sku: '',
         name: '',
@@ -95,11 +161,13 @@ export default function ProductsPage() {
     } catch (error: any) {
       console.error('Error saving product:', error);
       alert('Failed to save product: ' + error.message);
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleExportToExcel = () => {
-    const headers = ['SKU', 'Name', 'Description', 'Category', 'Unit', 'Unit Price', 'Active'];
+    const headers = ['SKU', 'Name', 'Description', 'Category', 'Unit', 'Unit Price', 'Cost Price', 'Image URL', 'Active'];
 
     const csvRows = [
       headers.join(','),
@@ -110,6 +178,8 @@ export default function ProductsPage() {
         `"${p.category || ''}"`,
         p.unit,
         p.unit_price,
+        p.cost_price || '',
+        p.image_url || '',
         p.is_active ? 'Yes' : 'No'
       ].join(','))
     ];
@@ -143,11 +213,12 @@ export default function ProductsPage() {
 
       const productsToImport: any[] = [];
 
+      // CSV format: SKU, Name, Description, Category, Unit, Unit Price, Cost Price, Image URL, Active
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g)?.map(v => v.trim().replace(/^"|"$/g, ''));
         if (!values || values.length < 6) continue;
 
-        const [sku, name, description, category, unit, unit_price, is_active] = values;
+        const [sku, name, description, category, unit, unit_price, cost_price, image_url, is_active] = values;
 
         if (!sku || !name || !unit_price) continue;
 
@@ -157,8 +228,10 @@ export default function ProductsPage() {
           description: description || '',
           category: category || '',
           unit: unit || 'unit',
-          unit_price: parseFloat(unit_price) || 0,
-          is_active: is_active?.toLowerCase() === 'no' ? false : true,
+          unit_price: unit_price,
+          cost_price: cost_price || null,
+          image_url: image_url || null,
+          is_active: is_active?.toLowerCase() === 'no' ? 'false' : 'true',
         });
       }
 
@@ -168,15 +241,36 @@ export default function ProductsPage() {
       }
 
       try {
-        const { error } = await supabase.from('products').insert(productsToImport as any);
+        setUploading(true);
+
+        // Use bulk import function
+        const { data, error } = await supabase.rpc('bulk_import_products', {
+          p_products: productsToImport,
+          p_file_name: file.name
+        });
 
         if (error) throw error;
 
-        alert(`Successfully imported ${productsToImport.length} products!`);
+        const result = data as any;
+
+        if (result.failed > 0) {
+          alert(
+            `Import completed with warnings:\n` +
+            `✅ Successful: ${result.successful}\n` +
+            `❌ Failed: ${result.failed}\n\n` +
+            `Check console for error details.`
+          );
+          console.error('Import errors:', result.errors);
+        } else {
+          alert(`✅ Successfully imported ${result.successful} products!`);
+        }
+
         loadProducts();
       } catch (error: any) {
         console.error('Error importing products:', error);
         alert('Failed to import products: ' + error.message);
+      } finally {
+        setUploading(false);
       }
     };
 
@@ -345,6 +439,16 @@ export default function ProductsPage() {
                 </div>
               </div>
 
+              {product.image_url && (
+                <div className="mb-3">
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                    className="w-full h-40 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+
               <h3 className="font-semibold text-slate-900 mb-1">{product.name}</h3>
               <p className="text-sm text-slate-600 mb-4 line-clamp-2">
                 {product.description || 'No description'}
@@ -447,6 +551,56 @@ export default function ProductsPage() {
                   />
                 </div>
 
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Product Image
+                  </label>
+                  <div className="flex items-start gap-4">
+                    {imagePreview || editingProduct?.image_url ? (
+                      <div className="relative">
+                        <img
+                          src={imagePreview || editingProduct?.image_url || ''}
+                          alt="Product preview"
+                          className="w-32 h-32 object-cover rounded-lg border border-slate-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImageFile(null);
+                            setImagePreview(null);
+                          }}
+                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-32 h-32 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center bg-slate-50">
+                        <ImageIcon className="w-8 h-8 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id="image-upload"
+                      />
+                      <label
+                        htmlFor="image-upload"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Choose Image
+                      </label>
+                      <p className="text-xs text-slate-500 mt-2">
+                        PNG, JPG, WEBP up to 5MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Category</label>
                   <input
@@ -535,9 +689,10 @@ export default function ProductsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+                  disabled={uploading}
+                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {editingProduct ? 'Update Product' : 'Add Product'}
+                  {uploading ? 'Saving...' : (editingProduct ? 'Update Product' : 'Add Product')}
                 </button>
               </div>
             </form>
