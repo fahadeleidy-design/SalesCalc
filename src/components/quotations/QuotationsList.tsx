@@ -16,9 +16,11 @@ interface QuotationsListProps {
   onView: (id: string) => void;
   onDuplicate?: (id: string) => void;
   refreshTrigger?: number;
+  viewMode?: 'list' | 'grid';
+  showFilters?: boolean;
 }
 
-export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTrigger }: QuotationsListProps) {
+export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTrigger, viewMode = 'list', showFilters = false }: QuotationsListProps) {
   const { profile } = useAuth();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
