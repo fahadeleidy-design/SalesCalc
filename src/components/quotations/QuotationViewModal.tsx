@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, FileText, User, Calendar, DollarSign, Package, Download, Clock } from 'lucide-react';
+import {
+  X, FileText, User, Calendar, DollarSign, Package, Download, Clock,
+  Building, Mail, Phone, MapPin, Tag, Percent, Hash, Check, AlertCircle
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Database } from '../../lib/database.types';
 import { formatCurrency } from '../../lib/currencyUtils';
@@ -42,7 +45,6 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
   const loadQuotation = async () => {
     setLoading(true);
     try {
-      // First, get the quotation
       const { data: quotationData, error: quotationError } = await supabase
         .from('quotations')
         .select('*')
@@ -58,7 +60,6 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
         throw new Error('Quotation not found');
       }
 
-      // Then get the related data
       const [customerResult, salesRepResult, itemsResult] = await Promise.all([
         supabase
           .from('customers')
@@ -99,10 +100,8 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
         quotation_items: itemsResult.data || []
       };
 
-      console.log('Loaded quotation:', fullQuotationData);
       setQuotation(fullQuotationData as any);
 
-      // Load audit logs
       const { data: logs } = await supabase
         .from('audit_logs')
         .select(`
@@ -162,30 +161,46 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      draft: 'bg-slate-100 text-slate-700',
-      pending_pricing: 'bg-blue-100 text-blue-700',
-      pending_manager: 'bg-yellow-100 text-yellow-700',
-      pending_ceo: 'bg-orange-100 text-orange-700',
-      pending_finance: 'bg-blue-100 text-blue-700',
-      approved: 'bg-green-100 text-green-700',
-      rejected: 'bg-red-100 text-red-700',
-      changes_requested: 'bg-purple-100 text-purple-700',
-      finance_approved: 'bg-emerald-100 text-emerald-700',
-      deal_won: 'bg-teal-100 text-teal-700',
-      deal_lost: 'bg-gray-100 text-gray-700',
+      draft: 'bg-slate-100 text-slate-800 border-slate-300',
+      pending_pricing: 'bg-blue-50 text-blue-700 border-blue-200',
+      pending_manager: 'bg-yellow-50 text-yellow-800 border-yellow-200',
+      pending_ceo: 'bg-orange-50 text-orange-700 border-orange-200',
+      pending_finance: 'bg-purple-50 text-purple-700 border-purple-200',
+      approved: 'bg-green-50 text-green-700 border-green-200',
+      rejected: 'bg-red-50 text-red-700 border-red-200',
+      changes_requested: 'bg-purple-50 text-purple-700 border-purple-200',
+      finance_approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      deal_won: 'bg-teal-50 text-teal-700 border-teal-200',
+      deal_lost: 'bg-gray-50 text-gray-700 border-gray-200',
+    };
+
+    const labels = {
+      draft: 'Draft',
+      pending_pricing: 'Pending Pricing',
+      pending_manager: 'Pending Manager',
+      pending_ceo: 'Pending CEO',
+      pending_finance: 'Pending Finance',
+      approved: 'Approved',
+      rejected: 'Rejected',
+      changes_requested: 'Changes Requested',
+      finance_approved: 'Finance Approved',
+      deal_won: 'Deal Won',
+      deal_lost: 'Deal Lost',
     };
 
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles] || styles.draft}`}>
-        {status.replace(/_/g, ' ').toUpperCase()}
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${styles[status as keyof typeof styles] || styles.draft}`}>
+        {status === 'deal_won' && <Check className="w-3.5 h-3.5" />}
+        {status === 'rejected' && <X className="w-3.5 h-3.5" />}
+        {labels[status as keyof typeof labels] || status.replace(/_/g, ' ')}
       </span>
     );
   };
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-8">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
         </div>
       </div>
@@ -194,10 +209,15 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
 
   if (!quotation) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-8 text-center">
-          <p className="text-slate-600 mb-4">Quotation not found</p>
-          <button onClick={onClose} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-8 text-center max-w-md">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Quotation Not Found</h3>
+          <p className="text-slate-600 mb-4">The requested quotation could not be loaded.</p>
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+          >
             Close
           </button>
         </div>
@@ -212,293 +232,385 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
   const total = afterDiscount + taxAmount;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg w-full max-w-4xl my-8">
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
-          <div className="flex items-center gap-3">
-            <FileText className="w-6 h-6 text-orange-500" />
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">{quotation.title}</h2>
-              <p className="text-sm text-slate-500">Quote #{quotation.quotation_number}</p>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-8">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-t-2xl">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <FileText className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1">{quotation.title}</h2>
+                <div className="flex items-center gap-3 text-orange-50">
+                  <span className="flex items-center gap-1.5 text-sm font-medium">
+                    <Hash className="w-4 h-4" />
+                    {quotation.quotation_number}
+                  </span>
+                  <span className="text-orange-200">•</span>
+                  <span className="flex items-center gap-1.5 text-sm">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(quotation.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {getStatusBadge(quotation.status)}
-            <button
-              onClick={handleExportPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export PDF
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-500" />
-            </button>
+            <div className="flex items-center gap-2">
+              {getStatusBadge(quotation.status)}
+              <button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-orange-50 text-orange-600 rounded-lg font-medium transition-all hover:shadow-lg"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export PDF</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2.5 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Customer</label>
-                <div className="mt-1 flex items-center gap-2">
-                  <User className="w-4 h-4 text-slate-400" />
-                  <div>
-                    <p className="font-medium text-slate-900">{quotation.customer?.company_name || 'N/A'}</p>
-                    <p className="text-sm text-slate-600">{quotation.customer?.contact_person || 'N/A'}</p>
-                    <p className="text-sm text-slate-500">{quotation.customer?.email || 'N/A'}</p>
-                  </div>
-                </div>
+        <div className="p-8 space-y-8 max-h-[calc(100vh-200px)] overflow-y-auto">
+          {/* Customer & Sales Rep Info Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Customer Card */}
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 border border-slate-200">
+              <div className="flex items-center gap-2 mb-4">
+                <Building className="w-5 h-5 text-slate-600" />
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Bill To</h3>
               </div>
-
-              <div>
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Sales Representative</label>
-                <div className="mt-1 flex items-center gap-2">
-                  <User className="w-4 h-4 text-slate-400" />
-                  <div>
-                    <p className="font-medium text-slate-900">{quotation.sales_rep?.full_name || 'N/A'}</p>
-                    <p className="text-sm text-slate-500">{quotation.sales_rep?.email || 'N/A'}</p>
-                  </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-lg font-bold text-slate-900">{quotation.customer?.company_name || 'N/A'}</p>
+                  <p className="text-sm text-slate-600">{quotation.customer?.contact_person || 'N/A'}</p>
                 </div>
+                {quotation.customer?.email && (
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <Mail className="w-4 h-4 text-slate-400" />
+                    <span>{quotation.customer.email}</span>
+                  </div>
+                )}
+                {quotation.customer?.phone && (
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <Phone className="w-4 h-4 text-slate-400" />
+                    <span>{quotation.customer.phone}</span>
+                  </div>
+                )}
+                {quotation.customer?.address && (
+                  <div className="flex items-start gap-2 text-sm text-slate-700">
+                    <MapPin className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <span className="flex-1">{quotation.customer.address}</span>
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Sales Rep & Details Card */}
             <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Dates</label>
-                <div className="mt-1 space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span className="text-slate-600">Created:</span>
-                    <span className="font-medium text-slate-900">
-                      {new Date(quotation.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {quotation.valid_until && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-600">Valid Until:</span>
-                      <span className="font-medium text-slate-900">
-                        {new Date(quotation.valid_until).toLocaleDateString()}
-                      </span>
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <User className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide">Sales Representative</h3>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-lg font-bold text-blue-900">{quotation.sales_rep?.full_name || 'N/A'}</p>
+                  {quotation.sales_rep?.email && (
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <Mail className="w-4 h-4 text-blue-400" />
+                      <span>{quotation.sales_rep.email}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Amount</label>
-                <div className="mt-1 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-slate-400" />
-                  <span className="text-2xl font-bold text-slate-900">{formatCurrency(total)}</span>
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className="w-5 h-5 text-green-600" />
+                  <h3 className="text-sm font-bold text-green-900 uppercase tracking-wide">Quote Summary</h3>
+                </div>
+                <div className="space-y-2">
+                  {quotation.valid_until && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-green-700">Valid Until:</span>
+                      <span className="font-semibold text-green-900">
+                        {new Date(quotation.valid_until).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-green-200">
+                    <div className="text-sm text-green-700 mb-1">Total Amount</div>
+                    <div className="text-3xl font-bold text-green-600">{formatCurrency(total)}</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Line Items Table */}
           <div>
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">
-              <Package className="w-4 h-4 inline mr-1" />
-              Items
-            </label>
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase">Item</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-slate-600 uppercase">Qty</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-slate-600 uppercase">Unit Price</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-slate-600 uppercase">Discount</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-slate-600 uppercase">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {quotation.quotation_items.map((item) => (
-                    <tr key={item.id} className={
-                      (item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing'
-                        ? 'bg-blue-50'
-                        : ''
-                    }>
-                      <td className="py-3 px-4">
-                        <div className="flex items-start gap-3">
-                          {!item.is_custom && item.product?.image_url && (
-                            <img
-                              src={item.product.image_url}
-                              alt={item.product.name}
-                              className="w-16 h-16 object-cover rounded border border-slate-200 flex-shrink-0"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-slate-900">
-                                {item.is_custom ? item.custom_description : item.product?.name}
-                              </p>
-                              {(item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing' && (
-                                <span className="inline-flex items-center gap-1 text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
-                                  <Clock className="w-3 h-3" />
-                                  Needs Pricing
+            <div className="flex items-center gap-2 mb-4">
+              <Package className="w-5 h-5 text-slate-700" />
+              <h3 className="text-lg font-bold text-slate-900">Line Items</h3>
+              <span className="ml-auto text-sm text-slate-500">{quotation.quotation_items.length} items</span>
+            </div>
+
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Item Description
+                      </th>
+                      <th className="text-center py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Qty
+                      </th>
+                      <th className="text-right py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Unit Price
+                      </th>
+                      <th className="text-center py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Discount
+                      </th>
+                      <th className="text-right py-4 px-6 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Line Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-100">
+                    {quotation.quotation_items.map((item, index) => (
+                      <tr
+                        key={item.id}
+                        className={`hover:bg-slate-50 transition-colors ${
+                          (item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing'
+                            ? 'bg-blue-50/50'
+                            : ''
+                        }`}
+                      >
+                        <td className="py-5 px-6">
+                          <div className="flex items-start gap-4">
+                            {!item.is_custom && item.product?.image_url && (
+                              <img
+                                src={item.product.image_url}
+                                alt={item.product.name}
+                                className="w-20 h-20 object-cover rounded-lg border-2 border-slate-200 flex-shrink-0 shadow-sm"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-2 mb-1">
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs font-bold flex-shrink-0">
+                                  {index + 1}
                                 </span>
+                                <div className="flex-1">
+                                  <p className="font-semibold text-slate-900 text-base leading-snug">
+                                    {item.is_custom ? item.custom_description : item.product?.name}
+                                  </p>
+                                  {item.is_custom && (
+                                    <span className="inline-flex items-center gap-1 mt-1.5 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md font-medium border border-amber-200">
+                                      <Tag className="w-3 h-3" />
+                                      Custom Item
+                                    </span>
+                                  )}
+                                  {(item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing' && (
+                                    <span className="inline-flex items-center gap-1 mt-1.5 ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-md font-semibold">
+                                      <Clock className="w-3 h-3" />
+                                      Awaiting Pricing
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {item.modifications && (
+                                <div className="mt-2 text-xs text-slate-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                  <span className="font-semibold text-amber-900">Modifications:</span>
+                                  <p className="mt-1">{item.modifications}</p>
+                                </div>
+                              )}
+                              {item.notes && (
+                                <p className="text-xs text-slate-600 mt-2 italic">{item.notes}</p>
                               )}
                             </div>
-                            {item.is_custom && (
-                              <span className="text-xs text-amber-600 font-medium">Custom Item</span>
-                            )}
-                            {item.modifications && (
-                              <div className="mt-1 text-xs text-slate-600 bg-amber-50 p-2 rounded border border-amber-200">
-                                <span className="font-medium">Modifications:</span> {item.modifications}
-                              </div>
-                            )}
-                            {item.notes && (
-                              <p className="text-xs text-slate-500 mt-1">{item.notes}</p>
-                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-right text-slate-900">{item.quantity}</td>
-                      <td className="py-3 px-4 text-right text-slate-900">{formatCurrency(item.unit_price)}</td>
-                      <td className="py-3 px-4 text-right text-slate-600">{item.discount_percentage}%</td>
-                      <td className="py-3 px-4 text-right font-medium text-slate-900">
-                        {formatCurrency(item.line_total)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                        <td className="py-5 px-4 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 bg-slate-100 rounded-lg font-semibold text-slate-900">
+                            {item.quantity}
+                          </span>
+                        </td>
+                        <td className="py-5 px-4 text-right font-medium text-slate-900">
+                          {formatCurrency(item.unit_price)}
+                        </td>
+                        <td className="py-5 px-4 text-center">
+                          {item.discount_percentage > 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-md text-xs font-semibold border border-red-200">
+                              <Percent className="w-3 h-3" />
+                              {item.discount_percentage}%
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="py-5 px-6 text-right font-bold text-slate-900 text-lg">
+                          {formatCurrency(item.line_total)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-lg p-4">
-            <div className="max-w-sm ml-auto space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Subtotal:</span>
-                <span className="font-medium text-slate-900">{formatCurrency(subtotal)}</span>
+          {/* Financial Summary */}
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 border border-slate-200">
+            <div className="max-w-md ml-auto space-y-3">
+              <div className="flex justify-between items-center py-2">
+                <span className="text-slate-600 font-medium">Subtotal</span>
+                <span className="font-semibold text-slate-900 text-lg">{formatCurrency(subtotal)}</span>
               </div>
+
               {quotation.discount_percentage > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Discount ({quotation.discount_percentage}%):</span>
-                  <span className="font-medium text-red-600">-{formatCurrency(discountAmount)}</span>
+                <div className="flex justify-between items-center py-2 border-t border-slate-200">
+                  <span className="text-slate-600 font-medium flex items-center gap-2">
+                    <Tag className="w-4 h-4" />
+                    Discount ({quotation.discount_percentage}%)
+                  </span>
+                  <span className="font-semibold text-red-600 text-lg">-{formatCurrency(discountAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Tax ({quotation.tax_percentage}%):</span>
-                <span className="font-medium text-slate-900">{formatCurrency(taxAmount)}</span>
+
+              <div className="flex justify-between items-center py-2 border-t border-slate-200">
+                <span className="text-slate-600 font-medium">Tax ({quotation.tax_percentage}%)</span>
+                <span className="font-semibold text-slate-900 text-lg">+{formatCurrency(taxAmount)}</span>
               </div>
-              <div className="flex justify-between text-lg pt-2 border-t border-slate-200">
-                <span className="font-bold text-slate-900">Total:</span>
-                <span className="font-bold text-orange-600">{formatCurrency(total)}</span>
+
+              <div className="flex justify-between items-center py-4 border-t-2 border-slate-300">
+                <span className="font-bold text-slate-900 text-xl">Total Amount</span>
+                <span className="font-bold text-orange-600 text-3xl">{formatCurrency(total)}</span>
               </div>
             </div>
           </div>
 
-          {quotation.notes && (
-            <div>
-              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">Notes</label>
-              <div className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 whitespace-pre-wrap">
-                {quotation.notes}
+          {/* Notes, Terms & Audit Trail */}
+          <div className="space-y-6">
+            {quotation.notes && (
+              <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3">Customer Notes</h3>
+                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  {quotation.notes}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {quotation.terms_and_conditions && (
-            <div>
-              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">
-                Terms & Conditions
-              </label>
-              <div className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 whitespace-pre-wrap">
-                {quotation.terms_and_conditions}
+            {quotation.terms_and_conditions && (
+              <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3">Terms & Conditions</h3>
+                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  {quotation.terms_and_conditions}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {quotation.internal_notes && (
-            <div>
-              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">
-                Internal Notes
-              </label>
-              <div className="bg-amber-50 rounded-lg p-4 text-sm text-slate-700 whitespace-pre-wrap border border-amber-200">
-                {quotation.internal_notes}
+            {quotation.internal_notes && (
+              <div className="bg-amber-50 rounded-xl p-6 border border-amber-200">
+                <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Internal Notes (Not visible to customer)
+                </h3>
+                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  {quotation.internal_notes}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {(quotation.status === 'pending_pricing' || quotation.pricing_submitted_at || quotation.pricing_completed_at || auditLogs.length > 0) && (
-            <div>
-              <label className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 block">
-                <Clock className="w-4 h-4 inline mr-1" />
-                Pricing & Audit Trail
-              </label>
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 space-y-3">
-                {quotation.status === 'pending_pricing' && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-blue-600 mt-0.5 animate-pulse" />
-                    <div>
-                      <p className="font-medium text-blue-900">⏳ Awaiting Engineering Pricing</p>
-                      <p className="text-blue-700">
-                        This quotation contains custom items or modifications that require engineering review and pricing.
-                      </p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        Items needing pricing: {quotation.quotation_items.filter(
-                          item => item.is_custom || (item.modifications && item.modifications.trim().length > 0)
-                        ).length}
-                      </p>
+            {(quotation.status === 'pending_pricing' || quotation.pricing_submitted_at || quotation.pricing_completed_at || auditLogs.length > 0) && (
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Activity Timeline</h3>
+                </div>
+
+                <div className="space-y-4">
+                  {quotation.status === 'pending_pricing' && (
+                    <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <Clock className="w-5 h-5 text-blue-600 mt-0.5 animate-pulse flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-blue-900 mb-1">Awaiting Engineering Pricing</p>
+                        <p className="text-sm text-blue-700 mb-2">
+                          This quotation contains custom items or modifications requiring engineering review.
+                        </p>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded-md">
+                          {quotation.quotation_items.filter(
+                            item => item.is_custom || (item.modifications && item.modifications.trim().length > 0)
+                          ).length} items awaiting pricing
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {quotation.pricing_submitted_at && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-blue-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-blue-900">Pricing Requested</p>
-                      <p className="text-blue-700">
-                        {new Date(quotation.pricing_submitted_at).toLocaleString()}
-                      </p>
+                  {quotation.pricing_submitted_at && (
+                    <div className="flex items-start gap-3 text-sm">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                      <div>
+                        <p className="font-semibold text-slate-900">Pricing Requested</p>
+                        <p className="text-slate-600">{new Date(quotation.pricing_submitted_at).toLocaleString()}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {quotation.pricing_completed_at && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-green-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-green-900">Pricing Completed</p>
-                      <p className="text-green-700">
-                        {new Date(quotation.pricing_completed_at).toLocaleString()}
-                      </p>
+                  {quotation.pricing_completed_at && (
+                    <div className="flex items-start gap-3 text-sm">
+                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                      <div>
+                        <p className="font-semibold text-slate-900">Pricing Completed</p>
+                        <p className="text-slate-600">{new Date(quotation.pricing_completed_at).toLocaleString()}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {auditLogs.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-blue-300">
-                    <p className="text-xs font-medium text-slate-600 mb-2">Activity Log</p>
-                    <div className="space-y-2">
-                      {auditLogs.map((log) => (
-                        <div key={log.id} className="flex items-start gap-2 text-xs">
-                          <div className="flex-1">
-                            <p className="text-slate-900">{log.event_description}</p>
-                            <p className="text-slate-600">
-                              by {log.performer?.full_name || 'System'} • {new Date(log.created_at).toLocaleString()}
-                            </p>
+                  {auditLogs.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-purple-200">
+                      <p className="text-xs font-bold text-purple-900 uppercase tracking-wide mb-3">Audit Log</p>
+                      <div className="space-y-3">
+                        {auditLogs.map((log) => (
+                          <div key={log.id} className="flex items-start gap-3 text-sm">
+                            <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 flex-shrink-0"></div>
+                            <div className="flex-1">
+                              <p className="text-slate-900 font-medium">{log.event_description}</p>
+                              <p className="text-slate-600 text-xs mt-0.5">
+                                {log.performer?.full_name || 'System'} • {new Date(log.created_at).toLocaleString()}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        <div className="flex justify-end gap-3 p-6 border-t border-slate-200">
+        {/* Footer */}
+        <div className="bg-slate-50 border-t border-slate-200 px-8 py-4 rounded-b-2xl flex items-center justify-between">
+          <p className="text-xs text-slate-500">
+            Last updated: {new Date(quotation.updated_at).toLocaleString()}
+          </p>
           <button
             onClick={onClose}
-            className="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-900 rounded-lg font-medium transition-colors"
+            className="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
           >
             Close
           </button>
