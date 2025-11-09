@@ -50,9 +50,24 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
         .select('*, customer:customers(*), sales_rep:profiles(*)')
         .order('created_at', { ascending: false });
 
+      // Filter based on role
+      if (profile.role === 'sales') {
+        query = query.eq('sales_rep_id', profile.id);
+      }
+
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading quotations:', error);
+        throw error;
+      }
+
+      console.log('=== QuotationsList Debug ===');
+      console.log('Profile:', profile);
+      console.log('Query result:', data);
+      console.log('Loaded quotations:', data?.length || 0, 'records');
+      console.log('Raw data:', JSON.stringify(data, null, 2));
+
       setQuotations(data || []);
     } catch (error) {
       console.error('Error loading quotations:', error);
