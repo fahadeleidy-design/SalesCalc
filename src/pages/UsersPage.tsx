@@ -108,29 +108,17 @@ export default function UsersPage() {
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No active session');
-      }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-user-password`;
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: resetPasswordUser.user_id,
-          newPassword: newPassword,
-        }),
+      const { data, error } = await supabase.rpc('admin_reset_user_password', {
+        target_user_id: resetPasswordUser.user_id,
+        new_password: newPassword,
       });
 
-      const result = await response.json();
+      if (error) {
+        throw new Error(error.message);
+      }
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to reset password');
+      if (data && !data.success) {
+        throw new Error(data.error || 'Failed to reset password');
       }
 
       alert('Password reset successfully!');
