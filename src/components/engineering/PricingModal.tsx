@@ -83,7 +83,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
 
         const { data: quotation } = await supabase
           .from('quotations')
-          .select('discount_percentage, tax_percentage')
+          .select('discount_percentage, tax_percentage, status')
           .eq('id', request.quotation_id)
           .single();
 
@@ -93,16 +93,55 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
           const taxAmount = (afterDiscount * (quotation as any).tax_percentage) / 100;
           const total = afterDiscount + taxAmount;
 
+          // Check if all custom items are now priced
+          const { data: remainingPendingItems } = await supabase
+            .from('quotation_items')
+            .select('id')
+            .eq('quotation_id', request.quotation_id)
+            .or('is_custom.eq.true,needs_engineering_review.eq.true')
+            .eq('custom_item_status', 'pending');
+
+          // If no more pending items and quotation is in pending_pricing status, change to draft
+          const shouldUpdateStatus =
+            (quotation as any).status === 'pending_pricing' &&
+            (!remainingPendingItems || remainingPendingItems.length === 0);
+
+          const updateData: any = {
+            subtotal,
+            discount_amount: discountAmount,
+            tax_amount: taxAmount,
+            total,
+          };
+
+          if (shouldUpdateStatus) {
+            updateData.status = 'draft';
+          }
+
           await supabase
             .from('quotations')
-      // @ts-expect-error - Supabase type inference issue
-            .update({
-              subtotal,
-              discount_amount: discountAmount,
-              tax_amount: taxAmount,
-              total,
-            })
+            .update(updateData)
             .eq('id', request.quotation_id);
+
+          if (shouldUpdateStatus) {
+            // Notify sales rep that pricing is complete
+            const { data: quotationData } = await supabase
+              .from('quotations')
+              .select('sales_rep_id, quotation_number')
+              .eq('id', request.quotation_id)
+              .single();
+
+            if (quotationData) {
+              await supabase.from('notifications').insert({
+                user_id: (quotationData as any).sales_rep_id,
+                type: 'pricing_complete',
+                title: 'Pricing Complete',
+                message: `All items in quotation ${(quotationData as any).quotation_number} have been priced and are ready for submission`,
+                link: `/quotations`,
+                related_quotation_id: request.quotation_id,
+                is_read: false,
+              });
+            }
+          }
         }
       }
 

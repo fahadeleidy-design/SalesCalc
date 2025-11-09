@@ -43,13 +43,16 @@ export async function validateQuotationForSubmission(
     errors.push('Quotation must have at least one line item');
   }
 
+  // Check for custom items or items with modifications that are still pending pricing
   const pendingCustomItems = quotation.quotation_items?.filter(
-    (item) => item.is_custom && item.custom_item_status === 'pending'
+    (item) =>
+      (item.is_custom || item.needs_engineering_review) &&
+      item.custom_item_status === 'pending'
   );
 
   if (pendingCustomItems && pendingCustomItems.length > 0) {
     errors.push(
-      `${pendingCustomItems.length} custom item(s) are still awaiting engineering pricing`
+      `${pendingCustomItems.length} item(s) are still awaiting engineering pricing`
     );
   }
 

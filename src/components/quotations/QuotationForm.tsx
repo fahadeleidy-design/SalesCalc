@@ -247,22 +247,28 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         savedQuotationId = (data as any).id;
       }
 
-      const itemsToInsert = items.map((item, index) => ({
-        quotation_id: savedQuotationId!,
-        product_id: item.product_id || null,
-        is_custom: item.is_custom,
-        custom_description: item.custom_description || null,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        discount_percentage: item.discount_percentage,
-        discount_amount: item.discount_amount,
-        line_total: item.line_total,
-        custom_item_status: item.is_custom ? item.custom_item_status : (item.needs_engineering_review ? 'pending' : null),
-        notes: item.notes || null,
-        modifications: item.modifications || null,
-        needs_engineering_review: item.needs_engineering_review || false,
-        sort_order: index,
-      }));
+      const itemsToInsert = items.map((item, index) => {
+        // Automatically set needs_engineering_review if item has modifications
+        const hasModifications = item.modifications && item.modifications.trim().length > 0;
+        const needsEngineering = item.is_custom || hasModifications;
+
+        return {
+          quotation_id: savedQuotationId!,
+          product_id: item.product_id || null,
+          is_custom: item.is_custom,
+          custom_description: item.custom_description || null,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount_percentage: item.discount_percentage,
+          discount_amount: item.discount_amount,
+          line_total: item.line_total,
+          custom_item_status: needsEngineering ? 'pending' : null,
+          notes: item.notes || null,
+          modifications: item.modifications || null,
+          needs_engineering_review: hasModifications,
+          sort_order: index,
+        };
+      });
 
       const { data: insertedItems, error: itemsError } = await supabase
         .from('quotation_items')
