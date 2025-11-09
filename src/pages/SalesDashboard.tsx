@@ -92,7 +92,7 @@ export default function SalesDashboard() {
     const months = dateRange === '3months' ? 3 : dateRange === '12months' ? 12 : 6;
     const startDate = startOfMonth(subMonths(new Date(), months - 1));
 
-    const { data: quotations } = await supabase
+    const { data: quotations, error: quotationsError } = await supabase
       .from('quotations')
       .select(`
         id,
@@ -101,12 +101,16 @@ export default function SalesDashboard() {
         status,
         total,
         created_at,
-        customers (
+        customer:customers (
           company_name
         )
       `)
       .eq('sales_rep_id', profile.id)
       .order('created_at', { ascending: false });
+
+    if (quotationsError) {
+      console.error('Error loading quotations:', quotationsError);
+    }
 
     // Separate query for monthly chart data (with date filter)
     const { data: monthlyQuotations } = await supabase
@@ -466,7 +470,7 @@ export default function SalesDashboard() {
                   </div>
                   <p className="text-sm text-slate-600">{quotation.title}</p>
                   <p className="text-xs text-slate-500 mt-1">
-                    {(quotation as any).customers?.company_name} • {new Date(quotation.created_at).toLocaleDateString()}
+                    {(quotation as any).customer?.company_name} • {new Date(quotation.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
