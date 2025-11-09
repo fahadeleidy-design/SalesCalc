@@ -209,6 +209,8 @@ export interface Database {
           deal_won_at: string | null;
           pricing_submitted_at: string | null;
           pricing_completed_at: string | null;
+          version_number: number;
+          parent_version_id: string | null;
           created_at: string;
           updated_at: string;
           quotation_items?: {
@@ -695,6 +697,98 @@ export interface Database {
           performed_by?: string | null;
           metadata?: Json;
           created_at?: string;
+        };
+      };
+      quotation_versions: {
+        Row: {
+          id: string;
+          quotation_id: string;
+          version_number: number;
+          snapshot: Json;
+          changed_by: string | null;
+          change_summary: string | null;
+          created_at: string;
+        };
+      };
+      quotation_templates: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          category: string | null;
+          is_active: boolean;
+          default_title: string | null;
+          default_valid_days: number;
+          default_discount_percentage: number;
+          default_tax_percentage: number;
+          default_terms_and_conditions: string | null;
+          default_notes: string | null;
+          template_items: Json;
+          metadata: Json;
+          created_by: string | null;
+          usage_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+      };
+      quotation_shares: {
+        Row: {
+          id: string;
+          quotation_id: string;
+          share_token: string;
+          password_protected: boolean;
+          expires_at: string | null;
+          view_count: number;
+          last_viewed_at: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+      };
+      customer_quotation_responses: {
+        Row: {
+          id: string;
+          quotation_id: string;
+          share_id: string | null;
+          customer_name: string;
+          customer_email: string;
+          customer_title: string | null;
+          response_type: string;
+          signature_data: string | null;
+          comments: string | null;
+          responded_at: string;
+        };
+      };
+      follow_up_tasks: {
+        Row: {
+          id: string;
+          quotation_id: string;
+          assigned_to: string;
+          task_type: string;
+          priority: string;
+          due_date: string;
+          completed: boolean;
+          completed_at: string | null;
+          completed_by: string | null;
+          notes: string | null;
+          reminder_sent: boolean;
+          created_at: string;
+        };
+      };
+      notification_queue: {
+        Row: {
+          id: string;
+          notification_type: string;
+          recipient_id: string | null;
+          recipient_email: string;
+          subject: string;
+          body: string;
+          metadata: Json;
+          status: string;
+          attempts: number;
+          last_attempt_at: string | null;
+          sent_at: string | null;
+          error_message: string | null;
+          created_at: string;
         };
       };
     };
