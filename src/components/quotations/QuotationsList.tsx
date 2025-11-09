@@ -255,6 +255,7 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
         >
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
+          <option value="pending_pricing">Pending Pricing</option>
           <option value="pending_manager">Pending Manager</option>
           <option value="pending_ceo">Pending CEO</option>
           <option value="approved">Approved</option>
@@ -334,45 +335,54 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      {(quotation.status === 'draft' || quotation.status === 'changes_requested') &&
-                        profile?.role === 'sales' &&
-                        isOwnQuotation && (
-                          <>
-                            <button
-                              onClick={() => onEdit(quotation.id)}
-                              className="p-1.5 text-orange-500 hover:bg-orange-50 rounded"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            {onDuplicate && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  onDuplicate(quotation.id);
-                                }}
-                                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
-                                title="Duplicate"
-                              >
-                                <Copy className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleSubmit(quotation.id);
-                              }}
-                              disabled={submitting === quotation.id}
-                              className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
-                              title="Submit for Approval"
-                            >
-                              <Send className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
+                      {profile?.role === 'sales' && isOwnQuotation && (
+                        <>
+                          {quotation.status === 'pending_pricing' ? (
+                            <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                              <Clock className="w-3 h-3" />
+                              Waiting for Engineering Pricing
+                            </div>
+                          ) : (
+                            (quotation.status === 'draft' || quotation.status === 'changes_requested') && (
+                              <>
+                                <button
+                                  onClick={() => onEdit(quotation.id)}
+                                  className="p-1.5 text-orange-500 hover:bg-orange-50 rounded"
+                                  title="Edit"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                {onDuplicate && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      onDuplicate(quotation.id);
+                                    }}
+                                    className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
+                                    title="Duplicate"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleSubmit(quotation.id);
+                                  }}
+                                  disabled={submitting === quotation.id}
+                                  className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
+                                  title="Submit for Approval"
+                                >
+                                  <Send className="w-4 h-4" />
+                                </button>
+                              </>
+                            )
+                          )}
+                        </>
+                      )}
                       {profile?.role === 'admin' && (
                         <button
                           onClick={() => handleDelete(quotation.id)}

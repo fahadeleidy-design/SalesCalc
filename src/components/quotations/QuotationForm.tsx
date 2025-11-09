@@ -199,6 +199,14 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
     setSaving(true);
     try {
       const totals = calculateTotals();
+
+      // Check if any items need pricing from engineering
+      const hasPendingPricing = items.some(
+        item =>
+          (item.is_custom && item.custom_item_status === 'pending') ||
+          (item.needs_engineering_review && item.modifications && item.modifications.trim().length > 0)
+      );
+
       const quotationData = {
         customer_id: formData.customer_id,
         sales_rep_id: profile.id,
@@ -213,7 +221,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         tax_amount: totals.taxAmount,
         subtotal: totals.subtotal,
         total: totals.total,
-        status: 'draft' as const,
+        status: hasPendingPricing ? ('pending_pricing' as const) : ('draft' as const),
       };
 
       let savedQuotationId = quotationId;
@@ -306,7 +314,16 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         }
       }
 
-      alert('Quotation saved successfully!');
+      if (hasPendingPricing) {
+        alert(
+          'Quotation saved successfully!\n\n' +
+          'Status: PENDING PRICING\n' +
+          'This quotation contains custom items or modifications that require engineering pricing. ' +
+          'The Engineering team has been notified and will provide pricing soon.'
+        );
+      } else {
+        alert('Quotation saved successfully!');
+      }
       onSave();
     } catch (error: any) {
       console.error('Error saving quotation:', error);
