@@ -121,11 +121,8 @@ export async function determineNextApprovalStatus(
   const discountExceedsLimit = quotation.discount_percentage > rule.max_discount_percentage;
   const requiresCEO = rule.requires_ceo_approval || discountExceedsLimit;
 
-  if (requiresCEO) {
-    return { status: 'pending_ceo', requiresCEO: true };
-  } else {
-    return { status: 'pending_manager', requiresCEO: false };
-  }
+  // Always start with Manager approval, regardless of value
+  return { status: 'pending_manager', requiresCEO };
 }
 
 export async function submitQuotationForApproval(
@@ -291,7 +288,16 @@ export async function approveQuotation(
   const previousStatus = quotation.status;
 
   if (approverRole === 'manager') {
-    nextStatus = 'approved';
+    // Check if CEO approval is required after manager approval
+    const rule = await getDiscountMatrixRule(quotation.total);
+    const discountExceedsLimit = quotation.discount_percentage > (rule?.max_discount_percentage || 100);
+    const requiresCEO = rule?.requires_ceo_approval || discountExceedsLimit;
+
+    if (requiresCEO) {
+      nextStatus = 'pending_ceo';
+    } else {
+      nextStatus = 'approved';
+    }
   } else if (approverRole === 'ceo') {
     nextStatus = 'pending_finance';
   } else {
