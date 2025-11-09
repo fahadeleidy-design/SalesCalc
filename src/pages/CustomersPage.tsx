@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Edit2, Trash2, Search, Mail, Phone, MapPin, Building } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Search, Mail, Phone, MapPin, Building, Upload, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
+import toast from 'react-hot-toast';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
 
 export default function CustomersPage() {
+  const { profile } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +25,8 @@ export default function CustomersPage() {
     country: '',
     tax_id: '',
   });
+
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'manager';
 
   useEffect(() => {
     loadCustomers();
@@ -105,12 +111,151 @@ export default function CustomersPage() {
       const { error } = await supabase.from('customers').delete().eq('id', id);
 
       if (error) throw error;
-      alert('Customer deleted successfully');
+      toast.success('Customer deleted successfully');
       loadCustomers();
     } catch (error: any) {
       console.error('Error deleting customer:', error);
-      alert('Failed to delete customer: ' + error.message);
+      toast.error('Failed to delete customer: ' + error.message);
     }
+  };
+
+  const handleImportFromCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim());
+
+      if (lines.length < 2) {
+        toast.error('Invalid file format. File must contain headers and at least one customer.');
+        return;
+      }
+
+      const customersToImport: any[] = [];
+
+      // CSV format: Company Name, Contact Person, Email, Phone, Address, City, Country, Tax ID, Notes
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g)?.map(v => v.trim().replace(/^"|"$/g, ''));
+        if (!values || values.length < 3) continue;
+
+        const [company_name, contact_person, email, phone, address, city, country, tax_id, notes] = values;
+
+        if (!company_name || !contact_person || !email) continue;
+
+        customersToImport.push({
+          company_name,
+          contact_person,
+          email,
+          phone: phone || '',
+          address: address || '',
+          city: city || '',
+          country: country || '',
+          tax_id: tax_id || '',
+          notes: notes || '',
+        });
+      }
+
+      if (customersToImport.length === 0) {
+        toast.error('No valid customers found in the file.');
+        return;
+      }
+
+      try {
+        setUploading(true);
+
+        // Use bulk import function
+        const { data, error } = await supabase.rpc('bulk_import_customers', {
+          p_customers: customersToImport,
+          p_file_name: file.name
+        });
+
+        if (error) throw error;
+
+        const result = data as any;
+
+        if (result.failed > 0) {
+          toast(
+            `Import completed with warnings:\n✅ Successful: ${result.successful}\n❌ Failed: ${result.failed}`,
+            { duration: 5000 }
+          );
+          console.error('Import errors:', result.errors);
+        } else {
+          toast.success(`✅ Successfully imported ${result.successful} customers!`);
+        }
+
+        loadCustomers();
+      } catch (error: any) {
+        console.error('Error importing customers:', error);
+        toast.error('Failed to import customers: ' + error.message);
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
+  const handleExportToCSV = () => {
+    if (customers.length === 0) {
+      toast.error('No customers to export');
+      return;
+    }
+
+    // CSV Headers
+    const headers = [
+      'Company Name',
+      'Contact Person',
+      'Email',
+      'Phone',
+      'Address',
+      'City',
+      'Country',
+      'Tax ID',
+      'Notes'
+    ];
+
+    // Convert customers to CSV rows
+    const rows = customers.map(customer => [
+      customer.company_name,
+      customer.contact_person,
+      customer.email || '',
+      customer.phone || '',
+      customer.address || '',
+      customer.city || '',
+      customer.country || '',
+      customer.tax_id || '',
+      customer.notes || ''
+    ]);
+
+    // Escape CSV values that contain commas or quotes
+    const escapeCSV = (value: string) => {
+      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+        return `"${value.replace(/"/g, '""')}`;
+      }
+      return value;
+    };
+
+    // Build CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(escapeCSV).join(','))
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `customers_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success(`Exported ${customers.length} customers to CSV`);
   };
 
   const filteredCustomers = customers.filter(
@@ -135,27 +280,75 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Customers</h1>
           <p className="text-slate-600 mt-1">Manage your customer database</p>
         </div>
-        <button
-          onClick={() => {
-            setEditingCustomer(null);
-            setFormData({
-              company_name: '',
-              contact_person: '',
-              email: '',
-              phone: '',
-              address: '',
-              city: '',
-              country: '',
-              tax_id: '',
-            });
-            setShowModal(true);
-          }}
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add Customer
-        </button>
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <>
+              <button
+                onClick={handleExportToCSV}
+                disabled={customers.length === 0}
+                className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
+                title="Export customers to CSV"
+              >
+                <Download className="w-5 h-5" />
+                Export CSV
+              </button>
+              <label className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors cursor-pointer">
+                <Upload className="w-5 h-5" />
+                {uploading ? 'Importing...' : 'Import CSV'}
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleImportFromCSV}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+            </>
+          )}
+          <button
+            onClick={() => {
+              setEditingCustomer(null);
+              setFormData({
+                company_name: '',
+                contact_person: '',
+                email: '',
+                phone: '',
+                address: '',
+                city: '',
+                country: '',
+                tax_id: '',
+              });
+              setShowModal(true);
+            }}
+            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Add Customer
+          </button>
+        </div>
       </div>
+
+      {isAdmin && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Upload className="w-5 h-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-blue-900 mb-1">CSV Import Format</h3>
+              <p className="text-sm text-blue-700 mb-2">
+                Your CSV file should have the following columns in this exact order:
+              </p>
+              <code className="text-xs bg-white px-2 py-1 rounded border border-blue-200 text-blue-900 block">
+                Company Name, Contact Person, Email, Phone, Address, City, Country, Tax ID, Notes
+              </code>
+              <p className="text-xs text-blue-600 mt-2">
+                First row should be headers. Duplicate emails will update existing customers.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {customers.length > 0 && (
         <div className="bg-white rounded-lg border border-slate-200 p-4">
