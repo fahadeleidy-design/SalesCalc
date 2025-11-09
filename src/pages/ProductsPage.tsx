@@ -3,10 +3,12 @@ import { Package, Plus, Edit2, Trash2, Search, DollarSign, Tag, Upload, Download
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
+import { useAuth } from '../contexts/AuthContext';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
 export default function ProductsPage() {
+  const { profile } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -19,8 +21,12 @@ export default function ProductsPage() {
     category: '',
     unit: 'unit',
     unit_price: '',
+    cost_price: '',
     is_active: true,
   });
+
+  const canEditCost = profile?.role === 'finance' || profile?.role === 'admin';
+  const canViewCost = profile?.role === 'finance' || profile?.role === 'admin' || profile?.role === 'ceo';
 
   useEffect(() => {
     loadProducts();
@@ -48,10 +54,14 @@ export default function ProductsPage() {
       return;
     }
 
-    const productData = {
+    const productData: any = {
       ...formData,
       unit_price: parseFloat(formData.unit_price),
     };
+
+    if (canEditCost && formData.cost_price) {
+      productData.cost_price = parseFloat(formData.cost_price);
+    }
 
     try {
       if (editingProduct) {
@@ -78,6 +88,7 @@ export default function ProductsPage() {
         category: '',
         unit: 'unit',
         unit_price: '',
+        cost_price: '',
         is_active: true,
       });
       loadProducts();
@@ -182,6 +193,7 @@ export default function ProductsPage() {
       category: product.category || '',
       unit: product.unit || 'unit',
       unit_price: product.unit_price.toString(),
+      cost_price: product.cost_price?.toString() || '',
       is_active: product.is_active,
     });
     setShowModal(true);
@@ -358,6 +370,19 @@ export default function ProductsPage() {
                     <span className="text-xs text-slate-500">/ {product.unit}</span>
                   </div>
                 </div>
+                {canViewCost && product.cost_price && (
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm text-amber-600 font-medium">Cost Price</span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold text-amber-700">
+                        {formatCurrency(product.cost_price)}
+                      </span>
+                      <span className="text-xs text-amber-600">
+                        ({((product.unit_price - product.cost_price) / product.unit_price * 100).toFixed(1)}% margin)
+                      </span>
+                    </div>
+                  </div>
+                )}
                 <div className="pt-2">
                   <span
                     className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
@@ -465,6 +490,25 @@ export default function ProductsPage() {
                     />
                   </div>
                 </div>
+
+                {canEditCost && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Cost Price {canEditCost ? '(Finance Only)' : ''}
+                    </label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.cost_price}
+                        onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
+                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-amber-50"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
