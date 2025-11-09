@@ -4,7 +4,8 @@ import { SetTargetsForm } from '../components/targets/SetTargetsForm';
 import { TargetApprovalList } from '../components/targets/TargetApprovalList';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { Target, Plus } from 'lucide-react';
+import { useApprovedTargets, useSalesRepsWithoutTargets } from '../hooks/useTargets';
+import { Target, Plus, CheckCircle, Users, Calendar, DollarSign, AlertCircle } from 'lucide-react';
 
 export default function TargetsPage() {
   const { profile } = useAuth();
@@ -79,18 +80,7 @@ export default function TargetsPage() {
   }
 
   if (profile.role === 'ceo') {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Target className="h-7 w-7 text-orange-600" />
-            Target Approvals
-          </h1>
-          <p className="text-slate-600 mt-1">Review and approve sales targets</p>
-        </div>
-        <TargetApprovalList />
-      </div>
-    );
+    return <CEOTargetsView />;
   }
 
   return (
@@ -98,6 +88,185 @@ export default function TargetsPage() {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
         <p className="text-slate-600">You don't have permission to access this page.</p>
+      </div>
+    </div>
+  );
+}
+
+function CEOTargetsView() {
+  const { data: approvedTargets, isLoading: isLoadingApproved } = useApprovedTargets();
+  const { data: salesRepsWithoutTargets, isLoading: isLoadingReps } = useSalesRepsWithoutTargets();
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-SA', {
+      style: 'currency',
+      currency: 'SAR',
+    }).format(amount);
+  };
+
+  const formatPeriodType = (type: string) => {
+    const map: Record<string, string> = {
+      monthly: 'Monthly',
+      quarterly: 'Quarterly',
+      half_yearly: 'Half-Yearly',
+      yearly: 'Yearly',
+    };
+    return map[type] || type;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <Target className="h-7 w-7 text-orange-600" />
+          Target Management
+        </h1>
+        <p className="text-slate-600 mt-1">Review, approve targets, and monitor coverage</p>
+      </div>
+
+      {/* Pending Approvals Section */}
+      <TargetApprovalList />
+
+      {/* Sales Reps Without Targets Alert */}
+      {!isLoadingReps && salesRepsWithoutTargets && salesRepsWithoutTargets.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-6 w-6 text-amber-600 mt-1" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900 mb-2">
+                Sales Reps Without Approved Targets ({salesRepsWithoutTargets.length})
+              </h3>
+              <p className="text-sm text-amber-700 mb-4">
+                The following sales representatives do not have any approved targets. Consider asking their managers to set targets for them.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {salesRepsWithoutTargets.map((rep) => (
+                  <div
+                    key={rep.id}
+                    className="bg-white border border-amber-200 rounded-lg p-4 flex items-center gap-3"
+                  >
+                    <div className="bg-amber-100 p-2 rounded-lg">
+                      <Users className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-900 truncate">{rep.full_name}</p>
+                      <p className="text-xs text-slate-600 truncate">{rep.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approved Targets Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <CheckCircle className="h-6 w-6 text-green-600" />
+          <h2 className="text-xl font-bold text-slate-900">
+            Approved Targets ({approvedTargets?.length || 0})
+          </h2>
+        </div>
+
+        {isLoadingApproved ? (
+          <div className="flex items-center justify-center p-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+          </div>
+        ) : !approvedTargets || approvedTargets.length === 0 ? (
+          <div className="text-center py-12">
+            <Target className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No Approved Targets Yet</h3>
+            <p className="text-slate-600">Approved targets will appear here once you approve them.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {approvedTargets.map((target) => (
+              <div
+                key={target.id}
+                className="border border-slate-200 rounded-lg p-5 hover:border-green-300 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-50 rounded-lg">
+                      {target.targetType === 'sales' ? (
+                        <Target className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <Users className="h-5 w-5 text-green-600" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">
+                        {target.targetType === 'sales'
+                          ? `Individual: ${(target as any).sales_rep?.full_name}`
+                          : `Team: ${(target as any).manager?.full_name}`}
+                      </h3>
+                      <p className="text-sm text-slate-600">
+                        {target.targetType === 'sales'
+                          ? (target as any).sales_rep?.email
+                          : (target as any).manager?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                      Approved
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500">Period</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {formatPeriodType(target.period_type)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500">Duration</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {new Date(target.period_start).toLocaleDateString()} -{' '}
+                        {new Date(target.period_end).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500">Target Amount</p>
+                      <p className="text-sm font-semibold text-green-600">
+                        {formatCurrency(target.target_amount)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {target.approved_at && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs text-slate-500">
+                      Approved on {new Date(target.approved_at).toLocaleDateString()} at{' '}
+                      {new Date(target.approved_at).toLocaleTimeString()}
+                    </p>
+                  </div>
+                )}
+
+                {target.notes && (
+                  <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                    <p className="text-xs text-slate-500 mb-1">Notes:</p>
+                    <p className="text-sm text-slate-700">{target.notes}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
