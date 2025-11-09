@@ -320,18 +320,33 @@ export async function approveQuotation(
       nextStatus = 'approved';
     }
   } else if (approverRole === 'ceo') {
-    // CEO can approve any discount
+    // CEO can approve any discount, send to finance
     nextStatus = 'pending_finance';
+  } else if (approverRole === 'finance') {
+    // Finance final approval
+    nextStatus = 'approved';
   } else {
     return { success: false, nextStatus: previousStatus, error: 'Invalid approver role' };
   }
 
+  const updateData: any = {
+    status: nextStatus,
+  };
+
+  // Set approved_at when manager approves (for non-CEO approvals)
+  if (approverRole === 'manager' && nextStatus === 'approved') {
+    updateData.approved_at = new Date().toISOString();
+  }
+
+  // Set finance_approved_at when finance approves
+  if (approverRole === 'finance') {
+    updateData.finance_approved_at = new Date().toISOString();
+    updateData.approved_at = new Date().toISOString(); // Also set final approval time
+  }
+
   const { error: updateError } = await supabase
     .from('quotations')
-    .update({
-      status: nextStatus,
-      approved_at: approverRole === 'manager' ? new Date().toISOString() : quotation.approved_at,
-    })
+    .update(updateData)
     .eq('id', quotationId);
 
   if (updateError) {
@@ -354,6 +369,7 @@ export async function approveQuotation(
     .eq('id', quotationId)
     .single();
 
+  // Notify sales rep
   if (salesRep) {
     await supabase.from('notifications').insert({
       user_id: salesRep.sales_rep_id,
@@ -364,6 +380,28 @@ export async function approveQuotation(
       related_quotation_id: quotationId,
       is_read: false,
     });
+  }
+
+  // Notify finance team when CEO approves
+  if (approverRole === 'ceo' && nextStatus === 'pending_finance') {
+    const { data: financeUsers } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('role', 'finance');
+
+    if (financeUsers && financeUsers.length > 0) {
+      const notifications = financeUsers.map(user => ({
+        user_id: user.user_id,
+        type: 'quotation_submitted' as const,
+        title: 'Quotation Pending Finance Approval',
+        message: `Quotation ${quotation.quotation_number} requires your financial review`,
+        link: `/approvals`,
+        related_quotation_id: quotationId,
+        is_read: false,
+      }));
+
+      await supabase.from('notifications').insert(notifications);
+    }
   }
 
   return { success: true, nextStatus };

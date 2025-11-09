@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { CheckCircle, Clock, TrendingUp, Users, DollarSign, ArrowRight } from 'lucide-react';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useAuth } from '../contexts/AuthContext';
 import { formatCurrencyCompact } from '../lib/currencyUtils';
 
 interface TeamMember {
@@ -14,6 +15,7 @@ interface TeamMember {
 
 export default function ManagerDashboard() {
   const { navigate } = useNavigation();
+  const { profile } = useAuth();
   const [pendingCount, setPendingCount] = useState(0);
   const [approvedToday, setApprovedToday] = useState(0);
   const [teamPipeline, setTeamPipeline] = useState(0);
@@ -21,19 +23,33 @@ export default function ManagerDashboard() {
   const [loading, setLoading] = useState(true);
 
   const fetchDashboardData = async () => {
+    if (!profile) return;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Determine the pending status based on user role
+    let pendingStatus = 'pending_manager';
+    let approverRole = 'manager';
+
+    if (profile.role === 'ceo') {
+      pendingStatus = 'pending_ceo';
+      approverRole = 'ceo';
+    } else if (profile.role === 'finance') {
+      pendingStatus = 'pending_finance';
+      approverRole = 'finance';
+    }
 
     const [pendingResult, approvedResult, pipelineResult, salesRepsResult] = await Promise.all([
       supabase
         .from('quotations')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending_manager'),
+        .eq('status', pendingStatus),
 
       supabase
         .from('quotation_approvals')
         .select('*', { count: 'exact', head: true })
-        .eq('approver_role', 'manager')
+        .eq('approver_role', approverRole)
         .eq('action', 'approved')
         .gte('created_at', today.toISOString()),
 
@@ -87,8 +103,10 @@ export default function ManagerDashboard() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (profile) {
+      fetchDashboardData();
+    }
+  }, [profile]);
 
   if (loading) {
     return (
@@ -98,11 +116,35 @@ export default function ManagerDashboard() {
     );
   }
 
+  const getDashboardTitle = () => {
+    switch (profile?.role) {
+      case 'ceo':
+        return 'CEO Dashboard';
+      case 'finance':
+        return 'Finance Dashboard';
+      case 'manager':
+      default:
+        return 'Manager Dashboard';
+    }
+  };
+
+  const getDashboardSubtitle = () => {
+    switch (profile?.role) {
+      case 'ceo':
+        return 'Executive overview and final approvals';
+      case 'finance':
+        return 'Financial review and approval oversight';
+      case 'manager':
+      default:
+        return 'Team performance and approval oversight';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Manager Dashboard</h1>
-        <p className="text-slate-600 mt-1">Team performance and approval oversight</p>
+        <h1 className="text-2xl font-bold text-slate-900">{getDashboardTitle()}</h1>
+        <p className="text-slate-600 mt-1">{getDashboardSubtitle()}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
