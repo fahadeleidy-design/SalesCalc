@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import SalesDashboard from './pages/SalesDashboard';
 import EngineeringDashboard from './pages/EngineeringDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
+import CEODashboard from './pages/CEODashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import QuotationsPage from './pages/QuotationsPage';
 import CustomItemsPage from './pages/CustomItemsPage';
@@ -41,9 +42,10 @@ function AppContent() {
       case 'engineering':
         return <EngineeringDashboard />;
       case 'manager':
-      case 'ceo':
       case 'finance':
         return <ManagerDashboard />;
+      case 'ceo':
+        return <CEODashboard />;
       case 'admin':
         return <AdminDashboard />;
       default:

@@ -4,14 +4,19 @@ import {
   DollarSign,
   Users,
   FileText,
-
   BarChart3,
   PieChart,
   Target,
+  Download,
+  Calendar,
+  Award,
+  TrendingDown,
+  Percent,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { formatCurrencyCompact } from '../lib/currencyUtils';
+import { formatCurrencyCompact, formatCurrency } from '../lib/currencyUtils';
+import toast from 'react-hot-toast';
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -179,6 +184,59 @@ export default function ReportsPage() {
       .join(' ');
   };
 
+  const exportToCSV = () => {
+    const csvData = [
+      ['Sales Rep Performance Report'],
+      ['Generated:', new Date().toLocaleString()],
+      ['Period:', getDateRangeLabel()],
+      [],
+      ['Rep Name', 'Total Quotations', 'Won Deals', 'Revenue', 'Win Rate'],
+      ...analytics.salesRepPerformance.map(rep => [
+        rep.name,
+        rep.quotations.toString(),
+        rep.won.toString(),
+        formatCurrency(rep.revenue),
+        `${rep.quotations > 0 ? ((rep.won / rep.quotations) * 100).toFixed(1) : '0'}%`
+      ]),
+      [],
+      ['Top Products'],
+      ['Product', 'Units Sold', 'Revenue'],
+      ...analytics.topProducts.map(p => [
+        p.name,
+        p.count.toString(),
+        formatCurrency(p.revenue)
+      ]),
+      [],
+      ['Summary'],
+      ['Total Revenue', formatCurrency(analytics.totalRevenue)],
+      ['Total Quotations', analytics.totalQuotations.toString()],
+      ['Conversion Rate', `${analytics.conversionRate.toFixed(1)}%`],
+      ['Average Deal Size', formatCurrency(analytics.averageDealSize)],
+    ];
+
+    const csv = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sales-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Report exported successfully');
+  };
+
+  const getDateRangeLabel = () => {
+    const labels = {
+      '7d': 'Last 7 Days',
+      '30d': 'Last 30 Days',
+      '90d': 'Last 90 Days',
+      'all': 'All Time'
+    };
+    return labels[dateRange];
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -194,7 +252,16 @@ export default function ReportsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Reports & Analytics</h1>
           <p className="text-slate-600 mt-1">Comprehensive business insights and performance metrics</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <div className="h-8 w-px bg-slate-300"></div>
+          <div className="flex items-center gap-2">
           <button
             onClick={() => setDateRange('7d')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -235,6 +302,7 @@ export default function ReportsPage() {
           >
             All Time
           </button>
+          </div>
         </div>
       </div>
 
@@ -365,26 +433,50 @@ export default function ReportsPage() {
                     <th className="text-center py-2 px-2 text-xs font-medium text-slate-700">
                       Won
                     </th>
+                    <th className="text-center py-2 px-2 text-xs font-medium text-slate-700">
+                      Win Rate
+                    </th>
                     <th className="text-right py-2 px-2 text-xs font-medium text-slate-700">
                       Revenue
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {analytics.salesRepPerformance.map((rep, index) => (
-                    <tr key={index} className="border-b border-slate-100">
-                      <td className="py-2 px-2 text-sm font-medium text-slate-900">
-                        {rep.name}
-                      </td>
-                      <td className="py-2 px-2 text-sm text-center text-slate-700">
-                        {rep.quotations}
-                      </td>
-                      <td className="py-2 px-2 text-sm text-center text-slate-700">{rep.won}</td>
-                      <td className="py-2 px-2 text-sm text-right font-semibold text-green-600">
-                        {formatCurrencyValue(rep.revenue)}
-                      </td>
-                    </tr>
-                  ))}
+                  {analytics.salesRepPerformance.map((rep, index) => {
+                    const winRate = rep.quotations > 0 ? (rep.won / rep.quotations) * 100 : 0;
+                    return (
+                      <tr key={index} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="py-3 px-2 text-sm font-medium text-slate-900">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              index === 0 ? 'bg-yellow-400' :
+                              index === 1 ? 'bg-slate-300' :
+                              index === 2 ? 'bg-orange-400' : 'bg-slate-200'
+                            }`}></div>
+                            {rep.name}
+                          </div>
+                        </td>
+                        <td className="py-3 px-2 text-sm text-center text-slate-700">
+                          {rep.quotations}
+                        </td>
+                        <td className="py-3 px-2 text-sm text-center font-medium text-green-600">
+                          {rep.won}
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                            winRate >= 50 ? 'bg-green-100 text-green-700' :
+                            winRate >= 30 ? 'bg-amber-100 text-amber-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {winRate.toFixed(0)}%
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-sm text-right font-semibold text-green-600">
+                          {formatCurrencyValue(rep.revenue)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
