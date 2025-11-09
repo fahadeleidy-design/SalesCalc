@@ -37,6 +37,7 @@ interface DashboardStats {
   approvedQuotations: number;
   dealsWon: number;
   totalValue: number;
+  pipelineValue: number;
   targetProgress: number;
   monthlyGrowth: number;
   conversionRate: number;
@@ -75,6 +76,7 @@ export default function SalesDashboard() {
     approvedQuotations: 0,
     dealsWon: 0,
     totalValue: 0,
+    pipelineValue: 0,
     targetProgress: 0,
     monthlyGrowth: 0,
     conversionRate: 0,
@@ -142,9 +144,19 @@ export default function SalesDashboard() {
       .eq('sales_rep_id', profile.id)
       .eq('status', 'deal_won');
 
+    // Get approved deals for pipeline value
+    const { data: approvedDeals } = await supabase
+      .from('quotations')
+      .select('total, created_at')
+      .eq('sales_rep_id', profile.id)
+      .in('status', ['approved', 'finance_approved', 'deal_won']);
+
     const totalValue = wonDeals?.reduce((sum: number, q: any) => sum + Number(q.total), 0) || 0;
+    const pipelineValue = approvedDeals?.reduce((sum: number, q: any) => sum + Number(q.total), 0) || 0;
+
+    // Use pipeline value (approved + won) for target progress
     const targetProgress = profile.sales_target > 0
-      ? (totalValue / profile.sales_target) * 100
+      ? (pipelineValue / profile.sales_target) * 100
       : 0;
 
     // Calculate monthly growth
@@ -214,6 +226,7 @@ export default function SalesDashboard() {
       approvedQuotations: approvedCount || 0,
       dealsWon: wonDeals?.length || 0,
       totalValue,
+      pipelineValue,
       targetProgress,
       monthlyGrowth,
       conversionRate,
@@ -367,7 +380,7 @@ export default function SalesDashboard() {
             <div>
               <h3 className="font-semibold text-slate-900">Sales Target Progress</h3>
               <p className="text-sm text-slate-600">
-                {formatCurrencyCompact(stats.totalValue)} of {formatCurrencyCompact(profile?.sales_target || 0)}
+                {formatCurrencyCompact(stats.pipelineValue)} of {formatCurrencyCompact(profile?.sales_target || 0)}
               </p>
             </div>
           </div>
