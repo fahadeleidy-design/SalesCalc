@@ -68,6 +68,17 @@ export async function validateQuotationForSubmission(
     errors.push('Quotation total must be greater than zero');
   }
 
+  // Validate discount percentage based on user role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', quotation.sales_rep_id)
+    .single();
+
+  if (profile?.role === 'sales' && quotation.discount_percentage > 5) {
+    errors.push('Sales representatives can only apply discounts up to 5%. Please reduce the discount or request manager approval.');
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -112,16 +123,19 @@ export async function getDiscountMatrixRule(
 export async function determineNextApprovalStatus(
   quotation: Quotation
 ): Promise<{ status: QuotationStatus; requiresCEO: boolean }> {
-  const rule = await getDiscountMatrixRule(quotation.total);
+  // New discount rules:
+  // Sales: 0-5% (submit to manager)
+  // Manager: Can approve up to 10%
+  // CEO: Approves >10% (only via manager)
 
-  if (!rule) {
-    return { status: 'pending_manager', requiresCEO: false };
-  }
+  const discountPercentage = quotation.discount_percentage || 0;
 
-  const discountExceedsLimit = quotation.discount_percentage > rule.max_discount_percentage;
-  const requiresCEO = rule.requires_ceo_approval || discountExceedsLimit;
+  // Sales can only submit up to 5%
+  // Manager approval required for >5%
+  // CEO approval required for >10%
+  const requiresCEO = discountPercentage > 10;
 
-  // Always start with Manager approval, regardless of value
+  // Always start with Manager approval
   return { status: 'pending_manager', requiresCEO };
 }
 
@@ -288,17 +302,25 @@ export async function approveQuotation(
   const previousStatus = quotation.status;
 
   if (approverRole === 'manager') {
-    // Check if CEO approval is required after manager approval
-    const rule = await getDiscountMatrixRule(quotation.total);
-    const discountExceedsLimit = quotation.discount_percentage > (rule?.max_discount_percentage || 100);
-    const requiresCEO = rule?.requires_ceo_approval || discountExceedsLimit;
+    const discountPercentage = quotation.discount_percentage || 0;
 
-    if (requiresCEO) {
+    // Manager can approve up to 10%
+    if (discountPercentage > 10) {
+      // Discount >10% requires CEO approval
       nextStatus = 'pending_ceo';
+    } else if (discountPercentage > 10) {
+      // This should not happen - manager cannot approve >10%
+      return {
+        success: false,
+        nextStatus: previousStatus,
+        error: 'Manager cannot approve discounts greater than 10%. CEO approval required.'
+      };
     } else {
+      // Discount ≤10%, manager can approve
       nextStatus = 'approved';
     }
   } else if (approverRole === 'ceo') {
+    // CEO can approve any discount
     nextStatus = 'pending_finance';
   } else {
     return { success: false, nextStatus: previousStatus, error: 'Invalid approver role' };

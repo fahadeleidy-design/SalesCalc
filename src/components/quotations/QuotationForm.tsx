@@ -646,24 +646,45 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 <span className="text-slate-600">Subtotal:</span>
                 <span className="font-medium text-slate-900">{formatCurrency(totals.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm items-center">
-                <span className="text-slate-600">Discount:</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={formData.discount_percentage}
-                    onChange={(e) =>
-                      setFormData({ ...formData, discount_percentage: parseFloat(e.target.value) })
-                    }
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    className="w-16 px-2 py-1 border border-slate-300 rounded text-sm"
-                  />
-                  <span className="text-slate-900">%</span>
-                  <span className="font-medium text-slate-900">
-                    -{formatCurrency(totals.discountAmount)}
-                  </span>
+              <div className="flex justify-between text-sm items-start">
+                <span className="text-slate-600 mt-1">Discount:</span>
+                <div className="flex flex-col items-end gap-1">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={formData.discount_percentage}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        const maxDiscount = profile?.role === 'sales' ? 5 : 100;
+                        if (value <= maxDiscount) {
+                          setFormData({ ...formData, discount_percentage: value });
+                        }
+                      }}
+                      min="0"
+                      max={profile?.role === 'sales' ? 5 : 100}
+                      step="0.1"
+                      className="w-16 px-2 py-1 border border-slate-300 rounded text-sm"
+                    />
+                    <span className="text-slate-900">%</span>
+                    <span className="font-medium text-slate-900">
+                      -{formatCurrency(totals.discountAmount)}
+                    </span>
+                  </div>
+                  {profile?.role === 'sales' && (
+                    <span className="text-xs text-orange-600">
+                      Max 5% (Manager: 10%, CEO: &gt;10%)
+                    </span>
+                  )}
+                  {formData.discount_percentage > 5 && formData.discount_percentage <= 10 && (
+                    <span className="text-xs text-blue-600">
+                      Requires Manager approval
+                    </span>
+                  )}
+                  {formData.discount_percentage > 10 && (
+                    <span className="text-xs text-purple-600">
+                      Requires Manager → CEO approval
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex justify-between text-sm">
