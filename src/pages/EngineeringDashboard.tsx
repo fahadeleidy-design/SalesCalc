@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Wrench, Clock, CheckCircle, FileText, Eye } from 'lucide-react';
+import { Wrench, Clock, CheckCircle, FileText, Eye, DollarSign } from 'lucide-react';
 import PricingModal from '../components/engineering/PricingModal';
 import QuotationViewModal from '../components/quotations/QuotationViewModal';
 import type { Database } from '../lib/database.types';
@@ -13,16 +13,18 @@ type CustomItemRequest = Database['public']['Tables']['custom_item_requests']['R
 
 export default function EngineeringDashboard() {
   const [requests, setRequests] = useState<CustomItemRequest[]>([]);
+  const [pricedRequests, setPricedRequests] = useState<CustomItemRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<CustomItemRequest | null>(null);
   const [completedToday, setCompletedToday] = useState(0);
   const [viewingQuotationId, setViewingQuotationId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
 
   const fetchCustomItemRequests = async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [pendingResult, completedResult] = await Promise.all([
+    const [pendingResult, pricedResult, completedResult] = await Promise.all([
       supabase
         .from('custom_item_requests')
         .select(
@@ -30,11 +32,27 @@ export default function EngineeringDashboard() {
           *,
           quotation:quotations(*),
           requester:profiles!custom_item_requests_requested_by_fkey(*),
-          quotation_item:quotation_items(*)
+          quotation_item:quotation_items(*),
+          pricer:profiles!custom_item_requests_priced_by_fkey(*)
         `
         )
         .eq('status', 'pending')
         .order('created_at', { ascending: false }),
+
+      supabase
+        .from('custom_item_requests')
+        .select(
+          `
+          *,
+          quotation:quotations(*),
+          requester:profiles!custom_item_requests_requested_by_fkey(*),
+          quotation_item:quotation_items(*),
+          pricer:profiles!custom_item_requests_priced_by_fkey(*)
+        `
+        )
+        .eq('status', 'priced')
+        .order('priced_at', { ascending: false })
+        .limit(50),
 
       supabase
         .from('custom_item_requests')
@@ -44,6 +62,7 @@ export default function EngineeringDashboard() {
     ]);
 
     setRequests((pendingResult.data as any) || []);
+    setPricedRequests((pricedResult.data as any) || []);
     setCompletedToday(completedResult.data?.length || 0);
     setLoading(false);
   };
@@ -104,26 +123,48 @@ export default function EngineeringDashboard() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-200">
-          <h3 className="font-semibold text-slate-900">Custom Item Requests</h3>
+        <div className="border-b border-slate-200">
+          <div className="flex items-center gap-4 px-6 py-4">
+            <button
+              onClick={() => setActiveTab('pending')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'pending'
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Pending Requests ({requests.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'history'
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Pricing History ({pricedRequests.length})
+            </button>
+          </div>
         </div>
         <div className="divide-y divide-slate-200">
           {loading ? (
             <div className="px-6 py-12 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
             </div>
-          ) : requests.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wrench className="w-8 h-8 text-slate-400" />
+          ) : activeTab === 'pending' ? (
+            requests.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Wrench className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No Pending Requests</h3>
+                <p className="text-slate-600">
+                  All custom item pricing requests have been completed.
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Pending Requests</h3>
-              <p className="text-slate-600">
-                All custom item pricing requests have been completed.
-              </p>
-            </div>
-          ) : (
-            requests.map((request) => (
+            ) : (
+              requests.map((request) => (
               <div
                 key={request.id}
                 className="px-6 py-4 hover:bg-slate-50 transition-colors cursor-pointer"
@@ -184,6 +225,103 @@ export default function EngineeringDashboard() {
                 </div>
               </div>
             ))
+            )
+          ) : (
+            pricedRequests.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No Pricing History</h3>
+                <p className="text-slate-600">
+                  Completed pricing requests will appear here.
+                </p>
+              </div>
+            ) : (
+              pricedRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="px-6 py-4 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-start gap-3">
+                        <div className="bg-green-50 p-2 rounded-lg mt-1">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-slate-900">{request.description}</p>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                              <CheckCircle className="w-3 h-3" />
+                              Priced
+                            </span>
+                          </div>
+
+                          {request.specifications && typeof request.specifications === 'object' && Object.keys(request.specifications).length > 0 && (
+                            <div className="bg-slate-50 rounded-lg p-3 mb-2">
+                              <p className="text-xs font-medium text-slate-600 mb-2">
+                                Technical Specifications:
+                              </p>
+                              <div className="space-y-1">
+                                {Object.entries(request.specifications as Record<string, string>).map(([key, value]) => (
+                                  <div key={key} className="flex items-center gap-2 text-xs">
+                                    <span className="text-slate-600">{key}:</span>
+                                    <span className="text-slate-900 font-medium">{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-4 text-sm text-slate-600 mb-2">
+                            <span className="flex items-center gap-1">
+                              <FileText className="w-4 h-4" />
+                              {request.quotation.quotation_number}
+                            </span>
+                            <span>Quantity: {request.quotation_item.quantity}</span>
+                            <span>Requested by {request.requester.full_name}</span>
+                          </div>
+
+                          {request.quoted_unit_price && (
+                            <div className="flex items-center gap-4 text-sm mb-2">
+                              <div className="flex items-center gap-1 text-green-700 font-medium">
+                                <DollarSign className="w-4 h-4" />
+                                Unit Price: ${Number(request.quoted_unit_price).toFixed(2)}
+                              </div>
+                              <div className="text-slate-600">
+                                Total: ${(Number(request.quoted_unit_price) * request.quotation_item.quantity).toFixed(2)}
+                              </div>
+                            </div>
+                          )}
+
+                          {request.engineering_notes && (
+                            <div className="bg-blue-50 rounded p-2 text-xs text-slate-700 border border-blue-200">
+                              <span className="font-medium">Engineering Notes:</span> {request.engineering_notes}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-4 text-xs text-slate-500 mt-2">
+                            <span>Priced by {(request as any).pricer?.full_name || 'Unknown'}</span>
+                            <span>
+                              {request.priced_at ? new Date(request.priced_at).toLocaleString() : 'N/A'}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => setViewingQuotationId(request.quotation_id)}
+                            className="mt-2 flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View Full Quotation
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )
           )}
         </div>
       </div>
