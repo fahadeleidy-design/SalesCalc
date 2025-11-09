@@ -445,8 +445,8 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                             )
                           )}
 
-                          {/* Submit to Customer - Show when approved/finance_approved and not yet submitted */}
-                          {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
+                          {/* Submit to Customer - Show only when fully approved and not yet submitted */}
+                          {quotation.status === 'approved' &&
                            !quotation.submitted_to_customer_at && (
                             <button
                               onClick={(e) => {
