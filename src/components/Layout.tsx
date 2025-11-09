@@ -67,7 +67,7 @@ const navigationItems: NavItem[] = [
     label: 'Products',
     icon: Package,
     path: '/products',
-    roles: ['admin'],
+    roles: ['admin', 'finance'],
   },
   {
     label: 'Commissions',

@@ -370,14 +370,34 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="bg-orange-50 border border-blue-200 rounded-lg p-4">
+      {canEditCost && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
+          <h3 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Finance: Add Cost Prices for Profit Tracking
+          </h3>
+          <p className="text-sm text-amber-800 mb-2">
+            As a finance user, you have exclusive access to manage cost prices. This enables:
+          </p>
+          <ul className="text-sm text-amber-800 space-y-1 ml-4 list-disc">
+            <li>Accurate profit margin calculations on all quotations</li>
+            <li>CEO profit dashboard with real-time margin tracking</li>
+            <li>Financial analytics and cost control</li>
+          </ul>
+          <p className="text-xs text-amber-700 mt-3 font-medium">
+            💡 Click "Edit" on any product or add new products to set cost prices
+          </p>
+        </div>
+      )}
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="font-semibold text-blue-900 mb-2">CSV Import Format</h3>
         <p className="text-sm text-blue-800 mb-2">Your CSV file should have the following columns:</p>
         <code className="block bg-white px-3 py-2 rounded text-xs text-slate-900 overflow-x-auto">
-          SKU,Name,Description,Category,Unit,Unit Price,Active
+          SKU,Name,Description,Category,Unit,Unit Price,{canEditCost ? 'Cost Price,' : ''}Active
         </code>
-        <p className="text-xs text-orange-600 mt-2">
-          Example: PROD001,"Office Chair","Ergonomic chair","Furniture",unit,299.99,Yes
+        <p className="text-xs text-blue-600 mt-2">
+          Example: PROD001,"Office Chair","Ergonomic chair","Furniture",unit,299.99,{canEditCost ? '199.99,' : ''}Yes
         </p>
       </div>
 
@@ -647,20 +667,29 @@ export default function ProductsPage() {
 
                 {canEditCost && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Cost Price {canEditCost ? '(Finance Only)' : ''}
+                    <label className="block text-sm font-medium text-amber-700 mb-2 flex items-center gap-2">
+                      Cost Price (Finance Only)
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
+                        Required for Profit Tracking
+                      </span>
                     </label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5" />
                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         value={formData.cost_price}
                         onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-amber-50"
+                        placeholder="Enter supplier cost"
+                        className="w-full pl-10 pr-4 py-2 border-2 border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50"
                       />
                     </div>
+                    {formData.cost_price && formData.unit_price && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        Margin: {((parseFloat(formData.unit_price) - parseFloat(formData.cost_price)) / parseFloat(formData.unit_price) * 100).toFixed(1)}%
+                      </p>
+                    )}
                   </div>
                 )}
 
