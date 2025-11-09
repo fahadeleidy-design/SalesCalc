@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { FileText, Eye, CreditCard as Edit2, Send, CircleCheck as CheckCircle, Circle as XCircle, Clock, Search, Trash2, Copy } from 'lucide-react';
+import { FileText, Eye, CreditCard as Edit2, Send, CircleCheck as CheckCircle, Circle as XCircle, Clock, Search, Trash2, Copy, Mail, TrendingUp, TrendingDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
 import { submitQuotationForApproval } from '../../lib/approvalLogic';
 import { formatCurrency } from '../../lib/currencyUtils';
+import DealOutcomeModal from './DealOutcomeModal';
+import toast from 'react-hot-toast';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -28,6 +30,11 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [dealOutcomeModal, setDealOutcomeModal] = useState<{
+    quotationId: string;
+    quotationNumber: string;
+    outcome: 'won' | 'lost';
+  } | null>(null);
 
   useEffect(() => {
     loadQuotations();
@@ -125,6 +132,60 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
       console.log('🏁 Submission process complete');
       setSubmitting(null);
     }
+  };
+
+  const handleSubmitToCustomer = async (quotationId: string) => {
+    if (!profile) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    const confirmed = confirm(
+      'Submit this quotation to the customer? This will send the approved quotation to the customer for review.'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const { data, error } = await supabase.rpc('submit_quotation_to_customer', {
+        p_quotation_id: quotationId,
+        p_submitted_by: profile.id,
+        p_response_due_date: null
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; message?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit to customer');
+      }
+
+      toast.success('Quotation submitted to customer!');
+      loadQuotations();
+    } catch (error: any) {
+      console.error('Error submitting to customer:', error);
+      toast.error(error.message || 'Failed to submit to customer');
+    }
+  };
+
+  const handleMarkWon = (quotationId: string, quotationNumber: string) => {
+    setDealOutcomeModal({
+      quotationId,
+      quotationNumber,
+      outcome: 'won'
+    });
+  };
+
+  const handleMarkLost = (quotationId: string, quotationNumber: string) => {
+    setDealOutcomeModal({
+      quotationId,
+      quotationNumber,
+      outcome: 'lost'
+    });
+  };
+
+  const handleDealOutcomeSuccess = () => {
+    loadQuotations();
   };
 
   const getStatusBadge = (status: string) => {
@@ -383,6 +444,54 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                               </>
                             )
                           )}
+
+                          {/* Submit to Customer - Show when approved/finance_approved and not yet submitted */}
+                          {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
+                           !quotation.submitted_to_customer_at && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSubmitToCustomer(quotation.id);
+                              }}
+                              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+                              title="Submit to Customer"
+                            >
+                              <Mail className="w-3 h-3" />
+                              <span className="hidden sm:inline">Send to Customer</span>
+                            </button>
+                          )}
+
+                          {/* Deal Outcome Buttons - Show when submitted to customer and not yet decided */}
+                          {quotation.submitted_to_customer_at &&
+                           !['deal_won', 'deal_lost'].includes(quotation.status) && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleMarkWon(quotation.id, quotation.quotation_number);
+                                }}
+                                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
+                                title="Mark as Won"
+                              >
+                                <TrendingUp className="w-3 h-3" />
+                                <span className="hidden sm:inline">Won</span>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleMarkLost(quotation.id, quotation.quotation_number);
+                                }}
+                                className="flex items-center gap-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
+                                title="Mark as Lost"
+                              >
+                                <TrendingDown className="w-3 h-3" />
+                                <span className="hidden sm:inline">Lost</span>
+                              </button>
+                            </div>
+                          )}
                         </>
                       )}
                       {profile?.role === 'admin' && (
@@ -409,6 +518,17 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
           </div>
         )}
       </div>
+
+      {/* Deal Outcome Modal */}
+      {dealOutcomeModal && (
+        <DealOutcomeModal
+          quotationId={dealOutcomeModal.quotationId}
+          quotationNumber={dealOutcomeModal.quotationNumber}
+          outcome={dealOutcomeModal.outcome}
+          onClose={() => setDealOutcomeModal(null)}
+          onSuccess={handleDealOutcomeSuccess}
+        />
+      )}
     </div>
   );
 }
