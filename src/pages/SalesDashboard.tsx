@@ -106,8 +106,14 @@ export default function SalesDashboard() {
         )
       `)
       .eq('sales_rep_id', profile.id)
-      .gte('created_at', startDate.toISOString())
       .order('created_at', { ascending: false });
+
+    // Separate query for monthly chart data (with date filter)
+    const { data: monthlyQuotations } = await supabase
+      .from('quotations')
+      .select('total, created_at, status')
+      .eq('sales_rep_id', profile.id)
+      .gte('created_at', startDate.toISOString());
 
     const { count: totalCount } = await supabase
       .from('quotations')
