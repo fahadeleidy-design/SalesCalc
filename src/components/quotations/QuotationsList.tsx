@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Eye, Edit2, Send, CheckCircle, XCircle, Clock, Search, Trash2, Copy } from 'lucide-react';
+import { FileText, Eye, CreditCard as Edit2, Send, CircleCheck as CheckCircle, Circle as XCircle, Clock, Search, Trash2, Copy } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
