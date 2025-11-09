@@ -434,8 +434,13 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                 Tax Rate (%)
+                {(profile?.role === 'sales' || profile?.role === 'manager') && (
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                    Fixed
+                  </span>
+                )}
               </label>
               <input
                 type="number"
@@ -443,8 +448,19 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 onChange={(e) =>
                   setFormData({ ...formData, tax_percentage: parseFloat(e.target.value) })
                 }
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                readOnly={profile?.role === 'sales' || profile?.role === 'manager'}
+                disabled={profile?.role === 'sales' || profile?.role === 'manager'}
+                className={`w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
+                  profile?.role === 'sales' || profile?.role === 'manager'
+                    ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+                    : ''
+                }`}
               />
+              {(profile?.role === 'sales' || profile?.role === 'manager') && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Tax rate is managed by admin. Contact admin to change.
+                </p>
+              )}
             </div>
           </div>
 
@@ -652,8 +668,11 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                 Terms & Conditions
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                  Editable
+                </span>
               </label>
               <textarea
                 value={formData.terms_and_conditions}
@@ -662,8 +681,11 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 }
                 rows={3}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Payment terms, delivery, etc."
+                placeholder="Default terms loaded. You can modify as needed."
               />
+              <p className="text-xs text-slate-500 mt-1">
+                Default terms are pre-filled. Customize for this specific quotation if needed.
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
