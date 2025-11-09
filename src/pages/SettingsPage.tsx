@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Save, X, Plus, Trash2, Upload, Building2, FileText } from 'lucide-react';
+import { Edit2, Save, X, Plus, Trash2, Upload, Building2, FileText, Palette } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatCurrencyCompact } from '../lib/currencyUtils';
+import BrandingSettings from '../components/admin/BrandingSettings';
 
 interface DiscountRule {
   id: string;
@@ -28,6 +29,7 @@ interface SystemSettings {
 }
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<'branding' | 'discount' | 'commission'>('branding');
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
   const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
@@ -190,142 +192,56 @@ export default function SettingsPage() {
         <p className="text-slate-600 mt-1">Configure system parameters and preferences</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-orange-500" />
-            <h3 className="font-semibold text-slate-900">Company Branding & Terms</h3>
-          </div>
-          {!editingBranding ? (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div className="border-b border-slate-200">
+          <nav className="flex gap-2 px-6" aria-label="Tabs">
             <button
-              onClick={() => setEditingBranding(true)}
-              className="flex items-center gap-2 text-orange-500 hover:bg-orange-50 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              onClick={() => setActiveTab('branding')}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'branding'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+              }`}
             >
-              <Edit2 className="w-4 h-4" />
-              Edit
+              <Palette className="w-4 h-4" />
+              Branding & Terms
             </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={updateSystemSettings}
-                disabled={saving}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => {
-                  setEditingBranding(false);
-                  loadSettings();
-                }}
-                className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                <X className="w-4 h-4" />
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Company Name
-            </label>
-            {editingBranding ? (
-              <input
-                type="text"
-                value={systemSettings?.company_name || ''}
-                onChange={(e) =>
-                  setSystemSettings(
-                    systemSettings ? { ...systemSettings, company_name: e.target.value } : null
-                  )
-                }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                placeholder="Your Company Name"
-              />
-            ) : (
-              <p className="text-slate-900">{systemSettings?.company_name}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Company Logo URL
-            </label>
-            {editingBranding ? (
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={systemSettings?.company_logo_url || ''}
-                  onChange={(e) =>
-                    setSystemSettings(
-                      systemSettings
-                        ? { ...systemSettings, company_logo_url: e.target.value }
-                        : null
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                  placeholder="https://example.com/logo.png"
-                />
-                <p className="text-xs text-slate-500">
-                  Enter a public URL to your company logo (recommended size: 200x80px)
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                {systemSettings?.company_logo_url ? (
-                  <img
-                    src={systemSettings.company_logo_url}
-                    alt="Company Logo"
-                    className="h-12 object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <p className="text-slate-500 text-sm">No logo set</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+            <button
+              onClick={() => setActiveTab('discount')}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'discount'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
               <FileText className="w-4 h-4" />
-              Default Terms & Conditions
-            </label>
-            {editingBranding ? (
-              <textarea
-                value={systemSettings?.default_terms_and_conditions || ''}
-                onChange={(e) =>
-                  setSystemSettings(
-                    systemSettings
-                      ? { ...systemSettings, default_terms_and_conditions: e.target.value }
-                      : null
-                  )
-                }
-                rows={10}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono"
-                placeholder="Enter default terms and conditions..."
-              />
-            ) : (
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                <pre className="text-sm text-slate-700 whitespace-pre-wrap font-sans">
-                  {systemSettings?.default_terms_and_conditions}
-                </pre>
-              </div>
-            )}
-          </div>
+              Discount Matrix
+            </button>
+            <button
+              onClick={() => setActiveTab('commission')}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'commission'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              Commission Tiers
+            </button>
+          </nav>
         </div>
-      </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-900">Discount Approval Matrix</h3>
-          <p className="text-sm text-slate-600">Click values to edit</p>
-        </div>
+        <div className="p-6">
+          {activeTab === 'branding' && <BrandingSettings />}
+
+          {activeTab === 'discount' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-orange-500" />
+                  <h3 className="font-semibold text-slate-900">Discount Matrix</h3>
+                </div>
+              </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -425,16 +341,18 @@ export default function SettingsPage() {
             </tbody>
           </table>
         </div>
-      </div>
+            </div>
+          )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="font-semibold text-slate-900">Commission Tiers</h3>
-            <p className="text-sm text-slate-600 mt-1">
-              Configure commission rates based on deal value
-            </p>
-          </div>
+          {activeTab === 'commission' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold text-slate-900">Commission Tiers</h3>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Configure commission rates based on deal value
+                  </p>
+                </div>
           {!showCommissionForm && (
             <button
               onClick={() => setShowCommissionForm(true)}
@@ -607,6 +525,9 @@ export default function SettingsPage() {
             </table>
           </div>
         )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
