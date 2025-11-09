@@ -179,6 +179,11 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
         className: 'bg-teal-100 text-teal-700',
         icon: <CheckCircle className="w-3 h-3" />,
       },
+      pending_pricing: {
+        label: 'Pending Pricing',
+        className: 'bg-blue-100 text-blue-700',
+        icon: <Clock className="w-3 h-3" />,
+      },
     };
 
     const config = statusConfig[status] || statusConfig.draft;

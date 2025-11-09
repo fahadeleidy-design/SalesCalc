@@ -10,6 +10,7 @@ export type UserRole = 'sales' | 'engineering' | 'manager' | 'ceo' | 'finance' |
 
 export type QuotationStatus =
   | 'draft'
+  | 'pending_pricing'
   | 'pending_manager'
   | 'pending_ceo'
   | 'approved'
@@ -206,6 +207,8 @@ export interface Database {
           approved_at: string | null;
           finance_approved_at: string | null;
           deal_won_at: string | null;
+          pricing_submitted_at: string | null;
+          pricing_completed_at: string | null;
           created_at: string;
           updated_at: string;
           quotation_items?: {
@@ -671,6 +674,26 @@ export interface Database {
           file_size?: number;
           file_type?: string;
           uploaded_by?: string;
+          created_at?: string;
+        };
+      };
+      audit_logs: {
+        Row: {
+          id: string;
+          quotation_id: string;
+          event_type: string;
+          event_description: string;
+          performed_by: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          quotation_id: string;
+          event_type: string;
+          event_description: string;
+          performed_by?: string | null;
+          metadata?: Json;
           created_at?: string;
         };
       };
