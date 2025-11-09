@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Eye, Edit2, Send, CheckCircle, XCircle, Clock, Search, Trash2 } from 'lucide-react';
+import { FileText, Eye, Edit2, Send, CheckCircle, XCircle, Clock, Search, Trash2, Copy } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
@@ -14,10 +14,11 @@ type Quotation = Database['public']['Tables']['quotations']['Row'] & {
 interface QuotationsListProps {
   onEdit: (id: string) => void;
   onView: (id: string) => void;
+  onDuplicate?: (id: string) => void;
   refreshTrigger?: number;
 }
 
-export default function QuotationsList({ onEdit, onView, refreshTrigger }: QuotationsListProps) {
+export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTrigger }: QuotationsListProps) {
   const { profile } = useAuth();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -344,6 +345,19 @@ export default function QuotationsList({ onEdit, onView, refreshTrigger }: Quota
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
+                            {onDuplicate && (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  onDuplicate(quotation.id);
+                                }}
+                                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
+                                title="Duplicate"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={(e) => {

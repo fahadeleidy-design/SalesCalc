@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import QuotationForm from '../components/quotations/QuotationForm';
 import QuotationsList from '../components/quotations/QuotationsList';
 import QuotationViewModal from '../components/quotations/QuotationViewModal';
+import QuickActions from '../components/quotations/QuickActions';
+import toast from 'react-hot-toast';
 
 export default function QuotationsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
   const [viewingId, setViewingId] = useState<string | undefined>();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showQuickActions, setShowQuickActions] = useState(true);
 
   const handleNew = () => {
     setEditingId(undefined);
@@ -39,6 +43,43 @@ export default function QuotationsPage() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  const handleDuplicate = async (quotationId: string) => {
+    try {
+      const loadingToast = toast.loading('Duplicating quotation...');
+
+      const { data, error } = await supabase.rpc('duplicate_quotation', {
+        p_quotation_id: quotationId
+      });
+
+      toast.dismiss(loadingToast);
+
+      if (error) throw error;
+
+      toast.success('Quotation duplicated successfully!');
+      setEditingId(data as string);
+      setShowForm(true);
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (error: any) {
+      console.error('Error duplicating quotation:', error);
+      toast.error('Failed to duplicate: ' + error.message);
+    }
+  };
+
+  const handleQuickQuote = (customerId: string, products: any[]) => {
+    // For now, just open the form
+    // Future: pre-fill with customer and products
+    setEditingId(undefined);
+    setShowForm(true);
+  };
+
+  const handleUseTemplate = async (templateId: string) => {
+    // For now, just open the form
+    // Future: load template data
+    setEditingId(undefined);
+    setShowForm(true);
+    toast.success('Template loaded - customize and save');
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
@@ -57,7 +98,28 @@ export default function QuotationsPage() {
         </div>
       </div>
 
-      <QuotationsList onEdit={handleEdit} onView={handleView} refreshTrigger={refreshTrigger} />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Quick Actions Sidebar */}
+        {showQuickActions && (
+          <div className="lg:col-span-1">
+            <QuickActions
+              onQuickQuote={handleQuickQuote}
+              onDuplicate={handleDuplicate}
+              onUseTemplate={handleUseTemplate}
+            />
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className={showQuickActions ? 'lg:col-span-3' : 'lg:col-span-4'}>
+          <QuotationsList
+            onEdit={handleEdit}
+            onView={handleView}
+            onDuplicate={handleDuplicate}
+            refreshTrigger={refreshTrigger}
+          />
+        </div>
+      </div>
 
       {showForm && (
         <QuotationForm quotationId={editingId} onClose={handleClose} onSave={handleSave} />

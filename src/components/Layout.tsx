@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
+import KeyboardShortcutsHelper from './KeyboardShortcutsHelper';
 
 interface LayoutProps {
   children: ReactNode;
@@ -211,6 +212,9 @@ export default function Layout({ children }: LayoutProps) {
 
         <main className="p-6">{children}</main>
       </div>
+
+      {/* Keyboard Shortcuts Helper */}
+      <KeyboardShortcutsHelper />
     </div>
   );
 }
