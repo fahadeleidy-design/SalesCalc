@@ -527,7 +527,7 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                           )}
 
                           {/* Submit to Customer - Show only when fully approved and not yet submitted */}
-                          {quotation.status === 'approved' &&
+                          {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
                            !quotation.submitted_to_customer_at && (
                             <button
                               onClick={(e) => {
@@ -543,8 +543,8 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                             </button>
                           )}
 
-                          {/* Deal Outcome Buttons - Show when approved and not yet decided */}
-                          {['approved', 'finance_approved'].includes(quotation.status) &&
+                          {/* Deal Outcome Buttons - Show when approved (even after submitted to customer) but not yet decided */}
+                          {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
                            !['deal_won', 'deal_lost'].includes(quotation.status) && (
                             <div className="flex items-center gap-1">
                               <button
