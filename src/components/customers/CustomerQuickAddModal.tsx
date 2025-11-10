@@ -18,6 +18,8 @@ export default function CustomerQuickAddModal({
     email: '',
     phone: '',
     address: '',
+    customer_type: '',
+    sector: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,6 +40,8 @@ export default function CustomerQuickAddModal({
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
+          customer_type: formData.customer_type || null,
+          sector: formData.sector || null,
         })
         .select()
         .single();
@@ -128,6 +132,43 @@ export default function CustomerQuickAddModal({
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               placeholder="+966 50 123 4567"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Customer Type
+            </label>
+            <select
+              value={formData.customer_type}
+              onChange={(e) => setFormData({ ...formData, customer_type: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+            >
+              <option value="">Select Type</option>
+              <option value="direct_sales">Direct Sales</option>
+              <option value="partner">Partner</option>
+              <option value="distributor">Distributor</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Sector
+            </label>
+            <select
+              value={formData.sector}
+              onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+            >
+              <option value="">Select Sector</option>
+              <option value="government">Government</option>
+              <option value="financial">Financial</option>
+              <option value="telecommunications">Telecommunications</option>
+              <option value="corporate_private">Corporate & Private</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="education">Education</option>
+              <option value="hospitality">Hospitality</option>
+              <option value="startups_tech">Startups & Tech</option>
+            </select>
           </div>
 
           <div>
