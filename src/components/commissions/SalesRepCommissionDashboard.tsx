@@ -6,13 +6,25 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export function SalesRepCommissionDashboard() {
   const { user } = useAuth();
+  const [viewMode, setViewMode] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [selectedPeriod, setSelectedPeriod] = useState<{
     start: string;
     end: string;
   } | null>(null);
 
   // Get all approved targets for this sales rep
-  const { data: targets, isLoading: targetsLoading } = useMyTargets(user?.id || '');
+  const { data: allTargets, isLoading: targetsLoading } = useMyTargets(user?.id || '');
+
+  // Filter targets by view mode
+  const targets = useMemo(() => {
+    if (!allTargets) return [];
+    return allTargets.filter(target => {
+      if (viewMode === 'monthly') return target.period_type === 'monthly';
+      if (viewMode === 'quarterly') return target.period_type === 'quarterly';
+      if (viewMode === 'yearly') return target.period_type === 'yearly' || target.period_type === 'half_yearly';
+      return false;
+    });
+  }, [allTargets, viewMode]);
 
   // Set the first target as default if available
   const defaultTarget = targets?.[0];
@@ -55,7 +67,13 @@ export function SalesRepCommissionDashboard() {
     );
   }
 
-  if (!targets || targets.length === 0) {
+  const getViewLabel = () => {
+    if (viewMode === 'monthly') return 'Monthly';
+    if (viewMode === 'quarterly') return 'Quarterly';
+    return 'Annual';
+  };
+
+  if (!allTargets || allTargets.length === 0) {
     return (
       <div className="text-center py-12">
         <Target className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -63,6 +81,73 @@ export function SalesRepCommissionDashboard() {
         <p className="text-gray-600">
           Your manager hasn't set any targets for you yet. Check back later!
         </p>
+      </div>
+    );
+  }
+
+  if (!targets || targets.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Award className="h-6 w-6 text-orange-600" />
+            <h2 className="text-2xl font-bold text-gray-900">My Commission</h2>
+          </div>
+        </div>
+
+        {/* View Mode Tabs */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setViewMode('monthly')}
+              className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                viewMode === 'monthly'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>Monthly</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setViewMode('quarterly')}
+              className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                viewMode === 'quarterly'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>Quarterly</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setViewMode('yearly')}
+              className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                viewMode === 'yearly'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Calendar className="w-4 h-4" />
+                <span>Annual</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
+          <Target className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No {getViewLabel()} Targets Set</h3>
+          <p className="text-gray-600">
+            Your manager hasn't set any {getViewLabel().toLowerCase()} targets for you yet. Try switching to a different view.
+          </p>
+        </div>
       </div>
     );
   }
@@ -88,10 +173,13 @@ export function SalesRepCommissionDashboard() {
               if (e.target.value) {
                 const [start, end] = e.target.value.split('_');
                 setSelectedPeriod({ start, end });
+              } else {
+                setSelectedPeriod(null);
               }
             }}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
           >
+            <option value="">Latest Period</option>
             {targets.map((target) => (
               <option
                 key={target.id}
@@ -103,6 +191,60 @@ export function SalesRepCommissionDashboard() {
             ))}
           </select>
         )}
+      </div>
+
+      {/* View Mode Tabs */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              setViewMode('monthly');
+              setSelectedPeriod(null);
+            }}
+            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+              viewMode === 'monthly'
+                ? 'bg-orange-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span>Monthly</span>
+            </div>
+          </button>
+          <button
+            onClick={() => {
+              setViewMode('quarterly');
+              setSelectedPeriod(null);
+            }}
+            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+              viewMode === 'quarterly'
+                ? 'bg-orange-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span>Quarterly</span>
+            </div>
+          </button>
+          <button
+            onClick={() => {
+              setViewMode('yearly');
+              setSelectedPeriod(null);
+            }}
+            className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+              viewMode === 'yearly'
+                ? 'bg-orange-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span>Annual</span>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
