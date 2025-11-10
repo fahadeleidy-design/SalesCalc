@@ -477,8 +477,8 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                             </button>
                           )}
 
-                          {/* Deal Outcome Buttons - Show when submitted to customer and not yet decided */}
-                          {quotation.submitted_to_customer_at &&
+                          {/* Deal Outcome Buttons - Show when approved and not yet decided */}
+                          {['approved', 'finance_approved'].includes(quotation.status) &&
                            !['deal_won', 'deal_lost'].includes(quotation.status) && (
                             <div className="flex items-center gap-1">
                               <button

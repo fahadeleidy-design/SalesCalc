@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import {
   X, FileText, User, Calendar, DollarSign, Package, Download, Clock,
-  Building, Mail, Phone, MapPin, Tag, Percent, Hash, Check, AlertCircle
+  Building, Mail, Phone, MapPin, Tag, Percent, Hash, Check, AlertCircle,
+  TrendingUp, TrendingDown
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Database } from '../../lib/database.types';
 import { formatCurrency } from '../../lib/currencyUtils';
 import { generateQuotationPDF } from '../../lib/enhancedPdfExport';
+import { useAuth } from '../../contexts/AuthContext';
+import DealOutcomeModal from './DealOutcomeModal';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -34,9 +37,13 @@ interface QuotationViewModalProps {
 }
 
 export default function QuotationViewModal({ quotationId, onClose }: QuotationViewModalProps) {
+  const { profile } = useAuth();
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dealOutcomeModal, setDealOutcomeModal] = useState<{
+    outcome: 'won' | 'lost';
+  } | null>(null);
 
   useEffect(() => {
     loadQuotation();
@@ -262,6 +269,29 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
             </div>
             <div className="flex items-center gap-2">
               {getStatusBadge(quotation.status)}
+
+              {/* Won/Lost Buttons - Show for sales rep when quotation is approved */}
+              {profile?.role === 'sales' &&
+               ['approved', 'finance_approved'].includes(quotation.status) &&
+               !['deal_won', 'deal_lost'].includes(quotation.status) && (
+                <>
+                  <button
+                    onClick={() => setDealOutcomeModal({ outcome: 'won' })}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Won</span>
+                  </button>
+                  <button
+                    onClick={() => setDealOutcomeModal({ outcome: 'lost' })}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+                  >
+                    <TrendingDown className="w-4 h-4" />
+                    <span>Lost</span>
+                  </button>
+                </>
+              )}
+
               <button
                 onClick={handleExportPDF}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-orange-50 text-orange-600 rounded-lg font-medium transition-all hover:shadow-lg"
@@ -616,6 +646,20 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
           </button>
         </div>
       </div>
+
+      {/* Deal Outcome Modal */}
+      {dealOutcomeModal && quotation && (
+        <DealOutcomeModal
+          quotationId={quotation.id}
+          quotationNumber={quotation.quotation_number}
+          outcome={dealOutcomeModal.outcome}
+          onClose={() => setDealOutcomeModal(null)}
+          onSuccess={() => {
+            setDealOutcomeModal(null);
+            loadQuotation();
+          }}
+        />
+      )}
     </div>
   );
 }
