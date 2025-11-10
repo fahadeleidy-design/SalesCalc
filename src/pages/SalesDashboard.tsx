@@ -94,19 +94,15 @@ export default function SalesDashboard() {
 
     const { data: quotations, error: quotationsError } = await supabase
       .from('quotations')
-      .select(`
-        id,
-        quotation_number,
-        title,
-        status,
-        total,
-        created_at,
-        customer:customers (
-          company_name
-        )
-      `)
+      .select('*, customer:customers(company_name)')
       .eq('sales_rep_id', profile.id)
       .order('created_at', { ascending: false });
+
+    console.log('=== SalesDashboard Quotations Query ===');
+    console.log('Profile ID:', profile.id);
+    console.log('Quotations error:', quotationsError);
+    console.log('Quotations data:', quotations);
+    console.log('Quotations count:', quotations?.length || 0);
 
     if (quotationsError) {
       console.error('Error loading quotations:', quotationsError);
