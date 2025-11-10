@@ -617,10 +617,10 @@ const generateProfessionalQuotationHTML = (
                   }
                 </td>
                 <td class="text-center">${item.quantity}</td>
-                <td class="text-right">SAR ${formatNumber(item.price)}</td>
+                <td class="text-right">${item.unit_price != null && !isNaN(Number(item.unit_price)) ? `SAR ${formatNumber(item.unit_price)}` : '<span style="color: #2563eb; font-size: 11px; font-weight: 600;">Pending</span>'}</td>
                 <td class="text-center">${item.discount_percentage || 0}%</td>
-                <td class="text-right">SAR ${formatNumber(item.quantity * item.price)}</td>
-                <td class="text-right"><strong>SAR ${formatNumber(item.line_total)}</strong></td>
+                <td class="text-right">${item.unit_price != null ? `SAR ${formatNumber(item.quantity * item.unit_price)}` : '<span style="color: #2563eb; font-size: 11px;">Pending</span>'}</td>
+                <td class="text-right"><strong>${item.line_total != null && !isNaN(Number(item.line_total)) ? `SAR ${formatNumber(item.line_total)}` : '<span style="color: #2563eb; font-size: 11px;">Awaiting Price</span>'}</strong></td>
               </tr>
             `
               )

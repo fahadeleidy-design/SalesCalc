@@ -231,10 +231,18 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
     );
   }
 
-  const subtotal = quotation.quotation_items.reduce((sum, item) => sum + item.line_total, 0);
-  const discountAmount = (subtotal * quotation.discount_percentage) / 100;
+  // Calculate totals with defensive checks for NaN values
+  const subtotal = quotation.quotation_items.reduce((sum, item) => {
+    const lineTotal = Number(item.line_total) || 0;
+    return sum + lineTotal;
+  }, 0);
+
+  const discountPercentage = Number(quotation.discount_percentage) || 0;
+  const taxPercentage = Number(quotation.tax_percentage) || 0;
+
+  const discountAmount = (subtotal * discountPercentage) / 100;
   const afterDiscount = subtotal - discountAmount;
-  const taxAmount = (afterDiscount * quotation.tax_percentage) / 100;
+  const taxAmount = (afterDiscount * taxPercentage) / 100;
   const total = afterDiscount + taxAmount;
 
   return (
@@ -478,20 +486,36 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
                           </span>
                         </td>
                         <td className="py-5 px-4 text-right font-medium text-slate-900">
-                          {formatCurrency(item.unit_price)}
+                          {item.unit_price != null && !isNaN(Number(item.unit_price)) ? (
+                            formatCurrency(Number(item.unit_price))
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">
+                              <Clock className="w-3 h-3" />
+                              Pending
+                            </span>
+                          )}
                         </td>
                         <td className="py-5 px-4 text-center">
-                          {item.discount_percentage > 0 ? (
+                          {(Number(item.discount_percentage) || 0) > 0 ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-md text-xs font-semibold border border-red-200">
                               <Percent className="w-3 h-3" />
-                              {item.discount_percentage}%
+                              {Number(item.discount_percentage) || 0}%
                             </span>
                           ) : (
                             <span className="text-slate-400 text-xs">—</span>
                           )}
                         </td>
                         <td className="py-5 px-6 text-right font-bold text-slate-900 text-lg">
-                          {formatCurrency(item.line_total)}
+                          {item.line_total != null && !isNaN(Number(item.line_total)) && Number(item.line_total) > 0 ? (
+                            formatCurrency(Number(item.line_total))
+                          ) : item.unit_price == null || isNaN(Number(item.unit_price)) ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">
+                              <Clock className="w-3 h-3" />
+                              Awaiting Price
+                            </span>
+                          ) : (
+                            formatCurrency(0)
+                          )}
                         </td>
                       </tr>
                     ))}
