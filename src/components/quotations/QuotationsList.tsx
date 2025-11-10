@@ -7,6 +7,7 @@ import { submitQuotationForApproval } from '../../lib/approvalLogic';
 import { formatCurrency } from '../../lib/currencyUtils';
 import DealOutcomeModal from './DealOutcomeModal';
 import toast from 'react-hot-toast';
+import { SkeletonTable } from '../ui/SkeletonLoader';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -327,11 +328,7 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-      </div>
-    );
+    return <SkeletonTable rows={5} />;
   }
 
   if (quotations.length === 0) {

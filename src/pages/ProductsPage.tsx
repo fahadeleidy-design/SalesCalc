@@ -5,6 +5,7 @@ import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
 import { useAuth } from '../contexts/AuthContext';
 import { validatePrice } from '../lib/validation';
+import { SkeletonTable } from '../components/ui/SkeletonLoader';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
@@ -318,8 +319,14 @@ export default function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Products</h1>
+            <p className="text-slate-600 mt-1">Manage your product catalog</p>
+          </div>
+        </div>
+        <SkeletonTable rows={8} />
       </div>
     );
   }

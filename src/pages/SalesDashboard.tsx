@@ -17,6 +17,7 @@ import {
 import { formatCurrencyCompact, formatCurrency } from '../lib/currencyUtils';
 import { useNavigation } from '../contexts/NavigationContext';
 import QuotationViewModal from '../components/quotations/QuotationViewModal';
+import { SkeletonDashboard } from '../components/ui/SkeletonLoader';
 import {
   LineChart,
   Line,
@@ -277,11 +278,7 @@ export default function SalesDashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   return (
