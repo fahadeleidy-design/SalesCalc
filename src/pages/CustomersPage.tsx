@@ -38,7 +38,11 @@ export default function CustomersPage() {
     try {
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(`
+          *,
+          creator:created_by(full_name),
+          sales_rep:assigned_sales_rep(full_name)
+        `)
         .order('company_name');
 
       if (error) {
@@ -75,7 +79,10 @@ export default function CustomersPage() {
         if (error) throw error;
         alert('Customer updated successfully');
       } else {
-        const { error } = await supabase.from('customers').insert([formData as any]);
+        const { error } = await supabase.from('customers').insert([{
+          ...formData,
+          created_by: profile?.id
+        } as any]);
 
         if (error) throw error;
         alert('Customer added successfully');
@@ -457,6 +464,19 @@ export default function CustomersPage() {
                     </span>
                   </div>
                 )}
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs text-slate-500">
+                  <span>
+                    Created by: <span className="font-medium text-slate-600">{(customer as any).creator?.full_name || 'Unknown'}</span>
+                  </span>
+                  {customer.created_at && (
+                    <span>
+                      {new Date(customer.created_at).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           ))}
