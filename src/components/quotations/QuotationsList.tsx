@@ -340,35 +340,38 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search quotations..."
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-          />
+      {/* Filters - Only show when showFilters is true */}
+      {showFilters && (
+        <div className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search quotations..."
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 min-w-[200px]"
+          >
+            <option value="all">All Status</option>
+            <option value="draft">Draft</option>
+            <option value="pending_pricing">Pending Pricing</option>
+            <option value="pending_manager">Pending Manager</option>
+            <option value="pending_ceo">Pending CEO</option>
+            <option value="approved">Approved</option>
+            <option value="pending_finance">Pending Finance</option>
+            <option value="finance_approved">Finance Approved</option>
+            <option value="changes_requested">Changes Requested</option>
+            <option value="rejected">Rejected</option>
+            <option value="deal_won">Deal Won</option>
+          </select>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-        >
-          <option value="all">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="pending_pricing">Pending Pricing</option>
-          <option value="pending_manager">Pending Manager</option>
-          <option value="pending_ceo">Pending CEO</option>
-          <option value="approved">Approved</option>
-          <option value="pending_finance">Pending Finance</option>
-          <option value="finance_approved">Finance Approved</option>
-          <option value="changes_requested">Changes Requested</option>
-          <option value="rejected">Rejected</option>
-          <option value="deal_won">Deal Won</option>
-        </select>
-      </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full">
@@ -551,12 +554,6 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
             })}
           </tbody>
         </table>
-
-        {filteredQuotations.length === 0 && (
-          <div className="py-12 text-center text-slate-500">
-            No quotations match your search criteria.
-          </div>
-        )}
       </div>
 
       {/* Deal Outcome Modal */}
