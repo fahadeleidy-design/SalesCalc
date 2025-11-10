@@ -15,15 +15,92 @@ export function SalesRepCommissionDashboard() {
   // Get all approved targets for this sales rep
   const { data: allTargets, isLoading: targetsLoading } = useMyTargets(user?.id || '');
 
-  // Filter targets by view mode
-  const targets = useMemo(() => {
-    if (!allTargets) return [];
-    return allTargets.filter(target => {
+  // Calculate derived targets based on view mode
+  const { targets, derivedFrom } = useMemo(() => {
+    if (!allTargets) return { targets: [], derivedFrom: null };
+
+    // First, try to find exact matches for the view mode
+    let exactMatches = allTargets.filter(target => {
       if (viewMode === 'monthly') return target.period_type === 'monthly';
       if (viewMode === 'quarterly') return target.period_type === 'quarterly';
       if (viewMode === 'yearly') return target.period_type === 'yearly' || target.period_type === 'half_yearly';
       return false;
     });
+
+    if (exactMatches.length > 0) {
+      return { targets: exactMatches, derivedFrom: null };
+    }
+
+    // If no exact matches, derive from available targets
+    if (viewMode === 'monthly') {
+      // Derive monthly from quarterly or yearly
+      const quarterly = allTargets.filter(t => t.period_type === 'quarterly');
+      const yearly = allTargets.filter(t => t.period_type === 'yearly' || t.period_type === 'half_yearly');
+
+      if (quarterly.length > 0) {
+        // Divide quarterly by 3 to get monthly
+        const derived = quarterly.map(target => ({
+          ...target,
+          target_amount: target.target_amount / 3,
+          derived: true
+        }));
+        return { targets: derived, derivedFrom: 'quarterly' };
+      } else if (yearly.length > 0) {
+        // Divide yearly by 12 to get monthly
+        const derived = yearly.map(target => ({
+          ...target,
+          target_amount: target.target_amount / 12,
+          derived: true
+        }));
+        return { targets: derived, derivedFrom: 'yearly' };
+      }
+    } else if (viewMode === 'quarterly') {
+      // Derive quarterly from monthly or yearly
+      const monthly = allTargets.filter(t => t.period_type === 'monthly');
+      const yearly = allTargets.filter(t => t.period_type === 'yearly' || t.period_type === 'half_yearly');
+
+      if (monthly.length > 0) {
+        // Multiply monthly by 3 to get quarterly
+        const derived = monthly.map(target => ({
+          ...target,
+          target_amount: target.target_amount * 3,
+          derived: true
+        }));
+        return { targets: derived, derivedFrom: 'monthly' };
+      } else if (yearly.length > 0) {
+        // Divide yearly by 4 to get quarterly
+        const derived = yearly.map(target => ({
+          ...target,
+          target_amount: target.target_amount / 4,
+          derived: true
+        }));
+        return { targets: derived, derivedFrom: 'yearly' };
+      }
+    } else if (viewMode === 'yearly') {
+      // Derive yearly from quarterly or monthly
+      const quarterly = allTargets.filter(t => t.period_type === 'quarterly');
+      const monthly = allTargets.filter(t => t.period_type === 'monthly');
+
+      if (quarterly.length > 0) {
+        // Multiply quarterly by 4 to get yearly
+        const derived = quarterly.map(target => ({
+          ...target,
+          target_amount: target.target_amount * 4,
+          derived: true
+        }));
+        return { targets: derived, derivedFrom: 'quarterly' };
+      } else if (monthly.length > 0) {
+        // Multiply monthly by 12 to get yearly
+        const derived = monthly.map(target => ({
+          ...target,
+          target_amount: target.target_amount * 12,
+          derived: true
+        }));
+        return { targets: derived, derivedFrom: 'monthly' };
+      }
+    }
+
+    return { targets: [], derivedFrom: null };
   }, [allTargets, viewMode]);
 
   // Set the first target as default if available
@@ -152,8 +229,39 @@ export function SalesRepCommissionDashboard() {
     );
   }
 
-  const tierInfo = commission
-    ? getCommissionTierInfo(commission.achievementPercentage)
+  // Recalculate achievement percentage and commission based on derived target
+  const recalculatedCommission = useMemo(() => {
+    if (!commission || !defaultTarget) return commission;
+
+    const derivedTargetAmount = defaultTarget.target_amount;
+    const achievedAmount = commission.achievedAmount;
+    const achievementPercentage = derivedTargetAmount > 0
+      ? (achievedAmount / derivedTargetAmount) * 100
+      : 0;
+
+    // Recalculate commission based on new achievement percentage
+    let commissionRate = 0;
+    if (achievementPercentage >= 100) {
+      commissionRate = 3.0; // Platinum
+    } else if (achievementPercentage >= 90) {
+      commissionRate = 2.0; // Gold
+    } else if (achievementPercentage >= 80) {
+      commissionRate = 1.5; // Silver
+    }
+
+    const commissionAmount = (achievedAmount * commissionRate) / 100;
+
+    return {
+      ...commission,
+      targetAmount: derivedTargetAmount,
+      achievementPercentage,
+      commissionRate,
+      commissionAmount,
+    };
+  }, [commission, defaultTarget]);
+
+  const tierInfo = recalculatedCommission
+    ? getCommissionTierInfo(recalculatedCommission.achievementPercentage)
     : { tier: 'N/A', rate: '0%', color: 'gray' };
 
   return (
@@ -247,6 +355,32 @@ export function SalesRepCommissionDashboard() {
         </div>
       </div>
 
+      {/* Derived Target Info Banner */}
+      {derivedFrom && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-1">Calculated Target</h3>
+              <p className="text-sm text-blue-700">
+                {viewMode === 'monthly' && derivedFrom === 'quarterly' &&
+                  'Monthly target calculated by dividing your quarterly target by 3.'}
+                {viewMode === 'monthly' && derivedFrom === 'yearly' &&
+                  'Monthly target calculated by dividing your annual target by 12.'}
+                {viewMode === 'quarterly' && derivedFrom === 'monthly' &&
+                  'Quarterly target calculated by multiplying your monthly target by 3.'}
+                {viewMode === 'quarterly' && derivedFrom === 'yearly' &&
+                  'Quarterly target calculated by dividing your annual target by 4.'}
+                {viewMode === 'yearly' && derivedFrom === 'quarterly' &&
+                  'Annual target calculated by multiplying your quarterly target by 4.'}
+                {viewMode === 'yearly' && derivedFrom === 'monthly' &&
+                  'Annual target calculated by multiplying your monthly target by 12.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Target Amount */}
@@ -256,8 +390,13 @@ export function SalesRepCommissionDashboard() {
             <Target className="h-5 w-5 text-blue-600" />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {commission ? formatCurrency(commission.targetAmount) : 'N/A'}
+            {defaultTarget ? formatCurrency(defaultTarget.target_amount) : 'N/A'}
           </p>
+          {derivedFrom && (
+            <p className="text-xs text-blue-600 mt-1">
+              Calculated from {derivedFrom} target
+            </p>
+          )}
         </div>
 
         {/* Achieved Amount */}
@@ -267,7 +406,7 @@ export function SalesRepCommissionDashboard() {
             <TrendingUp className="h-5 w-5 text-green-600" />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {commission ? formatCurrency(commission.achievedAmount) : 'N/A'}
+            {recalculatedCommission ? formatCurrency(recalculatedCommission.achievedAmount) : 'N/A'}
           </p>
         </div>
 
@@ -277,8 +416,8 @@ export function SalesRepCommissionDashboard() {
             <span className="text-sm font-medium text-gray-600">Achievement</span>
             <Percent className="h-5 w-5 text-purple-600" />
           </div>
-          <p className={`text-2xl font-bold ${commission ? getAchievementColor(commission.achievementPercentage) : ''}`}>
-            {commission ? `${commission.achievementPercentage.toFixed(1)}%` : 'N/A'}
+          <p className={`text-2xl font-bold ${recalculatedCommission ? getAchievementColor(recalculatedCommission.achievementPercentage) : ''}`}>
+            {recalculatedCommission ? `${recalculatedCommission.achievementPercentage.toFixed(1)}%` : 'N/A'}
           </p>
         </div>
 
@@ -289,10 +428,10 @@ export function SalesRepCommissionDashboard() {
             <DollarSign className="h-5 w-5" />
           </div>
           <p className="text-2xl font-bold">
-            {commission ? formatCurrency(commission.commissionAmount) : 'N/A'}
+            {recalculatedCommission ? formatCurrency(recalculatedCommission.commissionAmount) : 'N/A'}
           </p>
           <p className="text-xs mt-2 opacity-90">
-            @ {commission?.commissionRate.toFixed(2)}% rate
+            @ {recalculatedCommission?.commissionRate.toFixed(2)}% rate
           </p>
         </div>
       </div>
@@ -310,7 +449,7 @@ export function SalesRepCommissionDashboard() {
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
                 className={`bg-${tierInfo.color}-600 h-3 rounded-full transition-all duration-500`}
-                style={{ width: `${Math.min(commission?.achievementPercentage || 0, 100)}%` }}
+                style={{ width: `${Math.min(recalculatedCommission?.achievementPercentage || 0, 100)}%` }}
               ></div>
             </div>
           </div>
