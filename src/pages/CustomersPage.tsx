@@ -150,12 +150,12 @@ export default function CustomersPage() {
 
       const customersToImport: any[] = [];
 
-      // CSV format: Company Name, Contact Person, Email, Phone, Address, City, Country, Tax ID, Notes
+      // CSV format: Company Name, Contact Person, Email, Phone, Address, City, Country, Tax ID, Customer Type, Sector, Notes
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g)?.map(v => v.trim().replace(/^"|"$/g, ''));
         if (!values || values.length < 3) continue;
 
-        const [company_name, contact_person, email, phone, address, city, country, tax_id, notes] = values;
+        const [company_name, contact_person, email, phone, address, city, country, tax_id, customer_type, sector, notes] = values;
 
         if (!company_name || !contact_person || !email) continue;
 
@@ -168,6 +168,8 @@ export default function CustomersPage() {
           city: city || '',
           country: country || '',
           tax_id: tax_id || '',
+          customer_type: customer_type || null,
+          sector: sector || null,
           notes: notes || '',
         });
       }
@@ -229,6 +231,8 @@ export default function CustomersPage() {
       'City',
       'Country',
       'Tax ID',
+      'Customer Type',
+      'Sector',
       'Notes'
     ];
 
@@ -242,6 +246,8 @@ export default function CustomersPage() {
       customer.city || '',
       customer.country || '',
       customer.tax_id || '',
+      customer.customer_type || '',
+      customer.sector || '',
       customer.notes || ''
     ]);
 
@@ -355,10 +361,13 @@ export default function CustomersPage() {
                 Your CSV file should have the following columns in this exact order:
               </p>
               <code className="text-xs bg-white px-2 py-1 rounded border border-blue-200 text-blue-900 block">
-                Company Name, Contact Person, Email, Phone, Address, City, Country, Tax ID, Notes
+                Company Name, Contact Person, Email, Phone, Address, City, Country, Tax ID, Customer Type, Sector, Notes
               </code>
               <p className="text-xs text-blue-600 mt-2">
                 First row should be headers. Duplicate emails will update existing customers.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Customer Type: direct_sales, partner, distributor | Sector: government, financial, telecommunications, corporate_private, healthcare, education, hospitality, startups_tech
               </p>
             </div>
           </div>
