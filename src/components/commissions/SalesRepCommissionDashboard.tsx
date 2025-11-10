@@ -115,6 +115,7 @@ export function SalesRepCommissionDashboard() {
     periodEnd
   );
 
+  // Helper functions
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-SA', {
       style: 'currency',
@@ -135,6 +136,41 @@ export function SalesRepCommissionDashboard() {
     if (percentage >= 80) return { tier: 'Silver', rate: '1.5%', color: 'yellow' };
     return { tier: 'No Commission', rate: '0.0%', color: 'red' };
   };
+
+  // Recalculate achievement percentage and commission based on derived target
+  // MUST be called before any conditional returns (Rules of Hooks)
+  const recalculatedCommission = useMemo(() => {
+    if (!commission || !defaultTarget) return commission;
+
+    const derivedTargetAmount = defaultTarget.target_amount;
+    const achievedAmount = commission.achievedAmount;
+    const achievementPercentage = derivedTargetAmount > 0
+      ? (achievedAmount / derivedTargetAmount) * 100
+      : 0;
+
+    let commissionRate = 0;
+    if (achievementPercentage >= 100) {
+      commissionRate = 3.0;
+    } else if (achievementPercentage >= 90) {
+      commissionRate = 2.0;
+    } else if (achievementPercentage >= 80) {
+      commissionRate = 1.5;
+    }
+
+    const commissionAmount = (achievedAmount * commissionRate) / 100;
+
+    return {
+      ...commission,
+      targetAmount: derivedTargetAmount,
+      achievementPercentage,
+      commissionRate,
+      commissionAmount,
+    };
+  }, [commission, defaultTarget]);
+
+  const tierInfo = recalculatedCommission
+    ? getCommissionTierInfo(recalculatedCommission.achievementPercentage)
+    : { tier: 'N/A', rate: '0%', color: 'gray' };
 
   if (targetsLoading || commissionLoading) {
     return (
@@ -228,41 +264,6 @@ export function SalesRepCommissionDashboard() {
       </div>
     );
   }
-
-  // Recalculate achievement percentage and commission based on derived target
-  const recalculatedCommission = useMemo(() => {
-    if (!commission || !defaultTarget) return commission;
-
-    const derivedTargetAmount = defaultTarget.target_amount;
-    const achievedAmount = commission.achievedAmount;
-    const achievementPercentage = derivedTargetAmount > 0
-      ? (achievedAmount / derivedTargetAmount) * 100
-      : 0;
-
-    // Recalculate commission based on new achievement percentage
-    let commissionRate = 0;
-    if (achievementPercentage >= 100) {
-      commissionRate = 3.0; // Platinum
-    } else if (achievementPercentage >= 90) {
-      commissionRate = 2.0; // Gold
-    } else if (achievementPercentage >= 80) {
-      commissionRate = 1.5; // Silver
-    }
-
-    const commissionAmount = (achievedAmount * commissionRate) / 100;
-
-    return {
-      ...commission,
-      targetAmount: derivedTargetAmount,
-      achievementPercentage,
-      commissionRate,
-      commissionAmount,
-    };
-  }, [commission, defaultTarget]);
-
-  const tierInfo = recalculatedCommission
-    ? getCommissionTierInfo(recalculatedCommission.achievementPercentage)
-    : { tier: 'N/A', rate: '0%', color: 'gray' };
 
   return (
     <div className="space-y-6">
