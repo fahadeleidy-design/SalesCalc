@@ -330,6 +330,10 @@ export default function EngineeringDashboard() {
         <QuotationViewModal
           quotationId={viewingQuotationId}
           onClose={() => setViewingQuotationId(undefined)}
+          onDelete={() => {
+            setViewingQuotationId(undefined);
+            window.location.reload();
+          }}
         />
       )}
 

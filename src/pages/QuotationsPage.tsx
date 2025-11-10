@@ -81,6 +81,13 @@ export default function QuotationsPage() {
     setViewingId(undefined);
   };
 
+  const handleDeleteQuotation = () => {
+    // Refresh the list after deletion
+    setViewingId(undefined);
+    setRefreshTrigger((prev) => prev + 1);
+    refetchStats();
+  };
+
   const handleClose = () => {
     setShowForm(false);
     setEditingId(undefined);
@@ -331,6 +338,7 @@ export default function QuotationsPage() {
         <QuotationViewModal
           quotationId={viewingId}
           onClose={handleCloseView}
+          onDelete={handleDeleteQuotation}
         />
       )}
     </div>

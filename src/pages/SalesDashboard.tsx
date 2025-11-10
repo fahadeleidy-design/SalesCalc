@@ -494,7 +494,14 @@ export default function SalesDashboard() {
       </div>
 
       {viewingId && (
-        <QuotationViewModal quotationId={viewingId} onClose={() => setViewingId(undefined)} />
+        <QuotationViewModal
+          quotationId={viewingId}
+          onClose={() => setViewingId(undefined)}
+          onDelete={() => {
+            setViewingId(undefined);
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );

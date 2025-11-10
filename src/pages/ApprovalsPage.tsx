@@ -374,7 +374,14 @@ export default function ApprovalsPage() {
       )}
 
       {viewingId && (
-        <QuotationViewModal quotationId={viewingId} onClose={() => setViewingId(undefined)} />
+        <QuotationViewModal
+          quotationId={viewingId}
+          onClose={() => setViewingId(undefined)}
+          onDelete={() => {
+            setViewingId(undefined);
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );

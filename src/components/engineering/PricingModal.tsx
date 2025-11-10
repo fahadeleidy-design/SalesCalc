@@ -305,6 +305,10 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
         <QuotationViewModal
           quotationId={request.quotation_id}
           onClose={() => setShowQuotationView(false)}
+          onDelete={() => {
+            setShowQuotationView(false);
+            window.location.reload();
+          }}
         />
       )}
     </div>
