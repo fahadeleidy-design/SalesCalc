@@ -41,36 +41,60 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
   }, [profile, refreshTrigger]);
 
   const loadQuotations = async () => {
-    if (!profile) return;
+    if (!profile) {
+      console.log('⚠️ QuotationsList: No profile available');
+      return;
+    }
+
+    console.log('🔄 QuotationsList: Loading quotations...');
+    console.log('👤 Profile:', {
+      id: profile.id,
+      user_id: profile.user_id,
+      role: profile.role,
+      name: profile.full_name
+    });
 
     setLoading(true);
     try {
       let query = supabase
         .from('quotations')
         .select('*, customer:customers(*), sales_rep:profiles(*)')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false});
 
       // Filter based on role
       if (profile.role === 'sales') {
+        console.log('🔍 Filtering quotations for sales rep ID:', profile.id);
         query = query.eq('sales_rep_id', profile.id);
+      } else {
+        console.log('👔 Loading all quotations (non-sales role)');
       }
 
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error loading quotations:', error);
+        console.error('❌ Error loading quotations:', error);
+        toast.error('Failed to load quotations: ' + error.message);
         throw error;
       }
 
-      console.log('=== QuotationsList Debug ===');
-      console.log('Profile:', profile);
-      console.log('Query result:', data);
-      console.log('Loaded quotations:', data?.length || 0, 'records');
-      console.log('Raw data:', JSON.stringify(data, null, 2));
+      console.log('✅ Quotations loaded successfully:', data?.length || 0, 'records');
+      console.log('📊 Quotation data:', data);
+
+      if (data && data.length > 0) {
+        console.log('📝 First quotation sample:', {
+          id: data[0].id,
+          number: data[0].quotation_number,
+          customer: data[0].customer?.company_name,
+          sales_rep_id: data[0].sales_rep_id,
+          status: data[0].status
+        });
+      }
 
       setQuotations(data || []);
-    } catch (error) {
-      console.error('Error loading quotations:', error);
+    } catch (error: any) {
+      console.error('❌ Exception in loadQuotations:', error);
+      toast.error('Failed to load quotations');
+      setQuotations([]);
     } finally {
       setLoading(false);
     }
@@ -287,6 +311,16 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
 
     return matchesSearch && matchesStatus;
   });
+
+  // Debug filtering
+  if (quotations.length > 0 && filteredQuotations.length !== quotations.length) {
+    console.log('🔍 Filtering applied:', {
+      total: quotations.length,
+      filtered: filteredQuotations.length,
+      searchTerm,
+      statusFilter
+    });
+  }
 
   if (loading) {
     return (
