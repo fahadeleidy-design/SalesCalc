@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
+import { getLocalStorage, setLocalStorage } from '../lib/storage';
 
 /**
  * PWA Install Prompt Component
@@ -26,7 +27,7 @@ export function InstallPrompt() {
       setDeferredPrompt(e);
       
       // Check if user has dismissed the prompt before
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      const dismissed = getLocalStorage('pwa-install-dismissed');
       const dismissedTime = dismissed ? parseInt(dismissed) : 0;
       const daysSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
       
@@ -65,7 +66,7 @@ export function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    setLocalStorage('pwa-install-dismissed', Date.now().toString());
   };
 
   // Don't show if already installed

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Target, Calendar, DollarSign, Users } from 'lucide-react';
 import { useCreateSalesTarget, useCreateTeamTarget } from '../../hooks/useTargets';
 import { useAuth } from '../../contexts/AuthContext';
+import { validateTarget } from '../../lib/validation';
 
 interface SetTargetsFormProps {
   salesReps: Array<{ id: string; full_name: string; email: string }>;
@@ -209,7 +210,15 @@ export function SetTargetsForm({ salesReps, onClose }: SetTargetsFormProps) {
               <input
                 type="number"
                 value={targetAmount}
-                onChange={(e) => setTargetAmount(e.target.value)}
+                onChange={(e) => {
+                  const value = validateTarget(e.target.value);
+                  setTargetAmount(value.toString());
+                }}
+                onBlur={(e) => {
+                  if (!e.target.value || parseFloat(e.target.value) <= 0) {
+                    setTargetAmount('0');
+                  }
+                }}
                 required
                 min="0"
                 step="0.01"

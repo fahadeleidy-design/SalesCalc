@@ -6,6 +6,12 @@ import type { Database } from '../../lib/database.types';
 import CustomItemRequestModal, { type CustomItemData } from './CustomItemRequestModal';
 import CustomerQuickAddModal from '../customers/CustomerQuickAddModal';
 import { formatCurrency } from '../../lib/currencyUtils';
+import {
+  validatePrice,
+  validateQuantity,
+  validateDiscount,
+  validateTaxRate,
+} from '../../lib/validation';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
 type Product = Database['public']['Tables']['products']['Row'];
@@ -469,8 +475,11 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 type="number"
                 value={formData.tax_percentage}
                 onChange={(e) =>
-                  setFormData({ ...formData, tax_percentage: parseFloat(e.target.value) })
+                  setFormData({ ...formData, tax_percentage: validateTaxRate(e.target.value) })
                 }
+                min="0"
+                max="100"
+                step="0.1"
                 readOnly={profile?.role === 'sales' || profile?.role === 'manager'}
                 disabled={profile?.role === 'sales' || profile?.role === 'manager'}
                 className={`w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
@@ -554,11 +563,16 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             type="number"
                             value={item.quantity}
                             onChange={(e) =>
-                              updateItem(index, 'quantity', parseFloat(e.target.value))
+                              updateItem(index, 'quantity', validateQuantity(e.target.value))
                             }
                             min="0"
                             step="0.01"
                             className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
+                            onBlur={(e) => {
+                              if (!e.target.value || parseFloat(e.target.value) <= 0) {
+                                updateItem(index, 'quantity', 1);
+                              }
+                            }}
                           />
                         </div>
                         <div className="col-span-3 md:col-span-2">
@@ -567,7 +581,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             type="number"
                             value={item.unit_price}
                             onChange={(e) =>
-                              updateItem(index, 'unit_price', parseFloat(e.target.value))
+                              updateItem(index, 'unit_price', validatePrice(e.target.value))
                             }
                             min="0"
                             step="0.01"
@@ -581,7 +595,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             type="number"
                             value={item.discount_percentage}
                             onChange={(e) =>
-                              updateItem(index, 'discount_percentage', parseFloat(e.target.value))
+                              updateItem(index, 'discount_percentage', validateDiscount(e.target.value))
                             }
                             min="0"
                             max="100"

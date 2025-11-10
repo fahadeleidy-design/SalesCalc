@@ -7,6 +7,7 @@ import {
   useDeleteCommissionTier,
   CommissionTier,
 } from '../../hooks/useCommissionTiers';
+import { validatePercentage, validatePrice } from '../../lib/validation';
 
 export function CommissionTiersManager() {
   const { data: tiers, isLoading } = useCommissionTiers();
@@ -97,9 +98,11 @@ export function CommissionTiersManager() {
                       type="number"
                       value={editValues.min_achievement ?? tier.min_achievement}
                       onChange={(e) =>
-                        setEditValues({ ...editValues, min_achievement: parseFloat(e.target.value) })
+                        setEditValues({ ...editValues, min_achievement: validatePercentage(e.target.value) })
                       }
                       className="w-24 px-2 py-1 border border-gray-300 rounded"
+                      min="0"
+                      max="100"
                       step="0.01"
                     />
                   </td>
@@ -108,9 +111,11 @@ export function CommissionTiersManager() {
                       type="number"
                       value={editValues.max_achievement ?? tier.max_achievement}
                       onChange={(e) =>
-                        setEditValues({ ...editValues, max_achievement: parseFloat(e.target.value) })
+                        setEditValues({ ...editValues, max_achievement: validatePercentage(e.target.value) })
                       }
                       className="w-24 px-2 py-1 border border-gray-300 rounded"
+                      min="0"
+                      max="200"
                       step="0.01"
                     />
                   </td>
@@ -119,9 +124,11 @@ export function CommissionTiersManager() {
                       type="number"
                       value={editValues.commission_rate ?? tier.commission_rate}
                       onChange={(e) =>
-                        setEditValues({ ...editValues, commission_rate: parseFloat(e.target.value) })
+                        setEditValues({ ...editValues, commission_rate: validatePercentage(e.target.value) })
                       }
                       className="w-24 px-2 py-1 border border-gray-300 rounded"
+                      min="0"
+                      max="100"
                       step="0.01"
                     />
                   </td>

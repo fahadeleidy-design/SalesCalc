@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
 import { useAuth } from '../contexts/AuthContext';
+import { validatePrice } from '../lib/validation';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
@@ -658,7 +659,15 @@ export default function ProductsPage() {
                       step="0.01"
                       min="0"
                       value={formData.unit_price}
-                      onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
+                      onChange={(e) => {
+                        const value = validatePrice(e.target.value);
+                        setFormData({ ...formData, unit_price: value.toString() });
+                      }}
+                      onBlur={(e) => {
+                        if (!e.target.value || parseFloat(e.target.value) < 0) {
+                          setFormData({ ...formData, unit_price: '0' });
+                        }
+                      }}
                       className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       required
                     />
@@ -680,7 +689,15 @@ export default function ProductsPage() {
                         step="0.01"
                         min="0"
                         value={formData.cost_price}
-                        onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
+                        onChange={(e) => {
+                          const value = validatePrice(e.target.value);
+                          setFormData({ ...formData, cost_price: value.toString() });
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value && parseFloat(e.target.value) < 0) {
+                            setFormData({ ...formData, cost_price: '0' });
+                          }
+                        }}
                         placeholder="Enter supplier cost"
                         className="w-full pl-10 pr-4 py-2 border-2 border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-amber-50"
                       />
