@@ -287,7 +287,17 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, submittedToCustomerAt?: string | null) => {
+    // If quotation is submitted to customer, show that status instead
+    if (submittedToCustomerAt && (status === 'approved' || status === 'finance_approved')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border bg-blue-50 text-blue-700 border-blue-200">
+          <Mail className="w-3.5 h-3.5" />
+          Submitted to Customer
+        </span>
+      );
+    }
+
     const styles = {
       draft: 'bg-slate-100 text-slate-800 border-slate-300',
       pending_pricing: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -397,7 +407,7 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {getStatusBadge(quotation.status)}
+              {getStatusBadge(quotation.status, quotation.submitted_to_customer_at)}
 
               {/* Won/Lost Buttons - Show for sales rep when quotation is approved */}
               {profile?.role === 'sales' &&

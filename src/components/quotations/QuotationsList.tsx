@@ -232,7 +232,17 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
     loadQuotations();
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, submittedToCustomerAt?: string | null) => {
+    // If quotation is submitted to customer, show that status instead
+    if (submittedToCustomerAt && (status === 'approved' || status === 'finance_approved')) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+          <Mail className="w-3 h-3" />
+          Submitted to Customer
+        </span>
+      );
+    }
+
     const statusConfig: Record<
       string,
       { label: string; className: string; icon: React.ReactNode }
@@ -461,7 +471,7 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                       {formatCurrency(quotation.total)}
                     </span>
                   </td>
-                  <td className="py-3 px-4">{getStatusBadge(quotation.status)}</td>
+                  <td className="py-3 px-4">{getStatusBadge(quotation.status, quotation.submitted_to_customer_at)}</td>
                   <td className="py-3 px-4">
                     <span className="text-sm text-slate-600">
                       {new Date(quotation.created_at).toLocaleDateString()}
