@@ -18,6 +18,8 @@ import SettingsPage from './pages/SettingsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
+import { SkeletonDashboard } from './components/ui/SkeletonLoader';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
@@ -25,8 +27,14 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-500"></div>
+      <div className="min-h-screen bg-slate-50">
+        <div className="lg:pl-64 pt-16 lg:pt-0">
+          <div className="p-6">
+            <div className="animate-fade-in">
+              <SkeletonDashboard />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -103,11 +111,13 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <NavigationProvider>
-        <AppContent />
-      </NavigationProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <NavigationProvider>
+          <AppContent />
+        </NavigationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

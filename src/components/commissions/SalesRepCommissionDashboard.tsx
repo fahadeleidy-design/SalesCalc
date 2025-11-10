@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { TrendingUp, Target, DollarSign, Percent, Award, Calendar } from 'lucide-react';
+import { TrendingUp, Target, DollarSign, Percent, Award, Calendar, AlertCircle } from 'lucide-react';
 import { useSalesRepCommission } from '../../hooks/useCommissions';
 import { useMyTargets } from '../../hooks/useTargets';
 import { useAuth } from '../../contexts/AuthContext';

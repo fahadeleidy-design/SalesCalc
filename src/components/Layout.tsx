@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import {
@@ -16,10 +16,12 @@ import {
   DollarSign,
   BarChart3,
   Target,
+  ChevronDown,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
 import KeyboardShortcutsHelper from './KeyboardShortcutsHelper';
+import CommandPalette from './CommandPalette';
 
 interface LayoutProps {
   children: ReactNode;
@@ -105,6 +107,8 @@ export default function Layout({ children }: LayoutProps) {
   const { profile, signOut } = useAuth();
   const { currentPath, navigate } = useNavigation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const filteredNav = navigationItems.filter((item) =>
     profile?.role ? item.roles.includes(profile.role) : false
@@ -114,6 +118,26 @@ export default function Layout({ children }: LayoutProps) {
     navigate(path);
     setSidebarOpen(false);
   };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [sidebarOpen]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -215,6 +239,9 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Keyboard Shortcuts Helper */}
       <KeyboardShortcutsHelper />
+
+      {/* Command Palette */}
+      <CommandPalette />
     </div>
   );
 }
