@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Download, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
-import { exportQuotationToPDF } from '../lib/pdfExport';
-import { exportQuotationToPDFAdvanced } from '../lib/pdfExportAdvanced';
+import { exportProfessionalQuotationPDF } from '../lib/professionalPdfExport';
 import {
   exportQuotationsToExcel,
   exportQuotationDetailsToExcel,
@@ -25,16 +24,14 @@ interface ExportButtonProps {
 export function ExportButton({ type, data, label = 'Export', variant = 'primary' }: ExportButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleExport = (format: 'pdf' | 'excel' | 'pdf-advanced') => {
+  const handleExport = async (format: 'pdf' | 'excel') => {
     setIsOpen(false);
 
     try {
       switch (type) {
         case 'quotation':
           if (format === 'pdf') {
-            exportQuotationToPDF(data);
-          } else if (format === 'pdf-advanced') {
-            exportQuotationToPDFAdvanced(data);
+            await exportProfessionalQuotationPDF(data);
           } else {
             exportQuotationDetailsToExcel(data);
           }
@@ -105,26 +102,15 @@ export function ExportButton({ type, data, label = 'Export', variant = 'primary'
                 <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
                   <p className="text-xs font-semibold text-gray-600 uppercase">PDF Export</p>
                 </div>
-                
-                <button
-                  onClick={() => handleExport('pdf')}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                >
-                  <FileText className="w-5 h-5 text-red-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Basic PDF</p>
-                    <p className="text-xs text-gray-500">Print-friendly format</p>
-                  </div>
-                </button>
 
                 <button
-                  onClick={() => handleExport('pdf-advanced')}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-200"
+                  onClick={() => handleExport('pdf')}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-50 transition-colors text-left border-b border-gray-200"
                 >
-                  <FileText className="w-5 h-5 text-red-600" />
+                  <FileText className="w-5 h-5 text-orange-600" />
                   <div>
                     <p className="text-sm font-medium text-gray-900">Professional PDF</p>
-                    <p className="text-xs text-gray-500">With company branding</p>
+                    <p className="text-xs text-gray-500">With company logo & branding</p>
                   </div>
                 </button>
               </>

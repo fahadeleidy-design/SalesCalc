@@ -7,7 +7,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import type { Database } from '../../lib/database.types';
 import { formatCurrency } from '../../lib/currencyUtils';
-import { generateQuotationPDF } from '../../lib/enhancedPdfExport';
+import { exportProfessionalQuotationPDF } from '../../lib/professionalPdfExport';
 import { useAuth } from '../../contexts/AuthContext';
 import DealOutcomeModal from './DealOutcomeModal';
 
@@ -133,36 +133,25 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
     if (!quotation) return;
 
     try {
-      const { data: settings } = await supabase
-        .from('system_settings')
-        .select('company_name, company_logo_url')
-        .single();
-
-      await generateQuotationPDF(
-        {
-          quotation_number: quotation.quotation_number,
-          title: quotation.title,
-          created_at: quotation.created_at,
-          valid_until: quotation.valid_until,
-          status: quotation.status,
-          customer: quotation.customer,
-          sales_rep: quotation.sales_rep,
-          items: quotation.quotation_items,
-          subtotal: quotation.subtotal,
-          discount_percentage: quotation.discount_percentage,
-          discount_amount: quotation.discount_amount,
-          tax_percentage: quotation.tax_percentage,
-          tax_amount: quotation.tax_amount,
-          total: quotation.total,
-          notes: quotation.notes,
-          terms_and_conditions: quotation.terms_and_conditions,
-        },
-        settings?.company_name,
-        settings?.company_logo_url
-      );
+      await exportProfessionalQuotationPDF({
+        quotation_number: quotation.quotation_number,
+        customer: quotation.customer,
+        items: quotation.quotation_items,
+        subtotal: quotation.subtotal,
+        discount_percentage: quotation.discount_percentage,
+        discount_amount: quotation.discount_amount,
+        tax_percentage: quotation.tax_percentage,
+        tax_amount: quotation.tax_amount,
+        total: quotation.total,
+        notes: quotation.notes,
+        terms_and_conditions: quotation.terms_and_conditions,
+        created_at: quotation.created_at,
+        valid_until: quotation.valid_until,
+        status: quotation.status,
+      });
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      alert('Failed to export PDF');
+      alert('Failed to export PDF. Please try again.');
     }
   };
 
