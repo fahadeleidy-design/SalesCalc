@@ -4,6 +4,7 @@ import {
   Building, Mail, Phone, MapPin, Tag, Percent, Hash, Check, AlertCircle,
   TrendingUp, TrendingDown
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 import type { Database } from '../../lib/database.types';
 import { formatCurrency } from '../../lib/currencyUtils';
@@ -133,7 +134,7 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
     if (!quotation) return;
 
     try {
-      await exportProfessionalQuotationPDF({
+      const success = await exportProfessionalQuotationPDF({
         quotation_number: quotation.quotation_number,
         customer: quotation.customer,
         items: quotation.quotation_items,
@@ -149,9 +150,18 @@ export default function QuotationViewModal({ quotationId, onClose }: QuotationVi
         valid_until: quotation.valid_until,
         status: quotation.status,
       });
+
+      // Show success message if popup opened successfully
+      if (success) {
+        toast.success('PDF export opened in new window', {
+          icon: '📄',
+          duration: 3000,
+        });
+      }
+      // If success is false, the export function already showed popup blocked message
     } catch (error) {
       console.error('Error exporting PDF:', error);
-      alert('Failed to export PDF. Please try again.');
+      toast.error('Failed to export PDF. Please try again.');
     }
   };
 

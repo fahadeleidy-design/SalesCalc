@@ -1,18 +1,50 @@
 export const exportQuotationToPDF = (quotation: any) => {
   const htmlContent = generateQuotationHTML(quotation);
 
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    alert('Please allow popups to export PDF');
-    return;
+  // Try to open print window with specific dimensions
+  const printWindow = window.open('', '_blank', 'width=1200,height=800');
+
+  if (!printWindow || printWindow.closed || typeof printWindow.closed === 'undefined') {
+    // Popup was blocked - show detailed instructions
+    const message = `Popup Blocked!
+
+To export the PDF, please:
+
+1. Click the popup icon in your address bar (usually on the right)
+2. Select "Always allow popups from this site"
+3. Click the Export button again
+
+Browser-specific instructions:
+• Chrome: Click the popup icon ⓧ in the address bar
+• Firefox: Click "Preferences" then "Show pop-ups"
+• Safari: Safari > Preferences > Websites > Pop-up Windows
+• Edge: Click the popup icon in the address bar`;
+
+    alert(message);
+
+    // Log to console
+    console.warn('%c📄 PDF Export Blocked', 'color: #ea580c; font-size: 16px; font-weight: bold;');
+    console.log('%cPlease allow popups for this site to export PDFs.', 'font-size: 14px;');
+
+    return false;
   }
 
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
+  try {
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
 
-  setTimeout(() => {
-    printWindow.print();
-  }, 500);
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 500);
+
+    return true;
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('Failed to generate PDF. Please try again.');
+    if (printWindow) printWindow.close();
+    return false;
+  }
 };
 
 const generateQuotationHTML = (quotation: any): string => {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Download, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { exportProfessionalQuotationPDF } from '../lib/professionalPdfExport';
 import {
   exportQuotationsToExcel,
@@ -31,42 +32,49 @@ export function ExportButton({ type, data, label = 'Export', variant = 'primary'
       switch (type) {
         case 'quotation':
           if (format === 'pdf') {
-            await exportProfessionalQuotationPDF(data);
+            const success = await exportProfessionalQuotationPDF(data);
+            if (success) {
+              toast.success('PDF opened in new window', { icon: '📄' });
+            }
           } else {
             exportQuotationDetailsToExcel(data);
+            toast.success('Excel file downloaded', { icon: '📊' });
           }
           break;
 
         case 'quotations':
           if (format === 'pdf') {
-            // Export list to PDF (not implemented in basic version)
-            alert('PDF export for quotations list coming soon!');
+            toast.info('PDF export for quotations list coming soon!');
           } else {
             exportQuotationsToExcel(data);
+            toast.success('Excel file downloaded', { icon: '📊' });
           }
           break;
 
         case 'analytics':
           if (format === 'excel') {
             exportAnalyticsToExcel(data.quotations, data.dateRange);
+            toast.success('Analytics exported to Excel', { icon: '📊' });
           }
           break;
 
         case 'customers':
           if (format === 'excel') {
             exportCustomersToExcel(data);
+            toast.success('Customers exported to Excel', { icon: '📊' });
           }
           break;
 
         case 'products':
           if (format === 'excel') {
             exportProductsToExcel(data);
+            toast.success('Products exported to Excel', { icon: '📊' });
           }
           break;
       }
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      toast.error('Export failed. Please try again.');
     }
   };
 
