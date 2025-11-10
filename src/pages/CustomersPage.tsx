@@ -35,17 +35,26 @@ export default function CustomersPage() {
   }, []);
 
   const loadCustomers = async () => {
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('company_name');
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('company_name');
 
-    if (error) {
-      console.error('Error loading customers:', error);
-    } else {
-      setCustomers(data || []);
+      if (error) {
+        console.error('Error loading customers:', error);
+        toast.error(`Failed to load customers: ${error.message}`);
+        setCustomers([]);
+      } else {
+        setCustomers(data || []);
+      }
+    } catch (error: any) {
+      console.error('Exception loading customers:', error);
+      toast.error('Failed to load customers');
+      setCustomers([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
