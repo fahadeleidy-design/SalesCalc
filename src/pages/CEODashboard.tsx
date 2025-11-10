@@ -22,6 +22,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { formatCurrency, formatCurrencyCompact } from '../lib/currencyUtils';
 import CEOProfitDashboard from '../components/CEOProfitDashboard';
+import CustomerResponseTracking from '../components/CustomerResponseTracking';
+import QuotationViewModal from '../components/quotations/QuotationViewModal';
 
 interface DashboardMetrics {
   revenue: {
@@ -75,6 +77,7 @@ export default function CEODashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | 'ytd'>('30d');
+  const [viewingQuotationId, setViewingQuotationId] = useState<string>();
 
   useEffect(() => {
     if (profile?.role === 'ceo') {
@@ -645,6 +648,21 @@ export default function CEODashboard() {
 
       {/* Profit Dashboard */}
       <CEOProfitDashboard />
+
+      {/* Customer Response Tracking */}
+      <CustomerResponseTracking onViewQuotation={(id) => setViewingQuotationId(id)} />
+
+      {/* Quotation View Modal */}
+      {viewingQuotationId && (
+        <QuotationViewModal
+          quotationId={viewingQuotationId}
+          onClose={() => setViewingQuotationId(undefined)}
+          onDelete={() => {
+            setViewingQuotationId(undefined);
+            loadDashboardData();
+          }}
+        />
+      )}
     </div>
   );
 }

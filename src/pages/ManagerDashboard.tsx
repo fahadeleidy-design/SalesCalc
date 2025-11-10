@@ -4,6 +4,8 @@ import { CheckCircle, Clock, TrendingUp, Users, DollarSign, ArrowRight } from 'l
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrencyCompact } from '../lib/currencyUtils';
+import CustomerResponseTracking from '../components/CustomerResponseTracking';
+import QuotationViewModal from '../components/quotations/QuotationViewModal';
 
 interface TeamMember {
   id: string;
@@ -21,6 +23,7 @@ export default function ManagerDashboard() {
   const [teamPipeline, setTeamPipeline] = useState(0);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingQuotationId, setViewingQuotationId] = useState<string>();
 
   const fetchDashboardData = async () => {
     if (!profile) return;
@@ -251,6 +254,21 @@ export default function ManagerDashboard() {
           )}
         </div>
       </div>
+
+      {/* Customer Response Tracking */}
+      <CustomerResponseTracking onViewQuotation={(id) => setViewingQuotationId(id)} />
+
+      {/* Quotation View Modal */}
+      {viewingQuotationId && (
+        <QuotationViewModal
+          quotationId={viewingQuotationId}
+          onClose={() => setViewingQuotationId(undefined)}
+          onDelete={() => {
+            setViewingQuotationId(undefined);
+            fetchDashboardData();
+          }}
+        />
+      )}
     </div>
   );
 }
