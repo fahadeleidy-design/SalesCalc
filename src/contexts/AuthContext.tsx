@@ -101,8 +101,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) return { error };
+
+    // Check if user's account is approved
+    if (data.user) {
+      const profileData = await fetchProfile(data.user.id);
+
+      if (profileData && profileData.account_status === 'pending') {
+        await supabase.auth.signOut();
+        return {
+          error: new Error('Your account is pending admin approval. Please wait for an administrator to approve your account.')
+        };
+      }
+
+      if (profileData && profileData.account_status === 'rejected') {
+        await supabase.auth.signOut();
+        return {
+          error: new Error('Your account request was rejected. Please contact an administrator for more information.')
+        };
+      }
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
