@@ -279,9 +279,9 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
 
   const filteredQuotations = quotations.filter((q) => {
     const matchesSearch =
-      q.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.customer?.company_name.toLowerCase().includes(searchTerm.toLowerCase());
+      q.quotation_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      q.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      q.customer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || q.status === statusFilter;
 
@@ -298,16 +298,41 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
 
   if (quotations.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center animate-fade-in">
         <div className="max-w-md mx-auto">
-          <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <FileText className="w-8 h-8 text-slate-400" />
+          <div className="bg-orange-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-orange-500" />
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-2">No Quotations Yet</h3>
-          <p className="text-slate-600">
+          <p className="text-slate-600 mb-4">
             Get started by creating your first quotation. Add products, set prices, and send to
             customers.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (filteredQuotations.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center animate-fade-in">
+        <div className="max-w-md mx-auto">
+          <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="w-8 h-8 text-blue-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">No Results Found</h3>
+          <p className="text-slate-600 mb-4">
+            No quotations match your current filters. Try adjusting your search or filter criteria.
+          </p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setStatusFilter('all');
+            }}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            Clear Filters
+          </button>
         </div>
       </div>
     );
