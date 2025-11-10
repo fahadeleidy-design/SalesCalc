@@ -58,7 +58,11 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
     try {
       let query = supabase
         .from('quotations')
-        .select('*, customer:customers(*), sales_rep:profiles(*)')
+        .select(`
+          *,
+          customer:customers(*),
+          sales_rep:profiles!sales_rep_id(*)
+        `)
         .order('created_at', { ascending: false});
 
       // Filter based on role

@@ -57,7 +57,7 @@ export default function ReportsPage() {
     setLoading(true);
     try {
       const dateFilter = getDateFilter();
-      let query = supabase.from('quotations').select('*, sales_rep:profiles(full_name)');
+      let query = supabase.from('quotations').select('*, sales_rep:profiles!sales_rep_id(full_name)');
 
       if (dateFilter) {
         query = query.gte('created_at', dateFilter);

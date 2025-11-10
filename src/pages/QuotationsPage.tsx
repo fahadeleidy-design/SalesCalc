@@ -139,7 +139,7 @@ export default function QuotationsPage() {
 
       let query = supabase
         .from('quotations')
-        .select('*, customer:customers(company_name), sales_rep:profiles(full_name)');
+        .select('*, customer:customers(company_name), sales_rep:profiles!sales_rep_id(full_name)');
 
       if (profile?.role === 'sales') {
         query = query.eq('sales_rep_id', profile.id);

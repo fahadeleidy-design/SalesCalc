@@ -50,7 +50,7 @@ export default function ApprovalsPage() {
 
       const { data, error } = await supabase
         .from('quotations')
-        .select('*, customer:customers(*), sales_rep:profiles(*), quotation_items(*)')
+        .select('*, customer:customers(*), sales_rep:profiles!sales_rep_id(*), quotation_items(*)')
         .in('status', statusFilter)
         .order('submitted_at', { ascending: false });
 
