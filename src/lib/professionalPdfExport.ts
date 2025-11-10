@@ -353,11 +353,34 @@ const generateProfessionalQuotationHTML = (
           font-weight: 600;
           color: #0f172a;
           margin-bottom: 4px;
+          font-size: 14px;
         }
 
         .item-description {
           color: #64748b;
-          font-size: 13px;
+          font-size: 12px;
+          line-height: 1.5;
+          margin-top: 4px;
+        }
+
+        /* Custom sections styling */
+        .custom-section {
+          margin-top: 8px;
+          padding: 8px 10px;
+          border-radius: 6px;
+          border-left: 3px solid;
+        }
+
+        .section-label {
+          font-weight: 600;
+          font-size: 11px;
+          margin-bottom: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+
+        .section-content {
+          font-size: 12px;
           line-height: 1.5;
         }
 
@@ -605,16 +628,73 @@ const generateProfessionalQuotationHTML = (
           <tbody>
             ${(items || [])
               .map(
-                (item: any, index: number) => `
+                (item: any, index: number) => {
+                  // Determine if this is a custom item or has modifications
+                  const isCustomItem = item.is_custom === true;
+                  const hasModifications = item.modifications && item.modifications.trim().length > 0;
+                  const hasNotes = item.notes && item.notes.trim().length > 0;
+
+                  // Build description content
+                  let descriptionHTML = '';
+
+                  // Item name/title
+                  const itemTitle = isCustomItem
+                    ? (item.custom_description || 'Custom Item')
+                    : (item.product?.name || item.item_description || 'Product');
+
+                  descriptionHTML += `<div class="item-name">${itemTitle}</div>`;
+
+                  // Custom item badge
+                  if (isCustomItem) {
+                    descriptionHTML += `<div style="display: inline-block; background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-top: 4px; border: 1px solid #fcd34d;">⭐ CUSTOM ITEM</div>`;
+                  }
+
+                  // Product description (for standard products)
+                  if (!isCustomItem && item.product?.description) {
+                    descriptionHTML += `<div class="item-description">${item.product.description}</div>`;
+                  }
+
+                  // Modifications (for standard products with modifications)
+                  if (hasModifications) {
+                    descriptionHTML += `
+                      <div style="background: #fef3c7; padding: 8px 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid #f59e0b;">
+                        <div style="color: #92400e; font-weight: 600; font-size: 11px; margin-bottom: 4px;">🔧 MODIFICATIONS REQUESTED:</div>
+                        <div style="color: #78350f; font-size: 12px; line-height: 1.5;">${item.modifications.replace(/\n/g, '<br>')}</div>
+                      </div>
+                    `;
+                  }
+
+                  // Custom item specifications
+                  if (isCustomItem && item.specifications) {
+                    const specs = typeof item.specifications === 'string'
+                      ? item.specifications
+                      : JSON.stringify(item.specifications, null, 2);
+
+                    if (specs && specs !== '{}' && specs.trim().length > 0) {
+                      descriptionHTML += `
+                        <div style="background: #e0f2fe; padding: 8px 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid #0ea5e9;">
+                          <div style="color: #075985; font-weight: 600; font-size: 11px; margin-bottom: 4px;">📋 SPECIFICATIONS:</div>
+                          <div style="color: #0c4a6e; font-size: 12px; line-height: 1.5; white-space: pre-wrap;">${specs}</div>
+                        </div>
+                      `;
+                    }
+                  }
+
+                  // Item notes
+                  if (hasNotes) {
+                    descriptionHTML += `
+                      <div style="background: #f3f4f6; padding: 8px 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid #9ca3af;">
+                        <div style="color: #4b5563; font-weight: 600; font-size: 11px; margin-bottom: 4px;">📝 NOTES:</div>
+                        <div style="color: #374151; font-size: 12px; line-height: 1.5;">${item.notes.replace(/\n/g, '<br>')}</div>
+                      </div>
+                    `;
+                  }
+
+                  return `
               <tr>
                 <td class="text-center">${index + 1}</td>
                 <td>
-                  <div class="item-name">${item.product?.name || item.item_description || 'Custom Item'}</div>
-                  ${
-                    item.product?.description || item.specifications
-                      ? `<div class="item-description">${item.product?.description || (typeof item.specifications === 'string' ? item.specifications : JSON.stringify(item.specifications))}</div>`
-                      : ''
-                  }
+                  ${descriptionHTML}
                 </td>
                 <td class="text-center">${item.quantity}</td>
                 <td class="text-right">${item.unit_price != null && !isNaN(Number(item.unit_price)) ? `SAR ${formatNumber(item.unit_price)}` : '<span style="color: #2563eb; font-size: 11px; font-weight: 600;">Pending</span>'}</td>
@@ -622,7 +702,8 @@ const generateProfessionalQuotationHTML = (
                 <td class="text-right">${item.unit_price != null ? `SAR ${formatNumber(item.quantity * item.unit_price)}` : '<span style="color: #2563eb; font-size: 11px;">Pending</span>'}</td>
                 <td class="text-right"><strong>${item.line_total != null && !isNaN(Number(item.line_total)) ? `SAR ${formatNumber(item.line_total)}` : '<span style="color: #2563eb; font-size: 11px;">Awaiting Price</span>'}</strong></td>
               </tr>
-            `
+            `;
+                }
               )
               .join('')}
           </tbody>
