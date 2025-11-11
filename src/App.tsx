@@ -122,11 +122,13 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <NavigationProvider>
-          <AppContent />
-        </NavigationProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <NavigationProvider>
+            <AppContent />
+          </NavigationProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }
