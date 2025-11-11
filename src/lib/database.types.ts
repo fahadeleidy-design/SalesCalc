@@ -49,6 +49,7 @@ export interface Database {
           language: string;
           theme: string;
           notifications_enabled: boolean;
+          preferred_language: string;
           created_at: string;
           updated_at: string;
         };
@@ -65,6 +66,7 @@ export interface Database {
           language?: string;
           theme?: string;
           notifications_enabled?: boolean;
+          preferred_language?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -81,6 +83,7 @@ export interface Database {
           language?: string;
           theme?: string;
           notifications_enabled?: boolean;
+          preferred_language?: string;
           created_at?: string;
           updated_at?: string;
         };

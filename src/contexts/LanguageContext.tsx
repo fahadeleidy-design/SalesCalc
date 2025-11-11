@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { translations, Language, TranslationKeys } from '../locales';
+import { supabase } from '../lib/supabase';
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: TranslationKeys;
   isRTL: boolean;
+  loadUserLanguage: (userId: string) => Promise<void>;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -32,8 +34,40 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, [language, isRTL]);
 
-  const setLanguage = (lang: Language) => {
+  const loadUserLanguage = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data?.preferred_language) {
+        const userLang = data.preferred_language as Language;
+        if (userLang === 'en' || userLang === 'ar') {
+          setLanguageState(userLang);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user language preference:', error);
+    }
+  };
+
+  const setLanguage = async (lang: Language) => {
     setLanguageState(lang);
+
+    // Save to database if user is logged in
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ preferred_language: lang })
+          .eq('id', user.id);
+      }
+    } catch (error) {
+      console.error('Error saving language preference:', error);
+    }
   };
 
   const value = {
@@ -41,6 +75,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLanguage,
     t: translations[language],
     isRTL,
+    loadUserLanguage,
   };
 
   return (

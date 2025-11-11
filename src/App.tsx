@@ -1,5 +1,7 @@
+import React from 'react';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { useNavigation, NavigationProvider } from './contexts/NavigationContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 import SalesDashboard from './pages/SalesDashboard';
@@ -24,6 +26,14 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 function AppContent() {
   const { user, profile, loading } = useAuth();
   const { currentPath } = useNavigation();
+  const { loadUserLanguage } = useLanguage();
+
+  // Load user's preferred language when profile is available
+  React.useEffect(() => {
+    if (profile?.id) {
+      loadUserLanguage(profile.id);
+    }
+  }, [profile?.id, loadUserLanguage]);
 
   if (loading) {
     return (
