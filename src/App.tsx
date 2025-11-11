@@ -9,6 +9,7 @@ import EngineeringDashboard from './pages/EngineeringDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import CEODashboard from './pages/CEODashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import FinanceDashboard from './pages/FinanceDashboard';
 import QuotationsPage from './pages/QuotationsPage';
 import CustomItemsPage from './pages/CustomItemsPage';
 import ApprovalsPage from './pages/ApprovalsPage';
@@ -60,8 +61,9 @@ function AppContent() {
       case 'engineering':
         return <EngineeringDashboard />;
       case 'manager':
-      case 'finance':
         return <ManagerDashboard />;
+      case 'finance':
+        return <FinanceDashboard />;
       case 'ceo':
         return <CEODashboard />;
       case 'admin':
