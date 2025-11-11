@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { validatePrice } from '../lib/validation';
 import { SkeletonTable } from '../components/ui/SkeletonLoader';
 
@@ -11,6 +12,7 @@ type Product = Database['public']['Tables']['products']['Row'];
 
 export default function ProductsPage() {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -322,8 +324,8 @@ export default function ProductsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Products</h1>
-            <p className="text-slate-600 mt-1">Manage your product catalog</p>
+            <h1 className="text-2xl font-bold text-slate-900">{t.products.title}</h1>
+            <p className="text-slate-600 mt-1">{t.products.subtitle}</p>
           </div>
         </div>
         <SkeletonTable rows={8} />
@@ -335,8 +337,8 @@ export default function ProductsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Products</h1>
-          <p className="text-slate-600 mt-1">Manage your product catalog</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t.products.title}</h1>
+          <p className="text-slate-600 mt-1">{t.products.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-lg font-medium cursor-pointer transition-colors">
@@ -373,7 +375,7 @@ export default function ProductsPage() {
             className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Add Product
+            {t.products.addProduct}
           </button>
         </div>
       </div>

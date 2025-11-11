@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, Plus, Edit2, Trash2, Search, Mail, Phone, MapPin, Building, Upload, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import type { Database } from '../lib/database.types';
 import toast from 'react-hot-toast';
 
@@ -9,6 +10,7 @@ type Customer = Database['public']['Tables']['customers']['Row'];
 
 export default function CustomersPage() {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -305,8 +307,8 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Customers</h1>
-          <p className="text-slate-600 mt-1">Manage your customer database</p>
+          <h1 className="text-2xl font-bold text-slate-900">{t.customers.title}</h1>
+          <p className="text-slate-600 mt-1">{t.customers.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           {isAdmin && (
@@ -351,7 +353,7 @@ export default function CustomersPage() {
             className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Add Customer
+            {t.customers.addCustomer}
           </button>
         </div>
       </div>
@@ -496,7 +498,7 @@ export default function CustomersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Company Name *
+                    {t.customers.companyName} *
                   </label>
                   <input
                     type="text"
@@ -509,7 +511,7 @@ export default function CustomersPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Contact Person *
+                    {t.customers.contactPerson} *
                   </label>
                   <input
                     type="text"
@@ -629,7 +631,7 @@ export default function CustomersPage() {
                   type="submit"
                   className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
                 >
-                  {editingCustomer ? 'Update Customer' : 'Add Customer'}
+                  {editingCustomer ? t.common.edit + ' ' + t.customers.title.slice(0, -1) : t.customers.addCustomer}
                 </button>
               </div>
             </form>

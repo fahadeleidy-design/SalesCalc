@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import QuotationForm from '../components/quotations/QuotationForm';
 import QuotationsList from '../components/quotations/QuotationsList';
 import QuotationViewModal from '../components/quotations/QuotationViewModal';
@@ -23,6 +24,7 @@ import { formatCurrencyCompact } from '../lib/currencyUtils';
 
 export default function QuotationsPage() {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | undefined>();
   const [viewingId, setViewingId] = useState<string | undefined>();
@@ -197,9 +199,9 @@ export default function QuotationsPage() {
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                 <FileText className="w-7 h-7" />
-                Quotations
+                {t.quotations.title}
               </h1>
-              <p className="text-orange-50 mt-1">Manage sales quotations and proposals</p>
+              <p className="text-orange-50 mt-1">{t.quotations.subtitle}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Save, X, Plus, Trash2, Upload, Building2, FileText, Palette } from 'lucide-react';
+import { Edit2, Save, X, Plus, Trash2, Upload, Building2, FileText, Palette, Languages } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatCurrencyCompact } from '../lib/currencyUtils';
 import BrandingSettings from '../components/admin/BrandingSettings';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DiscountRule {
   id: string;
@@ -29,7 +30,8 @@ interface SystemSettings {
 }
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'branding' | 'discount' | 'commission'>('branding');
+  const { t, language, setLanguage } = useLanguage();
+  const [activeTab, setActiveTab] = useState<'branding' | 'discount' | 'commission' | 'language'>('branding');
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
   const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
@@ -228,11 +230,66 @@ export default function SettingsPage() {
               <Building2 className="w-4 h-4" />
               Commission Tiers
             </button>
+            <button
+              onClick={() => setActiveTab('language')}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'language'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              <Languages className="w-4 h-4" />
+              {t.settings.language}
+            </button>
           </nav>
         </div>
 
         <div className="p-6">
           {activeTab === 'branding' && <BrandingSettings />}
+
+          {activeTab === 'language' && (
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <Languages className="w-5 h-5 text-orange-500" />
+                <h3 className="font-semibold text-slate-900">{t.settings.selectLanguage}</h3>
+              </div>
+              <div className="space-y-4 max-w-md">
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setLanguage('en')}
+                    className={`p-4 border-2 rounded-lg transition-all ${
+                      language === 'en'
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">🇬🇧</div>
+                    <div className="font-medium">{t.settings.english}</div>
+                    <div className="text-xs text-slate-500 mt-1">English</div>
+                  </button>
+                  <button
+                    onClick={() => setLanguage('ar')}
+                    className={`p-4 border-2 rounded-lg transition-all ${
+                      language === 'ar'
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">🇸🇦</div>
+                    <div className="font-medium">{t.settings.arabic}</div>
+                    <div className="text-xs text-slate-500 mt-1">العربية</div>
+                  </button>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    {language === 'en'
+                      ? 'Your language preference is saved automatically and will be remembered across sessions.'
+                      : 'يتم حفظ تفضيل اللغة الخاص بك تلقائيًا وسيتم تذكره عبر الجلسات.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {activeTab === 'discount' && (
             <div>
