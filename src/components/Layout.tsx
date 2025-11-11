@@ -1,6 +1,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
   LayoutDashboard,
   FileText,
@@ -17,6 +18,7 @@ import {
   BarChart3,
   Target,
   ChevronDown,
+  Languages,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -106,6 +108,7 @@ const navigationItems: NavItem[] = [
 export default function Layout({ children }: LayoutProps) {
   const { profile, signOut } = useAuth();
   const { currentPath, navigate } = useNavigation();
+  const { language, setLanguage, t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -145,12 +148,24 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex items-center gap-3">
           <img src="/logo.svg" alt="Special Offices" className="h-8" />
         </div>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-        >
-          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+            title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
+          >
+            <Languages className="w-4 h-4 text-slate-600" />
+            <span className="text-xs font-medium text-slate-700">
+              {language === 'en' ? 'EN' : 'ع'}
+            </span>
+          </button>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       <aside
@@ -223,6 +238,16 @@ export default function Layout({ children }: LayoutProps) {
           </h2>
           <div className="flex items-center gap-4">
             <GlobalSearch />
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+              title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
+            >
+              <Languages className="w-5 h-5 text-slate-600" />
+              <span className="text-sm font-medium text-slate-700">
+                {language === 'en' ? 'EN' : 'العربية'}
+              </span>
+            </button>
             <button
               onClick={() => navigate('/notifications')}
               className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
