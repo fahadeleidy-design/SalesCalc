@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Save, X, Plus, Trash2, Upload, Building2, FileText, Palette, Languages } from 'lucide-react';
+import { Edit2, Save, X, Plus, Trash2, Upload, Building2, FileText, Palette, Languages, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatCurrencyCompact } from '../lib/currencyUtils';
 import BrandingSettings from '../components/admin/BrandingSettings';
 import { useLanguage } from '../contexts/LanguageContext';
+import toast from 'react-hot-toast';
 
 interface DiscountRule {
   id: string;
@@ -31,7 +32,7 @@ interface SystemSettings {
 
 export default function SettingsPage() {
   const { t, language, setLanguage } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'branding' | 'discount' | 'commission' | 'language'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'discount' | 'commission' | 'language' | 'security'>('branding');
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
   const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
@@ -46,6 +47,16 @@ export default function SettingsPage() {
     max_amount: null as number | null,
     commission_percentage: 0,
   });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -179,6 +190,49 @@ export default function SettingsPage() {
     return formatCurrencyCompact(value);
   };
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    setChangingPassword(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) {
+        if (error.message.includes('New password should be different')) {
+          toast.error('New password must be different from the current password');
+        } else {
+          toast.error(error.message || 'Failed to update password');
+        }
+        return;
+      }
+
+      toast.success('Password updated successfully!');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -241,6 +295,17 @@ export default function SettingsPage() {
               <Languages className="w-4 h-4" />
               {t.settings.language}
             </button>
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'security'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              <Lock className="w-4 h-4" />
+              Security
+            </button>
           </nav>
         </div>
 
@@ -288,6 +353,90 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <Lock className="w-5 h-5 text-orange-500" />
+                <h3 className="font-semibold text-slate-900">Change Password</h3>
+              </div>
+              <form onSubmit={handlePasswordChange} className="max-w-md space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Enter new password"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Confirm new password"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    {language === 'en'
+                      ? 'Password must be at least 6 characters long. You will remain logged in after changing your password.'
+                      : 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل. ستبقى مسجلاً للدخول بعد تغيير كلمة المرور.'}
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={changingPassword}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {changingPassword ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      {language === 'en' ? 'Updating...' : 'جاري التحديث...'}
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-5 h-5" />
+                      {language === 'en' ? 'Update Password' : 'تحديث كلمة المرور'}
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
           )}
 
