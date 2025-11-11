@@ -49,11 +49,9 @@ export default function SettingsPage() {
   });
 
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -221,7 +219,6 @@ export default function SettingsPage() {
 
       toast.success('Password updated successfully!');
       setPasswordData({
-        currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, Clock, TrendingUp, TrendingDown, Eye, Calendar, User, Building, DollarSign, AlertCircle } from 'lucide-react';
+import { Mail, Clock, TrendingUp, Eye, Calendar, User, Building, DollarSign, AlertCircle, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/currencyUtils';
 import { useAuth } from '../contexts/AuthContext';
