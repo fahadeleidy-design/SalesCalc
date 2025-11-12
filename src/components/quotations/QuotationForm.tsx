@@ -576,7 +576,19 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                           />
                         </div>
                         <div className="col-span-3 md:col-span-2">
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Unit Price</label>
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">
+                            Unit Price
+                            {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
+                              <span className="ml-1 text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                                Locked
+                              </span>
+                            )}
+                            {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
+                              <span className="ml-1 text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">
+                                Set by Engineering
+                              </span>
+                            )}
+                          </label>
                           <input
                             type="number"
                             value={item.unit_price}
@@ -585,9 +597,50 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             }
                             min="0"
                             step="0.01"
-                            className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                            disabled={item.is_custom && item.custom_item_status === 'pending'}
+                            className={`w-full px-2 py-1 border border-slate-300 rounded text-sm ${
+                              (
+                                // Disable for sales/manager on standard products
+                                ((profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom) ||
+                                // Disable for sales/manager on engineering-priced items
+                                ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
+                                // Disable for everyone on pending custom items
+                                (item.is_custom && item.custom_item_status === 'pending')
+                              )
+                                ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+                                : ''
+                            }`}
+                            disabled={
+                              // Disable for sales/manager on standard products
+                              ((profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom) ||
+                              // Disable for sales/manager on engineering-priced items
+                              ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
+                              // Disable for everyone on pending custom items
+                              (item.is_custom && item.custom_item_status === 'pending')
+                            }
+                            readOnly={
+                              ((profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom) ||
+                              ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced')
+                            }
+                            title={
+                              (profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom
+                                ? 'Product unit price is locked. Contact admin to change product pricing.'
+                                : item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager')
+                                ? 'This price was set by Engineering and cannot be changed. Contact Engineering for price adjustments.'
+                                : item.is_custom && item.custom_item_status === 'pending'
+                                ? 'Waiting for Engineering to set the price'
+                                : ''
+                            }
                           />
+                          {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              Product price is locked
+                            </p>
+                          )}
+                          {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
+                            <p className="text-xs text-blue-600 mt-0.5">
+                              Contact Engineering to change
+                            </p>
+                          )}
                         </div>
                         <div className="col-span-3 md:col-span-2">
                           <label className="text-xs font-medium text-slate-600 mb-1 block">Disc %</label>
