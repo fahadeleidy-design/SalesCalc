@@ -19,6 +19,7 @@ import {
   Target,
   ChevronDown,
   Languages,
+  ShoppingCart,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -78,6 +79,12 @@ const navigationItems: NavItem[] = [
     icon: DollarSign,
     path: '/commissions',
     roles: ['sales', 'manager', 'ceo', 'finance', 'admin'],
+  },
+  {
+    label: 'Purchase Orders',
+    icon: ShoppingCart,
+    path: '/purchase-orders',
+    roles: ['finance', 'ceo', 'admin'],
   },
   {
     label: 'Targets',

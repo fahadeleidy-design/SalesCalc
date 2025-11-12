@@ -21,6 +21,7 @@ import SettingsPage from './pages/SettingsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
+import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -113,6 +114,8 @@ function AppContent() {
         return hasAccess(['admin', 'manager', 'ceo']) ? <ReportsPage /> : <UnauthorizedPage />;
       case '/users':
         return hasAccess(['admin']) ? <UsersPage /> : <UnauthorizedPage />;
+      case '/purchase-orders':
+        return hasAccess(['finance', 'ceo', 'admin']) ? <PurchaseOrdersPage /> : <UnauthorizedPage />;
       default:
         return getDashboardForRole();
     }
