@@ -114,11 +114,16 @@ const navigationItems: NavItem[] = [
 
 export default function Layout({ children }: LayoutProps) {
   const { profile, signOut } = useAuth();
-  const { currentPath, navigate } = useNavigation();
+  const { currentPath, navigate, resetNavigation } = useNavigation();
   const { language, setLanguage, t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  const handleSignOut = async () => {
+    resetNavigation();
+    await signOut();
+  };
 
   const filteredNav = navigationItems.filter((item) =>
     profile?.role ? item.roles.includes(profile.role) : false
@@ -222,7 +227,7 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
           <button
-            onClick={signOut}
+            onClick={handleSignOut}
             className="w-full flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
           >
             <LogOut className="w-4 h-4" />

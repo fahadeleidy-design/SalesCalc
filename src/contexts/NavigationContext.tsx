@@ -3,6 +3,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 interface NavigationContextType {
   currentPath: string;
   navigate: (path: string) => void;
+  resetNavigation: () => void;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -14,8 +15,12 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     setCurrentPath(path);
   };
 
+  const resetNavigation = () => {
+    setCurrentPath('/dashboard');
+  };
+
   return (
-    <NavigationContext.Provider value={{ currentPath, navigate }}>
+    <NavigationContext.Provider value={{ currentPath, navigate, resetNavigation }}>
       {children}
     </NavigationContext.Provider>
   );

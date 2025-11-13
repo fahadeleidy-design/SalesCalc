@@ -27,8 +27,15 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
-  const { currentPath } = useNavigation();
+  const { currentPath, resetNavigation } = useNavigation();
   const { loadUserLanguage } = useLanguage();
+
+  // Reset navigation when user changes (login/logout)
+  React.useEffect(() => {
+    if (user) {
+      resetNavigation();
+    }
+  }, [user?.id, resetNavigation]);
 
   // Load user's preferred language when profile is available
   React.useEffect(() => {
