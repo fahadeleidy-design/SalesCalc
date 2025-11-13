@@ -8,9 +8,9 @@ import { formatCurrency } from '../lib/currencyUtils';
 import QuotationViewModal from '../components/quotations/QuotationViewModal';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
-  customer: Database['public']['Tables']['customers']['Row'];
-  sales_rep: Database['public']['Tables']['profiles']['Row'];
-  quotation_items: Database['public']['Tables']['quotation_items']['Row'][];
+  customer?: Database['public']['Tables']['customers']['Row'] | null;
+  sales_rep?: Database['public']['Tables']['profiles']['Row'] | null;
+  quotation_items?: Database['public']['Tables']['quotation_items']['Row'][] | null;
 };
 
 export default function ApprovalsPage() {
@@ -205,13 +205,13 @@ export default function ApprovalsPage() {
                           <div>
                             <p className="text-sm text-slate-600">Customer</p>
                             <p className="font-medium text-slate-900">
-                              {quotation.customer.company_name}
+                              {quotation.customer?.company_name || 'N/A'}
                             </p>
                           </div>
                           <div>
                             <p className="text-sm text-slate-600">Sales Rep</p>
                             <p className="font-medium text-slate-900">
-                              {quotation.sales_rep.full_name}
+                              {quotation.sales_rep?.full_name || 'N/A'}
                             </p>
                           </div>
                           <div>
@@ -292,7 +292,7 @@ export default function ApprovalsPage() {
               <div className="bg-slate-50 rounded-lg p-4">
                 <p className="text-sm text-slate-600 mb-1">Quotation</p>
                 <p className="font-medium text-slate-900">
-                  {selectedQuotation.quotation_number} - {selectedQuotation.customer.company_name}
+                  {selectedQuotation.quotation_number} - {selectedQuotation.customer?.company_name || 'N/A'}
                 </p>
                 <p className="text-lg font-semibold text-slate-900 mt-2">
                   {formatCurrency(selectedQuotation.total)}
