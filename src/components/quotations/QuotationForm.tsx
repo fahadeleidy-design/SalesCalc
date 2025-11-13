@@ -386,12 +386,28 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   type="text"
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
-                  onFocus={() => setCustomerSearch('')}
+                  onFocus={() => {
+                    if (!formData.customer_id) {
+                      setCustomerSearch('');
+                    }
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      if (!formData.customer_id) {
+                        setCustomerSearch('');
+                      } else {
+                        const selected = customers.find((c) => c.id === formData.customer_id);
+                        if (selected) {
+                          setCustomerSearch(selected.company_name);
+                        }
+                      }
+                    }, 200);
+                  }}
                   placeholder="Search or type to add new customer..."
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 />
-                {customerSearch && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {customerSearch && !formData.customer_id && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {customers
                       .filter((customer) =>
                         customer.company_name
@@ -402,7 +418,8 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                         <button
                           key={customer.id}
                           type="button"
-                          onClick={() => {
+                          onMouseDown={(e) => {
+                            e.preventDefault();
                             setFormData({ ...formData, customer_id: customer.id });
                             setCustomerSearch(customer.company_name);
                           }}
@@ -416,7 +433,8 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                       ))}
                     <button
                       type="button"
-                      onClick={() => {
+                      onMouseDown={(e) => {
+                        e.preventDefault();
                         setShowCustomerModal(true);
                         setCustomerSearch('');
                       }}
@@ -429,9 +447,21 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                     </button>
                   </div>
                 )}
-                {!customerSearch && formData.customer_id && (
-                  <div className="mt-2 text-sm text-slate-600">
-                    Selected: {customers.find((c) => c.id === formData.customer_id)?.company_name}
+                {formData.customer_id && (
+                  <div className="mt-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-600">
+                      Selected: <span className="font-medium text-slate-900">{customers.find((c) => c.id === formData.customer_id)?.company_name}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({ ...formData, customer_id: '' });
+                        setCustomerSearch('');
+                      }}
+                      className="text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      Change
+                    </button>
                   </div>
                 )}
               </div>
