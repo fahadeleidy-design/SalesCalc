@@ -208,60 +208,96 @@ function ManagerTargetsView({ profile }: { profile: any }) {
           </div>
         ) : (
           <div className="space-y-4">
-            {teamTargets.map((target) => (
-              <div
-                key={target.id}
-                className="border border-slate-200 rounded-lg p-5 hover:border-orange-300 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold text-slate-900 text-lg">
-                      {formatPeriodType(target.period_type)} Team Target
-                    </h3>
-                    <p className="text-sm text-slate-600 mt-1">
-                      {new Date(target.period_start).toLocaleDateString()} - {new Date(target.period_end).toLocaleDateString()}
-                    </p>
-                  </div>
-                  {getStatusBadge(target.status)}
-                </div>
+            {teamTargets.map((target) => {
+              // Calculate sum of individual sales targets for the same period
+              const matchingSalesTargets = salesTargets?.filter(
+                st => st.status === 'approved' &&
+                st.period_start === target.period_start &&
+                st.period_end === target.period_end
+              ) || [];
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-slate-400" />
+              const totalIndividualTargets = matchingSalesTargets.reduce(
+                (sum, st) => sum + parseFloat(st.target_amount.toString()),
+                0
+              );
+
+              const teamTargetAmount = parseFloat(target.target_amount.toString());
+              const coverage = teamTargetAmount > 0 ? (totalIndividualTargets / teamTargetAmount) * 100 : 0;
+              const gap = teamTargetAmount - totalIndividualTargets;
+
+              return (
+                <div
+                  key={target.id}
+                  className="border border-slate-200 rounded-lg p-5 hover:border-orange-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-4">
                     <div>
-                      <p className="text-xs text-slate-500">Target Amount</p>
-                      <p className="text-lg font-semibold text-slate-900">
-                        {formatCurrency(target.target_amount)}
+                      <h3 className="font-semibold text-slate-900 text-lg">
+                        {formatPeriodType(target.period_type)} Team Target
+                      </h3>
+                      <p className="text-sm text-slate-600 mt-1">
+                        {new Date(target.period_start).toLocaleDateString()} - {new Date(target.period_end).toLocaleDateString()}
                       </p>
+                    </div>
+                    {getStatusBadge(target.status)}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500">Team Target</p>
+                        <p className="text-lg font-semibold text-slate-900">
+                          {formatCurrency(teamTargetAmount)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500">Individual Targets Sum</p>
+                        <p className={`text-lg font-semibold ${coverage >= 100 ? 'text-green-600' : 'text-orange-600'}`}>
+                          {formatCurrency(totalIndividualTargets)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {matchingSalesTargets.length} sales rep{matchingSalesTargets.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Target className="h-5 w-5 text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500">Coverage</p>
+                        <p className={`text-lg font-semibold ${coverage >= 100 ? 'text-green-600' : coverage >= 80 ? 'text-amber-600' : 'text-red-600'}`}>
+                          {coverage.toFixed(1)}%
+                        </p>
+                        {gap !== 0 && (
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {gap > 0 ? `Gap: ${formatCurrency(gap)}` : `Over: ${formatCurrency(Math.abs(gap))}`}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-slate-400" />
-                    <div>
-                      <p className="text-xs text-slate-500">Created</p>
-                      <p className="text-sm font-medium text-slate-900">
-                        {new Date(target.created_at).toLocaleDateString()}
-                      </p>
+                  {target.notes && (
+                    <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                      <p className="text-xs text-slate-500 mb-1">Notes:</p>
+                      <p className="text-sm text-slate-700">{target.notes}</p>
                     </div>
-                  </div>
+                  )}
+
+                  {target.rejection_reason && (
+                    <div className="mt-3 p-3 bg-red-50 rounded-lg">
+                      <p className="text-xs text-red-600 mb-1">Rejection Reason:</p>
+                      <p className="text-sm text-red-700">{target.rejection_reason}</p>
+                    </div>
+                  )}
                 </div>
-
-                {target.notes && (
-                  <div className="mt-3 p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-slate-500 mb-1">Notes:</p>
-                    <p className="text-sm text-slate-700">{target.notes}</p>
-                  </div>
-                )}
-
-                {target.rejection_reason && (
-                  <div className="mt-3 p-3 bg-red-50 rounded-lg">
-                    <p className="text-xs text-red-600 mb-1">Rejection Reason:</p>
-                    <p className="text-sm text-red-700">{target.rejection_reason}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
