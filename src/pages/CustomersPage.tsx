@@ -555,38 +555,72 @@ export default function CustomersPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Customer Type</label>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Customer Category *
+                  </label>
                   <select
                     value={formData.customer_type}
-                    onChange={(e) => setFormData({ ...formData, customer_type: e.target.value })}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      setFormData({
+                        ...formData,
+                        customer_type: newType,
+                        // Clear sector if not direct_sales
+                        sector: newType === 'direct_sales' ? formData.sector : '',
+                      });
+                    }}
+                    required
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                   >
-                    <option value="">Select Type</option>
-                    <option value="direct_sales">Direct Sales</option>
-                    <option value="partner">Partner</option>
-                    <option value="distributor">Distributor</option>
+                    <option value="">Select Customer Category</option>
+                    <option value="government">Government (Direct contact with government entities)</option>
+                    <option value="direct_sales">Direct Sales (Direct contact and billing with end user)</option>
+                    <option value="partners">Partners (Direct contact but billing through partner)</option>
+                    <option value="distributors">Distributors (Contact and billing with distributor only)</option>
                   </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {formData.customer_type === 'government' && '→ Government entities - No sector required'}
+                    {formData.customer_type === 'direct_sales' && '→ Direct B2B sales - Must select a sector below'}
+                    {formData.customer_type === 'partners' && '→ End user contact through partner - No sector required'}
+                    {formData.customer_type === 'distributors' && '→ Distributor relationship only - No sector required'}
+                  </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Sector</label>
-                  <select
-                    value={formData.sector}
-                    onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
-                  >
-                    <option value="">Select Sector</option>
-                    <option value="government">Government</option>
-                    <option value="financial">Financial</option>
-                    <option value="telecommunications">Telecommunications</option>
-                    <option value="corporate_private">Corporate & Private</option>
-                    <option value="healthcare">Healthcare</option>
-                    <option value="education">Education</option>
-                    <option value="hospitality">Hospitality</option>
-                    <option value="startups_tech">Startups & Tech</option>
-                  </select>
-                </div>
+                {formData.customer_type === 'direct_sales' && (
+                  <div className="col-span-2 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Industry Sector * <span className="text-orange-600">(Required for Direct Sales)</span>
+                    </label>
+                    <select
+                      value={formData.sector}
+                      onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
+                      required
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
+                    >
+                      <option value="">Select Industry Sector</option>
+                      <option value="financial_sector">Financial Sector (Banks, Insurance, Investment)</option>
+                      <option value="educational_sector">Educational Sector (Schools, Universities, Training)</option>
+                      <option value="health_sector">Health Sector (Hospitals, Clinics, Healthcare)</option>
+                      <option value="telecommunications_sector">Telecommunications Sector (Telecom, ISPs)</option>
+                      <option value="manufacturing_sector">Manufacturing Sector (Factories, Production)</option>
+                      <option value="retail_sector">Retail Sector (Stores, E-commerce, Shopping)</option>
+                      <option value="hospitality_sector">Hospitality Sector (Hotels, Restaurants, Tourism)</option>
+                      <option value="technology_sector">Technology Sector (IT, Software, Startups)</option>
+                      <option value="construction_sector">Construction Sector (Building, Real Estate Development)</option>
+                      <option value="transportation_sector">Transportation Sector (Logistics, Shipping, Airlines)</option>
+                      <option value="energy_sector">Energy Sector (Oil, Gas, Renewable Energy)</option>
+                      <option value="real_estate_sector">Real Estate Sector (Property Management, Brokers)</option>
+                      <option value="media_entertainment_sector">Media & Entertainment Sector (Publishing, Broadcasting)</option>
+                      <option value="agriculture_sector">Agriculture Sector (Farming, Food Production)</option>
+                      <option value="legal_services_sector">Legal Services Sector (Law Firms, Legal Consulting)</option>
+                      <option value="consulting_services_sector">Consulting Services Sector (Business, Management Consulting)</option>
+                    </select>
+                    <p className="text-xs text-slate-600 mt-2">
+                      ℹ️ Sector classification helps track market penetration and tailor solutions to industry needs.
+                    </p>
+                  </div>
+                )}
 
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-2">Address</label>

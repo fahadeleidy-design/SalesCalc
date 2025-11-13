@@ -1358,7 +1358,7 @@ function OpportunityModal({
     address: '',
     tax_id: '',
     industry: '',
-    customer_type: 'business',
+    customer_type: 'direct_sales',
     payment_terms: 'net_30',
   });
 
@@ -1614,29 +1614,67 @@ function OpportunityModal({
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Industry</label>
-                      <input
-                        type="text"
-                        value={newCustomerData.industry}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, industry: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                        placeholder="e.g., Manufacturing, Technology"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Customer Type</label>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Customer Category *
+                      </label>
                       <select
                         value={newCustomerData.customer_type}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, customer_type: e.target.value })}
+                        onChange={(e) => {
+                          const newType = e.target.value;
+                          setNewCustomerData({
+                            ...newCustomerData,
+                            customer_type: newType,
+                            // Clear industry if not direct_sales
+                            industry: newType === 'direct_sales' ? newCustomerData.industry : '',
+                          });
+                        }}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       >
-                        <option value="business">Business</option>
                         <option value="government">Government</option>
-                        <option value="individual">Individual</option>
+                        <option value="direct_sales">Direct Sales</option>
+                        <option value="partners">Partners</option>
+                        <option value="distributors">Distributors</option>
                       </select>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {newCustomerData.customer_type === 'government' && '→ Government entity'}
+                        {newCustomerData.customer_type === 'direct_sales' && '→ Must select sector below'}
+                        {newCustomerData.customer_type === 'partners' && '→ Partner billing'}
+                        {newCustomerData.customer_type === 'distributors' && '→ Distributor only'}
+                      </p>
                     </div>
+
+                    {newCustomerData.customer_type === 'direct_sales' && (
+                      <div className="md:col-span-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Industry Sector * <span className="text-orange-600">(Required)</span>
+                        </label>
+                        <select
+                          value={newCustomerData.industry}
+                          onChange={(e) => setNewCustomerData({ ...newCustomerData, industry: e.target.value })}
+                          required
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        >
+                          <option value="">Select Sector</option>
+                          <option value="financial_sector">Financial Sector</option>
+                          <option value="educational_sector">Educational Sector</option>
+                          <option value="health_sector">Health Sector</option>
+                          <option value="telecommunications_sector">Telecommunications</option>
+                          <option value="manufacturing_sector">Manufacturing</option>
+                          <option value="retail_sector">Retail</option>
+                          <option value="hospitality_sector">Hospitality</option>
+                          <option value="technology_sector">Technology</option>
+                          <option value="construction_sector">Construction</option>
+                          <option value="transportation_sector">Transportation</option>
+                          <option value="energy_sector">Energy</option>
+                          <option value="real_estate_sector">Real Estate</option>
+                          <option value="media_entertainment_sector">Media & Entertainment</option>
+                          <option value="agriculture_sector">Agriculture</option>
+                          <option value="legal_services_sector">Legal Services</option>
+                          <option value="consulting_services_sector">Consulting Services</option>
+                        </select>
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Payment Terms</label>
@@ -1657,11 +1695,19 @@ function OpportunityModal({
                       <button
                         type="button"
                         onClick={() => createCustomerMutation.mutate()}
-                        disabled={!newCustomerData.company_name || !newCustomerData.contact_name || createCustomerMutation.isPending}
+                        disabled={
+                          !newCustomerData.company_name ||
+                          !newCustomerData.contact_name ||
+                          (newCustomerData.customer_type === 'direct_sales' && !newCustomerData.industry) ||
+                          createCustomerMutation.isPending
+                        }
                         className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {createCustomerMutation.isPending ? 'Creating Customer...' : 'Create Customer & Continue'}
                       </button>
+                      {newCustomerData.customer_type === 'direct_sales' && !newCustomerData.industry && (
+                        <p className="text-xs text-red-600 mt-2">⚠️ Industry sector is required for Direct Sales customers</p>
+                      )}
                     </div>
                   </div>
                 </div>
