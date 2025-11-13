@@ -1867,21 +1867,242 @@ function OpportunityModal({
 }
 
 function ActivitiesView() {
+  const { profile } = useAuth();
+  const [showActivityModal, setShowActivityModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ type: 'lead' | 'opportunity' | 'customer', id: string, name: string } | null>(null);
+  const [filterType, setFilterType] = useState<string>('all');
+
+  // Fetch all activities
+  const { data: activities, isLoading: activitiesLoading, refetch } = useQuery({
+    queryKey: ['crm-activities-all', profile?.id, filterType],
+    queryFn: async () => {
+      let query = supabase
+        .from('crm_activities')
+        .select(`
+          *,
+          lead:crm_leads(company_name),
+          opportunity:crm_opportunities(name),
+          customer:customers(company_name),
+          assigned_user:profiles!crm_activities_assigned_to_fkey(full_name)
+        `)
+        .order('activity_date', { ascending: false })
+        .limit(50);
+
+      // Filter by user's access
+      if (profile?.role === 'sales') {
+        query = query.eq('assigned_to', profile.id);
+      }
+
+      // Filter by activity type
+      if (filterType !== 'all') {
+        query = query.eq('activity_type', filterType);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile,
+  });
+
+  const activityTypes = [
+    { value: 'all', label: 'All Activities', icon: FileText },
+    { value: 'call', label: 'Calls', icon: Phone },
+    { value: 'email', label: 'Emails', icon: Mail },
+    { value: 'meeting', label: 'Meetings', icon: Calendar },
+    { value: 'note', label: 'Notes', icon: MessageSquare },
+    { value: 'task', label: 'Tasks', icon: CheckCircle },
+  ];
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'call':
+        return <Phone className="h-4 w-4" />;
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'meeting':
+        return <Calendar className="h-4 w-4" />;
+      case 'note':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'task':
+        return <CheckCircle className="h-4 w-4" />;
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  const getEntityDisplay = (activity: any) => {
+    if (activity.lead) return { name: activity.lead.company_name, type: 'Lead' };
+    if (activity.opportunity) return { name: activity.opportunity.name, type: 'Opportunity' };
+    if (activity.customer) return { name: activity.customer.company_name, type: 'Customer' };
+    return { name: 'General', type: '' };
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-slate-900">Activities & Tasks</h2>
-        <button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
-          <Plus className="h-5 w-5" />
-          Log Activity
-        </button>
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Activities & Tasks</h2>
+            <p className="text-sm text-slate-600 mt-1">Track all customer interactions and follow-ups</p>
+          </div>
+          <button
+            onClick={() => {
+              setSelectedEntity(null);
+              setShowActivityModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Log Activity
+          </button>
+        </div>
+
+        {/* Activity Type Filters */}
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+          {activityTypes.map((type) => {
+            const Icon = type.icon;
+            return (
+              <button
+                key={type.value}
+                onClick={() => setFilterType(type.value)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
+                  filterType === type.value
+                    ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {type.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Activities List */}
+        {activitiesLoading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+            <p className="text-slate-600 mt-4">Loading activities...</p>
+          </div>
+        ) : activities && activities.length > 0 ? (
+          <div className="space-y-3">
+            {activities.map((activity: any) => {
+              const entity = getEntityDisplay(activity);
+              return (
+                <div
+                  key={activity.id}
+                  className="border border-slate-200 rounded-lg p-4 hover:border-orange-200 hover:bg-orange-50/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="p-2 bg-orange-100 rounded-lg text-orange-700">
+                        {getActivityIcon(activity.activity_type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-slate-900">{activity.subject}</h3>
+                          {entity.type && (
+                            <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                              {entity.type}
+                            </span>
+                          )}
+                        </div>
+                        {entity.name && (
+                          <p className="text-sm text-slate-600 mb-1">{entity.name}</p>
+                        )}
+                        {activity.description && (
+                          <p className="text-sm text-slate-600 line-clamp-2">{activity.description}</p>
+                        )}
+                        <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(activity.activity_date).toLocaleDateString()}
+                          </span>
+                          {activity.duration_minutes && (
+                            <span>{activity.duration_minutes} min</span>
+                          )}
+                          {activity.assigned_user && (
+                            <span>By {activity.assigned_user.full_name}</span>
+                          )}
+                          {activity.completed ? (
+                            <span className="flex items-center gap-1 text-green-600">
+                              <CheckCircle className="h-3 w-3" />
+                              Completed
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-amber-600">
+                              <Clock className="h-3 w-3" />
+                              Pending
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-slate-500">
+            <Calendar className="mx-auto h-16 w-16 text-slate-300 mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No Activities Yet</h3>
+            <p className="mb-4">Start logging your customer interactions and tasks</p>
+            <button
+              onClick={() => {
+                setSelectedEntity(null);
+                setShowActivityModal(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              Log Your First Activity
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="text-center py-12 text-slate-500">
-        <Calendar className="mx-auto h-16 w-16 text-slate-300 mb-4" />
-        <h3 className="text-lg font-medium text-slate-900 mb-2">Activity Tracking Coming Soon</h3>
-        <p>Track calls, meetings, emails, and follow-ups with automated reminders</p>
-      </div>
+      {/* Activity Log Modal - For general activities */}
+      {showActivityModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Log Activity</h2>
+                <p className="text-sm text-slate-600 mt-1">Record a customer interaction or task</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowActivityModal(false);
+                  refetch();
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                <strong>Note:</strong> To log an activity for a specific lead, opportunity, or customer, please navigate to their detail page and use the "Log Activity" button there.
+              </p>
+              <p className="text-sm text-slate-600">
+                General activity logging coming soon. For now, please log activities from the specific entity pages (Leads or Opportunities tabs).
+              </p>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowActivityModal(false);
+                  }}
+                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
