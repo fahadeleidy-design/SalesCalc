@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import {
   Users,
@@ -16,8 +16,17 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  Edit2,
+  Trash2,
+  X,
+  Search,
+  Building2,
+  MapPin,
+  Globe,
+  Briefcase,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '../lib/currencyUtils';
 
 interface CRMStats {
   totalLeads: number;
@@ -26,6 +35,28 @@ interface CRMStats {
   pipelineValue: number;
   wonOpportunities: number;
   activitiesThisWeek: number;
+}
+
+interface Lead {
+  id: string;
+  company_name: string;
+  contact_name: string;
+  contact_email: string | null;
+  contact_phone: string | null;
+  position: string | null;
+  industry: string | null;
+  country: string;
+  city: string | null;
+  address: string | null;
+  website: string | null;
+  lead_source: string;
+  lead_status: string;
+  lead_score: number;
+  estimated_value: number | null;
+  expected_close_date: string | null;
+  notes: string | null;
+  created_at: string;
+  assigned_to: string;
 }
 
 export default function CRMPage() {
@@ -45,7 +76,6 @@ export default function CRMPage() {
 
       if (!isCEO) {
         if (isManager) {
-          // Get team member IDs
           const { data: teamMembers } = await supabase
             .from('team_members')
             .select('sales_rep_id')
@@ -171,14 +201,6 @@ export default function CRMPage() {
     );
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -228,7 +250,6 @@ export default function CRMPage() {
               icon={Users}
               iconBg="bg-blue-100"
               iconColor="text-blue-600"
-              trend="+12%"
             />
             <StatsCard
               title="Qualified Leads"
@@ -284,14 +305,12 @@ function StatsCard({
   icon: Icon,
   iconBg,
   iconColor,
-  trend,
 }: {
   title: string;
   value: string | number;
   icon: any;
   iconBg: string;
   iconColor: string;
-  trend?: string;
 }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -299,9 +318,6 @@ function StatsCard({
         <div className={`p-3 rounded-lg ${iconBg}`}>
           <Icon className={`h-6 w-6 ${iconColor}`} />
         </div>
-        {trend && (
-          <span className="text-sm font-medium text-green-600">{trend}</span>
-        )}
       </div>
       <h3 className="text-sm font-medium text-slate-600 mb-1">{title}</h3>
       <p className="text-2xl font-bold text-slate-900">{value}</p>
@@ -332,20 +348,545 @@ function CRMOverview() {
 }
 
 function LeadsView() {
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Fetch leads
+  const { data: leads, isLoading } = useQuery({
+    queryKey: ['crm-leads', profile?.id],
+    queryFn: async () => {
+      let query = supabase
+        .from('crm_leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      // Apply access control
+      if (profile?.role === 'sales') {
+        query = query.eq('assigned_to', profile.id);
+      } else if (profile?.role === 'manager') {
+        const { data: teamMembers } = await supabase
+          .from('team_members')
+          .select('sales_rep_id')
+          .in('team_id', (
+            await supabase
+              .from('sales_teams')
+              .select('id')
+              .eq('manager_id', profile.id)
+          ).data?.map(t => t.id) || []);
+
+        query = query.in('assigned_to', teamMembers?.map(tm => tm.sales_rep_id) || []);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Lead[];
+    },
+    enabled: !!profile?.id,
+  });
+
+  const filteredLeads = leads?.filter((lead) => {
+    const matchesSearch =
+      lead.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.contact_email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'all' || lead.lead_status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-slate-900">Leads Management</h2>
-        <button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
-          <Plus className="h-5 w-5" />
-          Add Lead
-        </button>
+    <div className="space-y-6">
+      {/* Search and Filter */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search leads by company, contact, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          >
+            <option value="all">All Status</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="qualified">Qualified</option>
+            <option value="proposal">Proposal</option>
+            <option value="negotiation">Negotiation</option>
+            <option value="converted">Converted</option>
+            <option value="lost">Lost</option>
+            <option value="unqualified">Unqualified</option>
+          </select>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
+          >
+            <Plus className="h-5 w-5" />
+            Add Lead
+          </button>
+        </div>
       </div>
 
-      <div className="text-center py-12 text-slate-500">
-        <Users className="mx-auto h-16 w-16 text-slate-300 mb-4" />
-        <h3 className="text-lg font-medium text-slate-900 mb-2">Lead Management Coming Soon</h3>
-        <p>Full lead management interface with capture, qualification, and conversion tracking</p>
+      {/* Leads List */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        </div>
+      ) : !filteredLeads || filteredLeads.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+          <Users className="mx-auto h-16 w-16 text-slate-300 mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 mb-2">
+            {searchTerm || statusFilter !== 'all' ? 'No Leads Found' : 'No Leads Yet'}
+          </h3>
+          <p className="text-slate-600 mb-4">
+            {searchTerm || statusFilter !== 'all'
+              ? 'Try adjusting your search or filters'
+              : 'Start by adding your first lead to track potential customers'}
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Add First Lead
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredLeads.map((lead) => (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              onEdit={setEditingLead}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      {(showAddModal || editingLead) && (
+        <LeadModal
+          lead={editingLead}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingLead(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }) {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('crm_leads').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
+      toast.success('Lead deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete lead');
+    },
+  });
+
+  const statusColors: Record<string, string> = {
+    new: 'bg-blue-100 text-blue-700',
+    contacted: 'bg-purple-100 text-purple-700',
+    qualified: 'bg-green-100 text-green-700',
+    proposal: 'bg-orange-100 text-orange-700',
+    negotiation: 'bg-amber-100 text-amber-700',
+    converted: 'bg-emerald-100 text-emerald-700',
+    lost: 'bg-red-100 text-red-700',
+    unqualified: 'bg-slate-100 text-slate-700',
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">{lead.company_name}</h3>
+          <p className="text-sm text-slate-600">{lead.contact_name}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onEdit(lead)}
+            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <Edit2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => {
+              if (confirm('Delete this lead?')) {
+                deleteMutation.mutate(lead.id);
+              }
+            }}
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-4">
+        {lead.contact_email && (
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Mail className="h-4 w-4" />
+            <span className="truncate">{lead.contact_email}</span>
+          </div>
+        )}
+        {lead.contact_phone && (
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Phone className="h-4 w-4" />
+            <span>{lead.contact_phone}</span>
+          </div>
+        )}
+        {lead.industry && (
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Briefcase className="h-4 w-4" />
+            <span>{lead.industry}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[lead.lead_status]}`}>
+          {lead.lead_status.replace('_', ' ').toUpperCase()}
+        </span>
+        <div className="flex items-center gap-1 text-amber-500">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className={`h-2 w-2 rounded-full ${
+                i < Math.floor(lead.lead_score / 20) ? 'bg-amber-500' : 'bg-slate-200'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }) {
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState({
+    company_name: lead?.company_name || '',
+    contact_name: lead?.contact_name || '',
+    contact_email: lead?.contact_email || '',
+    contact_phone: lead?.contact_phone || '',
+    position: lead?.position || '',
+    industry: lead?.industry || '',
+    country: lead?.country || 'Saudi Arabia',
+    city: lead?.city || '',
+    address: lead?.address || '',
+    website: lead?.website || '',
+    lead_source: lead?.lead_source || 'other',
+    lead_status: lead?.lead_status || 'new',
+    lead_score: lead?.lead_score || 50,
+    estimated_value: lead?.estimated_value || '',
+    expected_close_date: lead?.expected_close_date || '',
+    notes: lead?.notes || '',
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const data = {
+        ...formData,
+        estimated_value: formData.estimated_value ? Number(formData.estimated_value) : null,
+        expected_close_date: formData.expected_close_date || null,
+        assigned_to: profile?.id,
+        created_by: profile?.id,
+      };
+
+      if (lead) {
+        const { error } = await supabase
+          .from('crm_leads')
+          .update(data)
+          .eq('id', lead.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('crm_leads').insert(data);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
+      toast.success(lead ? 'Lead updated successfully' : 'Lead created successfully');
+      onClose();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to save lead');
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+          <h2 className="text-xl font-bold text-slate-900">
+            {lead ? 'Edit Lead' : 'Add New Lead'}
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+          {/* Company Information */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Company Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Company Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.company_name}
+                  onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Industry</label>
+                <input
+                  type="text"
+                  value={formData.industry}
+                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="e.g., Technology, Manufacturing"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Website</label>
+                <input
+                  type="url"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="https://example.com"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Contact Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Contact Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.contact_name}
+                  onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Position</label>
+                <input
+                  type="text"
+                  value={formData.position}
+                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="e.g., CEO, Purchasing Manager"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={formData.contact_email}
+                  onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={formData.contact_phone}
+                  onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Location
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
+                <input
+                  type="text"
+                  value={formData.country}
+                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">City</label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Lead Details */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Lead Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Source</label>
+                <select
+                  value={formData.lead_source}
+                  onChange={(e) => setFormData({ ...formData, lead_source: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="website">Website</option>
+                  <option value="referral">Referral</option>
+                  <option value="cold_call">Cold Call</option>
+                  <option value="email_campaign">Email Campaign</option>
+                  <option value="social_media">Social Media</option>
+                  <option value="event">Event</option>
+                  <option value="partner">Partner</option>
+                  <option value="direct">Direct</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <select
+                  value={formData.lead_status}
+                  onChange={(e) => setFormData({ ...formData, lead_status: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="proposal">Proposal</option>
+                  <option value="negotiation">Negotiation</option>
+                  <option value="converted">Converted</option>
+                  <option value="lost">Lost</option>
+                  <option value="unqualified">Unqualified</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Lead Score (0-100)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.lead_score}
+                  onChange={(e) => setFormData({ ...formData, lead_score: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Estimated Value (SAR)
+                </label>
+                <input
+                  type="number"
+                  value={formData.estimated_value}
+                  onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Expected Close Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.expected_close_date}
+                  onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="Additional information about this lead..."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 p-6 border-t border-slate-200">
+          <button
+            onClick={() => saveMutation.mutate()}
+            disabled={!formData.company_name || !formData.contact_name || saveMutation.isPending}
+            className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saveMutation.isPending ? 'Saving...' : lead ? 'Update Lead' : 'Create Lead'}
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
