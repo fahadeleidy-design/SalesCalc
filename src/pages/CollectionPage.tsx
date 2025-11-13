@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { DollarSign, TrendingUp, Clock, FileText, AlertCircle, CheckCircle, Plus, Eye } from 'lucide-react';
+import { DollarSign, TrendingUp, Clock, FileText, AlertCircle, CheckCircle, Plus, Eye, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import CollectionEnhancedView from '../components/collection/CollectionEnhancedView';
 import {
   useCollectionSummary,
   useExpectedSales,
@@ -16,6 +17,7 @@ type TabType = 'expected' | 'down_payment' | 'wip' | 'invoices';
 export default function CollectionPage() {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('expected');
+  const [showEnhanced, setShowEnhanced] = useState(false);
 
   const { data: summary, isLoading: summaryLoading } = useCollectionSummary();
   const { data: expectedSales, isLoading: expectedLoading } = useExpectedSales();
@@ -132,7 +134,21 @@ export default function CollectionPage() {
           <h1 className="text-3xl font-bold text-slate-900">Collection Management</h1>
           <p className="text-slate-600 mt-1">Track and manage revenue collection across all stages</p>
         </div>
+        <button
+          onClick={() => setShowEnhanced(!showEnhanced)}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            showEnhanced
+              ? 'bg-orange-600 text-white hover:bg-orange-700'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          {showEnhanced ? 'Show Standard View' : 'Show Enhanced Tools'}
+        </button>
       </div>
+
+      {/* Enhanced View Toggle */}
+      {showEnhanced && <CollectionEnhancedView />}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
