@@ -379,22 +379,36 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-6xl m-4 max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900">
-            {quotationId ? 'Edit Quotation' : 'New Quotation'}
-          </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl my-4 max-h-[95vh] overflow-hidden flex flex-col">
+        <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between z-10 shadow-md">
+          <div>
+            <h2 className="text-2xl font-bold text-white">
+              {quotationId ? 'Edit Quotation' : 'New Quotation'}
+            </h2>
+            <p className="text-orange-100 text-sm mt-0.5">Fill in the details below to create a quotation</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6 space-y-6">
+          {/* Customer & Basic Info Section */}
+          <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-orange-500" />
+              Customer & Quotation Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
                 Customer *
+                <span className="text-red-500">•</span>
               </label>
               <div className="relative">
                 <input
@@ -482,9 +496,10 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
                 Title *
+                <span className="text-red-500">•</span>
               </label>
               <input
                 type="text"
@@ -496,7 +511,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Valid Until
               </label>
               <input
@@ -508,10 +523,10 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                 Tax Rate (%)
                 {(profile?.role === 'sales' || profile?.role === 'manager') && (
-                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-medium">
                     Fixed
                   </span>
                 )}
@@ -539,22 +554,32 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 </p>
               )}
             </div>
+            </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-900">Line Items</h3>
-              <div className="flex gap-2">
+          {/* Line Items Section */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <Package className="w-5 h-5 text-orange-500" />
+                Line Items
+                {items.length > 0 && (
+                  <span className="ml-2 bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full text-sm font-bold">
+                    {items.length}
+                  </span>
+                )}
+              </h3>
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowProductSelector(true)}
-                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md"
                 >
                   <Plus className="w-4 h-4" />
                   Add Product
                 </button>
                 <button
                   onClick={addCustomItem}
-                  className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md"
                 >
                   <Plus className="w-4 h-4" />
                   Custom Item
@@ -562,18 +587,23 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
               </div>
             </div>
 
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <div className="space-y-4">
+            <div className="p-6">
+              <div className="space-y-3">
                 {items.length === 0 ? (
-                  <div className="py-8 text-center text-slate-500 border border-slate-200 rounded-lg">
-                    No items added yet. Click "Add Product" to get started.
+                  <div className="py-16 text-center">
+                    <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500 text-lg font-medium mb-2">No items added yet</p>
+                    <p className="text-slate-400 text-sm">Click "Add Product" to get started</p>
                   </div>
                 ) : (
                   items.map((item, index) => (
-                    <div key={item.tempId || item.id} className="border border-slate-200 rounded-lg p-4 bg-white">
-                      <div className="grid grid-cols-12 gap-4 items-start">
-                        <div className="col-span-12 md:col-span-4">
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Item</label>
+                    <div key={item.tempId || item.id} className="border-2 border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-orange-300 hover:bg-white transition-all">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <div className="mb-4">
                           {item.is_custom ? (
                             <div>
                               <div className="text-sm font-medium text-slate-900">
@@ -594,149 +624,152 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                               )}
                             </div>
                           ) : (
-                            <div className="text-sm">
-                              <div className="font-medium text-slate-900">
+                            <div>
+                              <div className="font-semibold text-slate-900 text-base">
                                 {item.product?.name}
                               </div>
-                              <div className="text-slate-500">{item.product?.sku}</div>
+                              <div className="text-xs text-slate-500 mt-0.5">SKU: {item.product?.sku}</div>
                               {item.product?.description && (
-                                <div className="text-xs text-slate-600 mt-1 line-clamp-2">
+                                <div className="text-sm text-slate-600 mt-2 leading-relaxed">
                                   {item.product.description}
                                 </div>
                               )}
                             </div>
                           )}
-                        </div>
-                        <div className="col-span-3 md:col-span-2">
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">
-                            Qty
-                            <span className="ml-1 text-xs text-slate-500">(integer)</span>
-                          </label>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateItem(index, 'quantity', e.target.value)
-                            }
-                            min="1"
-                            step="1"
-                            className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                            onBlur={(e) => {
-                              if (!e.target.value || parseFloat(e.target.value) <= 0) {
-                                updateItem(index, 'quantity', 1);
-                              }
-                            }}
-                            title="Quantity must be a whole number (integer)"
-                          />
-                        </div>
-                        <div className="col-span-3 md:col-span-2">
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">
-                            Unit Price
-                            {!item.is_custom && item.base_unit_price && (
-                              <span className="ml-1 text-xs text-slate-500">
-                                (Base: {formatCurrency(item.base_unit_price || item.product?.unit_price || 0)})
-                              </span>
-                            )}
-                            {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
-                              <span className="ml-1 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
-                                Can only increase
-                              </span>
-                            )}
-                            {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
-                              <span className="ml-1 text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">
-                                Set by Engineering
-                              </span>
-                            )}
-                          </label>
-                          <input
-                            type="number"
-                            value={item.unit_price}
-                            onChange={(e) =>
-                              updateItem(index, 'unit_price', e.target.value)
-                            }
-                            min={item.base_unit_price || item.product?.unit_price || 0}
-                            step="0.01"
-                            className={`w-full px-2 py-1 border border-slate-300 rounded text-sm ${
-                              (
-                                // Disable for sales/manager on engineering-priced items
-                                ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
-                                // Disable for everyone on pending custom items
-                                (item.is_custom && item.custom_item_status === 'pending')
-                              )
-                                ? 'bg-slate-100 cursor-not-allowed text-slate-600'
-                                : ''
-                            }`}
-                            disabled={
-                              // Disable for sales/manager on engineering-priced items
-                              ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
-                              // Disable for everyone on pending custom items
-                              (item.is_custom && item.custom_item_status === 'pending')
-                            }
-                            title={
-                              !item.is_custom && item.base_unit_price
-                                ? `Base price: ${formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}. You can increase the price but cannot decrease below this.`
-                                : item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager')
-                                ? 'This price was set by Engineering and cannot be changed. Contact Engineering for price adjustments.'
-                                : item.is_custom && item.custom_item_status === 'pending'
-                                ? 'Waiting for Engineering to set the price'
-                                : ''
-                            }
-                          />
-                          {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && item.base_unit_price && (
-                            <p className="text-xs text-amber-600 mt-0.5">
-                              Can increase price, cannot decrease below base
-                            </p>
-                          )}
-                          {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
-                            <p className="text-xs text-blue-600 mt-0.5">
-                              Contact Engineering to change
-                            </p>
-                          )}
-                        </div>
-                        <div className="col-span-3 md:col-span-1">
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Total</label>
-                          <div className="text-sm font-medium text-slate-900 py-1">
-                            {formatCurrency(item.line_total)}
                           </div>
-                        </div>
-                        <div className="col-span-12 md:col-span-1 flex items-end justify-end md:justify-center">
-                          <button
-                            onClick={() => removeItem(index)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Remove item"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+
+                          <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-6 md:col-span-3">
+                              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                Quantity
+                              </label>
+                              <div className="relative">
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  updateItem(index, 'quantity', e.target.value)
+                                }
+                                min="1"
+                                step="1"
+                                className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                onBlur={(e) => {
+                                  if (!e.target.value || parseFloat(e.target.value) <= 0) {
+                                    updateItem(index, 'quantity', 1);
+                                  }
+                                }}
+                                title="Quantity must be a whole number (integer)"
+                              />
+                              <div className="text-xs text-slate-500 mt-1">Integer only</div>
+                              </div>
+                            </div>
+
+                            <div className="col-span-6 md:col-span-4">
+                              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                Unit Price
+                              </label>
+                              <div className="space-y-1">
+                                {!item.is_custom && item.base_unit_price && (
+                                  <div className="text-xs text-slate-600">
+                                    Base: <span className="font-semibold">{formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}</span>
+                                  </div>
+                                )}
+                                {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
+                                  <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
+                                    <TrendingUp className="w-3 h-3" />
+                                    Can only increase
+                                  </div>
+                                )}
+                                {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
+                                  <div className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                                    Set by Engineering
+                                  </div>
+                                )}
+                              <input
+                                type="number"
+                                value={item.unit_price}
+                                onChange={(e) =>
+                                  updateItem(index, 'unit_price', e.target.value)
+                                }
+                                min={item.base_unit_price || item.product?.unit_price || 0}
+                                step="0.01"
+                                className={`w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
+                                  (
+                                    ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
+                                    (item.is_custom && item.custom_item_status === 'pending')
+                                  )
+                                    ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+                                    : ''
+                                }`}
+                                disabled={
+                                  ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
+                                  (item.is_custom && item.custom_item_status === 'pending')
+                                }
+                                title={
+                                  !item.is_custom && item.base_unit_price
+                                    ? `Base price: ${formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}. You can increase the price but cannot decrease below this.`
+                                    : item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager')
+                                    ? 'This price was set by Engineering and cannot be changed. Contact Engineering for price adjustments.'
+                                    : item.is_custom && item.custom_item_status === 'pending'
+                                    ? 'Waiting for Engineering to set the price'
+                                    : ''
+                                }
+                              />
+                              </div>
+                            </div>
+
+                            <div className="col-span-6 md:col-span-3">
+                              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                Line Total
+                              </label>
+                              <div className="bg-slate-100 border-2 border-slate-300 rounded-lg px-4 py-2.5 text-base font-bold text-slate-900">
+                                {formatCurrency(item.line_total)}
+                              </div>
+                            </div>
+
+                            <div className="col-span-6 md:col-span-2 flex items-end">
+                              <button
+                                onClick={() => removeItem(index)}
+                                className="w-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 px-4 py-2.5 rounded-lg transition-all border-2 border-red-200 hover:border-red-300 font-medium flex items-center justify-center gap-2"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+
+                          {!item.is_custom && (
+                            <div className="mt-4 pt-4 border-t-2 border-slate-200">
+                              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                Modifications / Special Requirements
+                                {item.modifications && item.modifications.trim().length > 0 && (
+                                  <span className="ml-2 inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
+                                    <AlertCircle className="w-3 h-3" />
+                                    Will be sent to Engineering
+                                  </span>
+                                )}
+                              </label>
+                              <textarea
+                                value={item.modifications || ''}
+                                onChange={(e) => {
+                                  const newValue = e.target.value;
+                                  const updatedItems = [...items];
+                                  updatedItems[index] = {
+                                    ...updatedItems[index],
+                                    modifications: newValue,
+                                    needs_engineering_review: newValue.trim().length > 0,
+                                  };
+                                  setItems(updatedItems);
+                                }}
+                                rows={3}
+                                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
+                                placeholder="Enter any modifications or special requirements for this item..."
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {!item.is_custom && (
-                        <div className="mt-3 pt-3 border-t border-slate-100">
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">
-                            Modifications / Special Requirements
-                            {item.modifications && item.modifications.trim().length > 0 && (
-                              <span className="ml-2 text-amber-600">
-                                (Will be sent to Engineering for pricing)
-                              </span>
-                            )}
-                          </label>
-                          <textarea
-                            value={item.modifications || ''}
-                            onChange={(e) => {
-                              const newValue = e.target.value;
-                              const updatedItems = [...items];
-                              updatedItems[index] = {
-                                ...updatedItems[index],
-                                modifications: newValue,
-                                needs_engineering_review: newValue.trim().length > 0,
-                              };
-                              setItems(updatedItems);
-                            }}
-                            rows={2}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                            placeholder="Enter any modifications or special requirements for this item..."
-                          />
-                        </div>
-                      )}
                     </div>
                   ))
                 )}
@@ -744,16 +777,21 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
             </div>
           </div>
 
-          <div className="bg-slate-50 rounded-lg p-4">
-            <div className="max-w-sm ml-auto space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Subtotal:</span>
-                <span className="font-medium text-slate-900">{formatCurrency(totals.subtotal)}</span>
+          {/* Totals Summary Section */}
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-orange-500" />
+              Quotation Summary
+            </h3>
+            <div className="max-w-md ml-auto space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-slate-300">
+                <span className="text-slate-700 font-medium">Subtotal:</span>
+                <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm items-start">
-                <span className="text-slate-600 mt-1">Discount:</span>
-                <div className="flex flex-col items-end gap-1">
-                  <div className="flex items-center gap-2">
+              <div className="flex justify-between items-start py-2 border-b border-slate-300">
+                <span className="text-slate-700 font-medium mt-2">Discount:</span>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-3">
                     <input
                       type="number"
                       value={formData.discount_percentage}
@@ -767,58 +805,66 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                       min="0"
                       max={profile?.role === 'sales' ? 5 : 100}
                       step="0.1"
-                      className="w-16 px-2 py-1 border border-slate-300 rounded text-sm"
+                      className="w-20 px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     />
-                    <span className="text-slate-900">%</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-slate-700 font-medium">%</span>
+                    <span className="font-bold text-lg text-red-600">
                       -{formatCurrency(totals.discountAmount)}
                     </span>
                   </div>
                   {profile?.role === 'sales' && (
-                    <span className="text-xs text-orange-600">
+                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
                       Max 5% (Manager: 10%, CEO: &gt;10%)
                     </span>
                   )}
                   {formData.discount_percentage > 5 && formData.discount_percentage <= 10 && (
-                    <span className="text-xs text-blue-600">
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
                       Requires Manager approval
                     </span>
                   )}
                   {formData.discount_percentage > 10 && (
-                    <span className="text-xs text-purple-600">
+                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
                       Requires Manager → CEO approval
                     </span>
                   )}
                 </div>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Tax ({formData.tax_percentage}%):</span>
-                <span className="font-medium text-slate-900">{formatCurrency(totals.taxAmount)}</span>
+              <div className="flex justify-between items-center py-2 border-b border-slate-300">
+                <span className="text-slate-700 font-medium">Tax ({formData.tax_percentage}%):</span>
+                <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.taxAmount)}</span>
               </div>
-              <div className="border-t border-slate-300 pt-2 flex justify-between">
-                <span className="font-semibold text-slate-900">Total:</span>
-                <span className="font-bold text-lg text-slate-900">
+              <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300 rounded-lg mt-3 p-4 flex justify-between items-center">
+                <span className="font-bold text-slate-900 text-xl">Grand Total:</span>
+                <span className="font-black text-3xl text-orange-600">
                   {formatCurrency(totals.total)}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Additional Notes Section */}
+          <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-orange-500" />
+              Additional Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Notes</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Notes (Customer Visible)</label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Customer-visible notes"
+                rows={4}
+                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
+                placeholder="Add notes that will be visible to the customer..."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                 Terms & Conditions
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
                   Editable
                 </span>
               </label>
@@ -827,44 +873,57 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 onChange={(e) =>
                   setFormData({ ...formData, terms_and_conditions: e.target.value })
                 }
-                rows={3}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                rows={4}
+                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
                 placeholder="Default terms loaded. You can modify as needed."
               />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-600 mt-2">
                 Default terms are pre-filled. Customize for this specific quotation if needed.
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                 Internal Notes
+                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-medium">
+                  Private
+                </span>
               </label>
               <textarea
                 value={formData.internal_notes}
                 onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Not visible to customer"
+                rows={4}
+                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
+                placeholder="Add internal notes (not visible to customer)..."
               />
             </div>
           </div>
+          </div>
+        </div>
         </div>
 
-        <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-6 py-2.5 border border-slate-300 rounded-lg font-medium text-slate-700 hover:bg-slate-100 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            <Save className="w-5 h-5" />
-            {saving ? 'Saving...' : 'Save Quotation'}
-          </button>
+        <div className="sticky bottom-0 bg-gradient-to-r from-slate-50 to-slate-100 border-t-2 border-slate-300 px-6 py-5 flex items-center justify-between shadow-lg">          <div className="text-sm text-slate-600">
+            {items.length > 0 && (
+              <span className="font-medium">
+                {items.length} item{items.length !== 1 ? 's' : ''} • Total: <span className="text-orange-600 font-bold text-lg">{formatCurrency(totals.total)}</span>
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              className="px-8 py-3 border-2 border-slate-300 rounded-lg font-semibold text-slate-700 hover:bg-white hover:border-slate-400 transition-all shadow-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="w-5 h-5" />
+              {saving ? 'Saving...' : 'Save Quotation'}
+            </button>
+          </div>
         </div>
       </div>
 
