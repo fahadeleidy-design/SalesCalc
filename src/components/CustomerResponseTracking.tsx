@@ -82,7 +82,7 @@ export default function CustomerResponseTracking({ onViewQuotation }: CustomerRe
           )
         `)
         .not('submitted_to_customer_at', 'is', null)
-        .not('status', 'in', '("won","lost","rejected","cancelled")')
+        .not('status', 'in', '("deal_won","deal_lost","rejected","rejected_by_finance")')
         .order('submitted_to_customer_at', { ascending: true });
 
       if (error) throw error;
