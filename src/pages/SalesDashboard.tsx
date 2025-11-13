@@ -18,6 +18,7 @@ import { formatCurrencyCompact, formatCurrency } from '../lib/currencyUtils';
 import { useNavigation } from '../contexts/NavigationContext';
 import QuotationViewModal from '../components/quotations/QuotationViewModal';
 import { SkeletonDashboard } from '../components/ui/SkeletonLoader';
+import CustomerResponseTracking from '../components/CustomerResponseTracking';
 import {
   LineChart,
   Line,
@@ -434,6 +435,9 @@ export default function SalesDashboard() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Customer Response Tracking */}
+      <CustomerResponseTracking onViewQuotation={(id) => setViewingId(id)} />
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">

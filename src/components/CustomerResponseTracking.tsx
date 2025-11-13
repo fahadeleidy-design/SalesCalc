@@ -35,6 +35,8 @@ export default function CustomerResponseTracking({ onViewQuotation }: CustomerRe
   const [filter, setFilter] = useState<'all' | 'urgent' | 'overdue'>('all');
 
   useEffect(() => {
+    if (!profile) return;
+
     loadSubmittedQuotations();
 
     // Set up real-time subscription
@@ -56,13 +58,14 @@ export default function CustomerResponseTracking({ onViewQuotation }: CustomerRe
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [profile?.id]);
 
   const loadSubmittedQuotations = async () => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
+      // Build query based on role
+      let query = supabase
         .from('quotations')
         .select(`
           id,
@@ -72,6 +75,7 @@ export default function CustomerResponseTracking({ onViewQuotation }: CustomerRe
           submitted_to_customer_by,
           status,
           customer_response_due_date,
+          sales_rep_id,
           customer:customers(
             company_name,
             contact_person,
@@ -82,8 +86,14 @@ export default function CustomerResponseTracking({ onViewQuotation }: CustomerRe
           )
         `)
         .not('submitted_to_customer_at', 'is', null)
-        .not('status', 'in', '("deal_won","deal_lost","rejected","rejected_by_finance")')
-        .order('submitted_to_customer_at', { ascending: true });
+        .not('status', 'in', '("deal_won","deal_lost","rejected","rejected_by_finance")');
+
+      // Filter by sales rep if user is in sales role
+      if (profile?.role === 'sales') {
+        query = query.eq('sales_rep_id', profile.id);
+      }
+
+      const { data, error } = await query.order('submitted_to_customer_at', { ascending: true });
 
       if (error) throw error;
 
