@@ -21,7 +21,7 @@ interface SubmittedQuotation {
   submitted_to_customer_by: string;
   status: string;
   days_pending: number;
-  response_due_date?: string;
+  customer_response_due_date?: string;
 }
 
 interface CustomerResponseTrackingProps {
@@ -71,7 +71,7 @@ export default function CustomerResponseTracking({ onViewQuotation }: CustomerRe
           submitted_to_customer_at,
           submitted_to_customer_by,
           status,
-          response_due_date,
+          customer_response_due_date,
           customer:customers(
             company_name,
             contact_person,
@@ -82,7 +82,7 @@ export default function CustomerResponseTracking({ onViewQuotation }: CustomerRe
           )
         `)
         .not('submitted_to_customer_at', 'is', null)
-        .in('status', ['approved', 'finance_approved'])
+        .not('status', 'in', '("won","lost","rejected","cancelled")')
         .order('submitted_to_customer_at', { ascending: true });
 
       if (error) throw error;
@@ -352,9 +352,9 @@ export default function CustomerResponseTracking({ onViewQuotation }: CustomerRe
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{quotation.quotation_number}</p>
                       <p className="text-xs text-slate-500">
-                        {quotation.response_due_date ? (
+                        {quotation.customer_response_due_date ? (
                           <span className="text-orange-600 font-medium">
-                            Due: {new Date(quotation.response_due_date).toLocaleDateString()}
+                            Due: {new Date(quotation.customer_response_due_date).toLocaleDateString()}
                           </span>
                         ) : (
                           'No due date set'
