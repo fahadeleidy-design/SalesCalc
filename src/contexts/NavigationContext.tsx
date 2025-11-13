@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 interface NavigationContextType {
   currentPath: string;
@@ -11,13 +11,13 @@ const NavigationContext = createContext<NavigationContextType | undefined>(undef
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [currentPath, setCurrentPath] = useState('/dashboard');
 
-  const navigate = (path: string) => {
+  const navigate = useCallback((path: string) => {
     setCurrentPath(path);
-  };
+  }, []);
 
-  const resetNavigation = () => {
+  const resetNavigation = useCallback(() => {
     setCurrentPath('/dashboard');
-  };
+  }, []);
 
   return (
     <NavigationContext.Provider value={{ currentPath, navigate, resetNavigation }}>
