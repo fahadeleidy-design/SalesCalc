@@ -614,6 +614,12 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                                   <p className="font-semibold text-slate-900 text-base leading-snug">
                                     {item.is_custom ? item.custom_description : item.product?.name}
                                   </p>
+                                  {!item.is_custom && item.product?.sku && (
+                                    <p className="text-xs text-slate-500 mt-0.5">SKU: {item.product.sku}</p>
+                                  )}
+                                  {!item.is_custom && item.product?.description && (
+                                    <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">{item.product.description}</p>
+                                  )}
                                   {item.is_custom && (
                                     <span className="inline-flex items-center gap-1 mt-1.5 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md font-medium border border-amber-200">
                                       <Tag className="w-3 h-3" />

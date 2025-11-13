@@ -599,6 +599,11 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                 {item.product?.name}
                               </div>
                               <div className="text-slate-500">{item.product?.sku}</div>
+                              {item.product?.description && (
+                                <div className="text-xs text-slate-600 mt-1 line-clamp-2">
+                                  {item.product.description}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
