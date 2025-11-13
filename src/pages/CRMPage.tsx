@@ -1230,6 +1230,7 @@ function OpportunityModal({
 }) {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+  const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [formData, setFormData] = useState({
     name: opportunity?.name || '',
     customer_id: opportunity?.customer_id || '',
@@ -1241,6 +1242,60 @@ function OpportunityModal({
     description: opportunity?.description || '',
     next_step: opportunity?.next_step || '',
     notes: opportunity?.notes || '',
+  });
+
+  const [newCustomerData, setNewCustomerData] = useState({
+    company_name: '',
+    contact_name: '',
+    contact_email: '',
+    contact_phone: '',
+    country: 'Saudi Arabia',
+    city: '',
+    address: '',
+    tax_id: '',
+    industry: '',
+    customer_type: 'business',
+    payment_terms: 'net_30',
+  });
+
+  const createCustomerMutation = useMutation({
+    mutationFn: async () => {
+      const customerData = {
+        ...newCustomerData,
+        created_by: profile?.id,
+      };
+
+      const { data, error } = await supabase
+        .from('customers')
+        .insert(customerData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (newCustomer) => {
+      queryClient.invalidateQueries({ queryKey: ['customers-list'] });
+      setFormData({ ...formData, customer_id: newCustomer.id, lead_id: '' });
+      setShowNewCustomerForm(false);
+      setNewCustomerData({
+        company_name: '',
+        contact_name: '',
+        contact_email: '',
+        contact_phone: '',
+        country: 'Saudi Arabia',
+        city: '',
+        address: '',
+        tax_id: '',
+        industry: '',
+        customer_type: 'business',
+        payment_terms: 'net_30',
+      });
+      toast.success('Customer created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to create customer');
+    },
   });
 
   const saveMutation = useMutation({
@@ -1311,37 +1366,202 @@ function OpportunityModal({
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
-                <select
-                  value={formData.customer_id}
-                  onChange={(e) => setFormData({ ...formData, customer_id: e.target.value, lead_id: '' })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                >
-                  <option value="">Select Customer</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.company_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {!showNewCustomerForm ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
+                    <select
+                      value={formData.customer_id}
+                      onChange={(e) => setFormData({ ...formData, customer_id: e.target.value, lead_id: '' })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value="">Select Customer</option>
+                      {customers.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.company_name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCustomerForm(true)}
+                      className="mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      + Create New Customer
+                    </button>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Or Lead</label>
-                <select
-                  value={formData.lead_id}
-                  onChange={(e) => setFormData({ ...formData, lead_id: e.target.value, customer_id: '' })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                >
-                  <option value="">Select Lead</option>
-                  {leads.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.company_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Or Lead</label>
+                    <select
+                      value={formData.lead_id}
+                      onChange={(e) => setFormData({ ...formData, lead_id: e.target.value, customer_id: '' })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value="">Select Lead</option>
+                      {leads.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.company_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <div className="md:col-span-2 p-4 border-2 border-orange-200 rounded-lg bg-orange-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-slate-900 flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      New Customer Information
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCustomerForm(false)}
+                      className="text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Company Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={newCustomerData.company_name}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, company_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Contact Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={newCustomerData.contact_name}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, contact_name: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={newCustomerData.contact_email}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, contact_email: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                      <input
+                        type="tel"
+                        value={newCustomerData.contact_phone}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, contact_phone: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
+                      <input
+                        type="text"
+                        value={newCustomerData.country}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, country: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">City</label>
+                      <input
+                        type="text"
+                        value={newCustomerData.city}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, city: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                      <input
+                        type="text"
+                        value={newCustomerData.address}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, address: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Tax ID</label>
+                      <input
+                        type="text"
+                        value={newCustomerData.tax_id}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, tax_id: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Industry</label>
+                      <input
+                        type="text"
+                        value={newCustomerData.industry}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, industry: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="e.g., Manufacturing, Technology"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Customer Type</label>
+                      <select
+                        value={newCustomerData.customer_type}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, customer_type: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      >
+                        <option value="business">Business</option>
+                        <option value="government">Government</option>
+                        <option value="individual">Individual</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Payment Terms</label>
+                      <select
+                        value={newCustomerData.payment_terms}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, payment_terms: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      >
+                        <option value="net_30">Net 30</option>
+                        <option value="net_60">Net 60</option>
+                        <option value="net_90">Net 90</option>
+                        <option value="immediate">Immediate</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <button
+                        type="button"
+                        onClick={() => createCustomerMutation.mutate()}
+                        disabled={!newCustomerData.company_name || !newCustomerData.contact_name || createCustomerMutation.isPending}
+                        className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {createCustomerMutation.isPending ? 'Creating Customer...' : 'Create Customer & Continue'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Stage *</label>
