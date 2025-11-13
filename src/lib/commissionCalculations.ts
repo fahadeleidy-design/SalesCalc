@@ -37,14 +37,14 @@ export async function calculateSalesRepCommission(
     return null;
   }
 
-  // Get won deals (approved quotations) in this period
+  // Get won deals in this period
   const { data: wonDeals, error: dealsError } = await supabase
     .from('quotations')
     .select('total')
     .eq('sales_rep_id', salesRepId)
-    .eq('status', 'approved')
-    .gte('created_at', periodStart)
-    .lte('created_at', periodEnd);
+    .eq('status', 'deal_won')
+    .gte('deal_won_at', periodStart)
+    .lte('deal_won_at', periodEnd);
 
   if (dealsError) {
     throw dealsError;
@@ -127,9 +127,9 @@ export async function calculateManagerCommission(
     .from('quotations')
     .select('total')
     .in('sales_rep_id', salesRepIds)
-    .eq('status', 'approved')
-    .gte('created_at', periodStart)
-    .lte('created_at', periodEnd);
+    .eq('status', 'deal_won')
+    .gte('deal_won_at', periodStart)
+    .lte('deal_won_at', periodEnd);
 
   if (dealsError) {
     throw dealsError;
