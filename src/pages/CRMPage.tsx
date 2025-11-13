@@ -59,6 +59,32 @@ interface Lead {
   assigned_to: string;
 }
 
+interface Opportunity {
+  id: string;
+  name: string;
+  customer_id: string | null;
+  lead_id: string | null;
+  stage: string;
+  amount: number;
+  probability: number;
+  expected_close_date: string | null;
+  actual_close_date: string | null;
+  assigned_to: string;
+  description: string | null;
+  next_step: string | null;
+  notes: string | null;
+  created_at: string;
+  closed_won: boolean;
+  won_reason: string | null;
+  lost_reason: string | null;
+  customer?: {
+    company_name: string;
+  };
+  lead?: {
+    company_name: string;
+  };
+}
+
 export default function CRMPage() {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities'>('overview');
@@ -893,20 +919,537 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
 }
 
 function OpportunitiesView() {
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [stageFilter, setStageFilter] = useState<string>('all');
+
+  // Fetch opportunities
+  const { data: opportunities, isLoading } = useQuery({
+    queryKey: ['crm-opportunities', profile?.id],
+    queryFn: async () => {
+      let query = supabase
+        .from('crm_opportunities')
+        .select(`
+          *,
+          customer:customers(company_name),
+          lead:crm_leads(company_name)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Apply access control
+      if (profile?.role === 'sales') {
+        query = query.eq('assigned_to', profile.id);
+      } else if (profile?.role === 'manager') {
+        const { data: teamMembers } = await supabase
+          .from('team_members')
+          .select('sales_rep_id')
+          .in('team_id', (
+            await supabase
+              .from('sales_teams')
+              .select('id')
+              .eq('manager_id', profile.id)
+          ).data?.map(t => t.id) || []);
+
+        query = query.in('assigned_to', teamMembers?.map(tm => tm.sales_rep_id) || []);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Opportunity[];
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Fetch customers for dropdown
+  const { data: customers } = useQuery({
+    queryKey: ['customers-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, company_name')
+        .order('company_name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch leads for dropdown
+  const { data: leads } = useQuery({
+    queryKey: ['leads-list', profile?.id],
+    queryFn: async () => {
+      let query = supabase
+        .from('crm_leads')
+        .select('id, company_name')
+        .neq('lead_status', 'converted')
+        .order('company_name');
+
+      if (profile?.role === 'sales') {
+        query = query.eq('assigned_to', profile.id);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.id,
+  });
+
+  const filteredOpportunities = opportunities?.filter((opp) => {
+    const companyName = opp.customer?.company_name || opp.lead?.company_name || '';
+    const matchesSearch =
+      opp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      companyName.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStage = stageFilter === 'all' || opp.stage === stageFilter;
+
+    return matchesSearch && matchesStage;
+  });
+
+  // Group by stage for pipeline view
+  const stageGroups = {
+    prospecting: filteredOpportunities?.filter(o => o.stage === 'prospecting') || [],
+    qualification: filteredOpportunities?.filter(o => o.stage === 'qualification') || [],
+    needs_analysis: filteredOpportunities?.filter(o => o.stage === 'needs_analysis') || [],
+    proposal: filteredOpportunities?.filter(o => o.stage === 'proposal') || [],
+    negotiation: filteredOpportunities?.filter(o => o.stage === 'negotiation') || [],
+    closed_won: filteredOpportunities?.filter(o => o.stage === 'closed_won') || [],
+    closed_lost: filteredOpportunities?.filter(o => o.stage === 'closed_lost') || [],
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-slate-900">Sales Opportunities</h2>
-        <button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
-          <Plus className="h-5 w-5" />
-          Add Opportunity
+    <div className="space-y-6">
+      {/* Search and Filter */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search opportunities by name or company..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+          <select
+            value={stageFilter}
+            onChange={(e) => setStageFilter(e.target.value)}
+            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          >
+            <option value="all">All Stages</option>
+            <option value="prospecting">Prospecting</option>
+            <option value="qualification">Qualification</option>
+            <option value="needs_analysis">Needs Analysis</option>
+            <option value="proposal">Proposal</option>
+            <option value="negotiation">Negotiation</option>
+            <option value="closed_won">Closed Won</option>
+            <option value="closed_lost">Closed Lost</option>
+          </select>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
+          >
+            <Plus className="h-5 w-5" />
+            Add Opportunity
+          </button>
+        </div>
+      </div>
+
+      {/* Pipeline View */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        </div>
+      ) : !filteredOpportunities || filteredOpportunities.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+          <TrendingUp className="mx-auto h-16 w-16 text-slate-300 mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 mb-2">
+            {searchTerm || stageFilter !== 'all' ? 'No Opportunities Found' : 'No Opportunities Yet'}
+          </h3>
+          <p className="text-slate-600 mb-4">
+            {searchTerm || stageFilter !== 'all'
+              ? 'Try adjusting your search or filters'
+              : 'Start by adding your first opportunity to track potential deals'}
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Add First Opportunity
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Object.entries(stageGroups).map(([stage, opps]) => (
+            <PipelineColumn
+              key={stage}
+              stage={stage}
+              opportunities={opps}
+              onEdit={setEditingOpportunity}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
+      {(showAddModal || editingOpportunity) && (
+        <OpportunityModal
+          opportunity={editingOpportunity}
+          customers={customers || []}
+          leads={leads || []}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingOpportunity(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PipelineColumn({
+  stage,
+  opportunities,
+  onEdit,
+}: {
+  stage: string;
+  opportunities: Opportunity[];
+  onEdit: (opp: Opportunity) => void;
+}) {
+  const stageConfig: Record<string, { label: string; color: string; bgColor: string }> = {
+    prospecting: { label: 'Prospecting', color: 'text-slate-700', bgColor: 'bg-slate-100' },
+    qualification: { label: 'Qualification', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+    needs_analysis: { label: 'Needs Analysis', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+    proposal: { label: 'Proposal', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+    negotiation: { label: 'Negotiation', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+    closed_won: { label: 'Closed Won', color: 'text-green-700', bgColor: 'bg-green-100' },
+    closed_lost: { label: 'Closed Lost', color: 'text-red-700', bgColor: 'bg-red-100' },
+  };
+
+  const config = stageConfig[stage];
+  const totalValue = opportunities.reduce((sum, opp) => sum + Number(opp.amount), 0);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className={`font-semibold ${config.color}`}>{config.label}</h3>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.color}`}>
+            {opportunities.length}
+          </span>
+        </div>
+        <p className="text-sm text-slate-600">{formatCurrency(totalValue)}</p>
+      </div>
+
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {opportunities.map((opp) => (
+          <OpportunityCard key={opp.id} opportunity={opp} onEdit={onEdit} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OpportunityCard({
+  opportunity,
+  onEdit,
+}: {
+  opportunity: Opportunity;
+  onEdit: (opp: Opportunity) => void;
+}) {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('crm_opportunities').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
+      toast.success('Opportunity deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete opportunity');
+    },
+  });
+
+  const companyName = opportunity.customer?.company_name || opportunity.lead?.company_name || 'Unknown';
+
+  return (
+    <div
+      className="bg-slate-50 rounded-lg p-3 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200"
+      onClick={() => onEdit(opportunity)}
+    >
+      <div className="flex items-start justify-between mb-2">
+        <h4 className="font-medium text-slate-900 text-sm">{opportunity.name}</h4>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm('Delete this opportunity?')) {
+              deleteMutation.mutate(opportunity.id);
+            }
+          }}
+          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+        >
+          <Trash2 className="h-3 w-3" />
         </button>
       </div>
 
-      <div className="text-center py-12 text-slate-500">
-        <TrendingUp className="mx-auto h-16 w-16 text-slate-300 mb-4" />
-        <h3 className="text-lg font-medium text-slate-900 mb-2">Opportunity Pipeline Coming Soon</h3>
-        <p>Visual pipeline with drag-and-drop stage management and forecasting</p>
+      <p className="text-xs text-slate-600 mb-2">{companyName}</p>
+
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-semibold text-slate-900">{formatCurrency(opportunity.amount)}</span>
+        <span className="text-slate-600">{opportunity.probability}%</span>
+      </div>
+
+      {opportunity.expected_close_date && (
+        <div className="flex items-center gap-1 mt-2 text-xs text-slate-500">
+          <Calendar className="h-3 w-3" />
+          <span>{new Date(opportunity.expected_close_date).toLocaleDateString()}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OpportunityModal({
+  opportunity,
+  customers,
+  leads,
+  onClose,
+}: {
+  opportunity: Opportunity | null;
+  customers: any[];
+  leads: any[];
+  onClose: () => void;
+}) {
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState({
+    name: opportunity?.name || '',
+    customer_id: opportunity?.customer_id || '',
+    lead_id: opportunity?.lead_id || '',
+    stage: opportunity?.stage || 'prospecting',
+    amount: opportunity?.amount || '',
+    probability: opportunity?.probability || 50,
+    expected_close_date: opportunity?.expected_close_date || '',
+    description: opportunity?.description || '',
+    next_step: opportunity?.next_step || '',
+    notes: opportunity?.notes || '',
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const data = {
+        ...formData,
+        amount: Number(formData.amount) || 0,
+        customer_id: formData.customer_id || null,
+        lead_id: formData.lead_id || null,
+        expected_close_date: formData.expected_close_date || null,
+        assigned_to: profile?.id,
+        created_by: profile?.id,
+      };
+
+      if (opportunity) {
+        const { error } = await supabase
+          .from('crm_opportunities')
+          .update(data)
+          .eq('id', opportunity.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('crm_opportunities').insert(data);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
+      toast.success(opportunity ? 'Opportunity updated successfully' : 'Opportunity created successfully');
+      onClose();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to save opportunity');
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+          <h2 className="text-xl font-bold text-slate-900">
+            {opportunity ? 'Edit Opportunity' : 'Add New Opportunity'}
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+          {/* Basic Information */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Opportunity Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Opportunity Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="e.g., Q4 Equipment Sale"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
+                <select
+                  value={formData.customer_id}
+                  onChange={(e) => setFormData({ ...formData, customer_id: e.target.value, lead_id: '' })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="">Select Customer</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.company_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Or Lead</label>
+                <select
+                  value={formData.lead_id}
+                  onChange={(e) => setFormData({ ...formData, lead_id: e.target.value, customer_id: '' })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="">Select Lead</option>
+                  {leads.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.company_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Stage *</label>
+                <select
+                  value={formData.stage}
+                  onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="prospecting">Prospecting</option>
+                  <option value="qualification">Qualification</option>
+                  <option value="needs_analysis">Needs Analysis</option>
+                  <option value="proposal">Proposal</option>
+                  <option value="negotiation">Negotiation</option>
+                  <option value="closed_won">Closed Won</option>
+                  <option value="closed_lost">Closed Lost</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Amount (SAR) *
+                </label>
+                <input
+                  type="number"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Probability (0-100%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.probability}
+                  onChange={(e) => setFormData({ ...formData, probability: Number(e.target.value) })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Expected Close Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.expected_close_date}
+                  onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="Brief description of the opportunity..."
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Next Step</label>
+                <input
+                  type="text"
+                  value={formData.next_step}
+                  onChange={(e) => setFormData({ ...formData, next_step: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="e.g., Schedule demo, Send proposal"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  placeholder="Additional notes or context..."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 p-6 border-t border-slate-200">
+          <button
+            onClick={() => saveMutation.mutate()}
+            disabled={!formData.name || !formData.amount || saveMutation.isPending}
+            className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saveMutation.isPending ? 'Saving...' : opportunity ? 'Update Opportunity' : 'Create Opportunity'}
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
