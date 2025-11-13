@@ -69,6 +69,12 @@ const navigationItems: NavItem[] = [
     roles: ['sales', 'manager', 'admin'],
   },
   {
+    label: 'CRM',
+    icon: Target,
+    path: '/crm',
+    roles: ['sales', 'manager', 'ceo'],
+  },
+  {
     label: 'Products',
     icon: Package,
     path: '/products',
