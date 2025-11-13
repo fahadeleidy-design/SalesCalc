@@ -101,7 +101,7 @@ function AppContent() {
       case '/customers':
         return hasAccess(['sales', 'manager', 'admin']) ? <CustomersPage /> : <UnauthorizedPage />;
       case '/products':
-        return hasAccess(['admin']) ? <ProductsPage /> : <UnauthorizedPage />;
+        return hasAccess(['admin', 'finance']) ? <ProductsPage /> : <UnauthorizedPage />;
       case '/commissions':
         return hasAccess(['sales', 'manager', 'ceo', 'finance', 'admin']) ? <CommissionsPage /> : <UnauthorizedPage />;
       case '/targets':
