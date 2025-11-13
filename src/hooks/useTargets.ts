@@ -76,6 +76,7 @@ export function useTeamTargets(managerId?: string) {
       if (error) throw error;
       return data as TeamTarget[];
     },
+    enabled: !!managerId,
   });
 }
 

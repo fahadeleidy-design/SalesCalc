@@ -5,14 +5,14 @@ import { useTeamTargets } from '../../hooks/useTargets';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function ManagerCommissionDashboard() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState<{
     start: string;
     end: string;
   } | null>(null);
 
   // Get all approved team targets for this manager
-  const { data: teamTargets, isLoading: targetsLoading } = useTeamTargets(user?.id || '');
+  const { data: teamTargets, isLoading: targetsLoading } = useTeamTargets(profile?.id || '');
   const approvedTargets = teamTargets?.filter((t) => t.status === 'approved') || [];
 
   // Set the first target as default if available
@@ -22,14 +22,14 @@ export function ManagerCommissionDashboard() {
 
   // Get manager's commission calculation
   const { data: managerCommission, isLoading: managerCommissionLoading } = useManagerCommission(
-    user?.id || '',
+    profile?.id || '',
     periodStart,
     periodEnd
   );
 
   // Get team commissions
   const { data: teamCommissions, isLoading: teamCommissionsLoading } = useTeamCommissions(
-    user?.id || '',
+    profile?.id || '',
     periodStart,
     periodEnd
   );
