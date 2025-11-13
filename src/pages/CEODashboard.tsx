@@ -135,9 +135,8 @@ export default function CEODashboard() {
       // Calculate metrics
       const wonDeals = quotations.filter((q: any) => q.status === 'deal_won');
       const lostDeals = quotations.filter((q: any) => q.status === 'deal_lost');
-      const pendingQuotations = quotations.filter((q: any) =>
-        ['pending_manager', 'pending_ceo', 'pending_finance'].includes(q.status)
-      );
+      // CEO should only see quotations pending their approval (pending_ceo status)
+      const pendingQuotations = quotations.filter((q: any) => q.status === 'pending_ceo');
       const approvedQuotations = quotations.filter((q: any) => q.status === 'approved');
       const rejectedQuotations = quotations.filter((q: any) => q.status === 'rejected');
 
