@@ -4,8 +4,8 @@ import { SetTargetsForm } from '../components/targets/SetTargetsForm';
 import { TargetApprovalList } from '../components/targets/TargetApprovalList';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useApprovedTargets, useSalesRepsWithoutTargets } from '../hooks/useTargets';
-import { Target, Plus, CheckCircle, Users, Calendar, DollarSign, AlertCircle } from 'lucide-react';
+import { useApprovedTargets, useSalesRepsWithoutTargets, useTeamTargets } from '../hooks/useTargets';
+import { Target, Plus, CheckCircle, Users, Calendar, DollarSign, AlertCircle, Clock, XCircle } from 'lucide-react';
 
 export default function TargetsPage() {
   const { profile } = useAuth();
@@ -37,46 +37,7 @@ export default function TargetsPage() {
 
   // Render different views based on role
   if (profile.role === 'manager') {
-    if (isLoadingSalesReps) {
-      return (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Target className="h-7 w-7 text-orange-600" />
-              Manage Targets
-            </h1>
-            <p className="text-slate-600 mt-1">Set individual and team sales targets</p>
-          </div>
-          <button
-            onClick={() => setShowSetTargetForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-            Set New Target
-          </button>
-        </div>
-
-        {/* Show existing targets here - to be implemented */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-600">Target management interface coming soon...</p>
-        </div>
-
-        {showSetTargetForm && (
-          <SetTargetsForm
-            salesReps={salesReps || []}
-            onClose={() => setShowSetTargetForm(false)}
-          />
-        )}
-      </div>
-    );
+    return <ManagerTargetsView profile={profile} />;
   }
 
   if (profile.role === 'ceo') {
@@ -89,6 +50,314 @@ export default function TargetsPage() {
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
         <p className="text-slate-600">You don't have permission to access this page.</p>
       </div>
+    </div>
+  );
+}
+
+function ManagerTargetsView({ profile }: { profile: any }) {
+  const [showSetTargetForm, setShowSetTargetForm] = useState(false);
+
+  // Fetch sales reps for the manager
+  const { data: salesReps, isLoading: isLoadingSalesReps } = useQuery({
+    queryKey: ['salesReps'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('role', 'sales')
+        .order('full_name');
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch all targets (sales and team) for this manager
+  const { data: salesTargets, isLoading: isLoadingSalesTargets } = useQuery({
+    queryKey: ['manager-sales-targets', profile.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sales_targets')
+        .select('*, sales_rep:profiles!sales_targets_sales_rep_id_fkey(full_name, email)')
+        .eq('manager_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: teamTargets, isLoading: isLoadingTeamTargets } = useTeamTargets(profile.id);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-SA', {
+      style: 'currency',
+      currency: 'SAR',
+    }).format(amount);
+  };
+
+  const formatPeriodType = (type: string) => {
+    const map: Record<string, string> = {
+      monthly: 'Monthly',
+      quarterly: 'Quarterly',
+      half_yearly: 'Half-Yearly',
+      yearly: 'Yearly',
+    };
+    return map[type] || type;
+  };
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, { bg: string; text: string; icon: any }> = {
+      pending_ceo: { bg: 'bg-amber-100', text: 'text-amber-800', icon: Clock },
+      approved: { bg: 'bg-green-100', text: 'text-green-800', icon: CheckCircle },
+      rejected: { bg: 'bg-red-100', text: 'text-red-800', icon: XCircle },
+    };
+
+    const style = styles[status] || styles.pending_ceo;
+    const Icon = style.icon;
+
+    return (
+      <span className={`inline-flex items-center gap-1 px-3 py-1 ${style.bg} ${style.text} rounded-full text-sm font-medium`}>
+        <Icon className="h-4 w-4" />
+        {status === 'pending_ceo' ? 'Pending CEO' : status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
+  };
+
+  const isLoading = isLoadingSalesReps || isLoadingSalesTargets || isLoadingTeamTargets;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  const approvedSalesTargets = salesTargets?.filter(t => t.status === 'approved') || [];
+  const pendingSalesTargets = salesTargets?.filter(t => t.status === 'pending_ceo') || [];
+  const approvedTeamTargets = teamTargets?.filter(t => t.status === 'approved') || [];
+  const pendingTeamTargets = teamTargets?.filter(t => t.status === 'pending_ceo') || [];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Target className="h-7 w-7 text-orange-600" />
+            Manage Targets
+          </h1>
+          <p className="text-slate-600 mt-1">Set individual and team sales targets</p>
+        </div>
+        <button
+          onClick={() => setShowSetTargetForm(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+        >
+          <Plus className="h-5 w-5" />
+          Set New Target
+        </button>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-slate-600">Approved Sales Targets</span>
+            <CheckCircle className="h-5 w-5 text-green-600" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900">{approvedSalesTargets.length}</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-slate-600">Pending Sales Targets</span>
+            <Clock className="h-5 w-5 text-amber-600" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900">{pendingSalesTargets.length}</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-slate-600">Approved Team Targets</span>
+            <CheckCircle className="h-5 w-5 text-green-600" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900">{approvedTeamTargets.length}</p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-slate-600">Pending Team Targets</span>
+            <Clock className="h-5 w-5 text-amber-600" />
+          </div>
+          <p className="text-2xl font-bold text-slate-900">{pendingTeamTargets.length}</p>
+        </div>
+      </div>
+
+      {/* Team Targets Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <Users className="h-6 w-6 text-orange-600" />
+          Team Targets
+        </h2>
+
+        {!teamTargets || teamTargets.length === 0 ? (
+          <div className="text-center py-12">
+            <Target className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No Team Targets Yet</h3>
+            <p className="text-slate-600">Click "Set New Target" to create your first team target.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {teamTargets.map((target) => (
+              <div
+                key={target.id}
+                className="border border-slate-200 rounded-lg p-5 hover:border-orange-300 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold text-slate-900 text-lg">
+                      {formatPeriodType(target.period_type)} Team Target
+                    </h3>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {new Date(target.period_start).toLocaleDateString()} - {new Date(target.period_end).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {getStatusBadge(target.status)}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500">Target Amount</p>
+                      <p className="text-lg font-semibold text-slate-900">
+                        {formatCurrency(target.target_amount)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500">Created</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {new Date(target.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {target.notes && (
+                  <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                    <p className="text-xs text-slate-500 mb-1">Notes:</p>
+                    <p className="text-sm text-slate-700">{target.notes}</p>
+                  </div>
+                )}
+
+                {target.rejection_reason && (
+                  <div className="mt-3 p-3 bg-red-50 rounded-lg">
+                    <p className="text-xs text-red-600 mb-1">Rejection Reason:</p>
+                    <p className="text-sm text-red-700">{target.rejection_reason}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Individual Sales Targets Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <Target className="h-6 w-6 text-orange-600" />
+          Individual Sales Targets
+        </h2>
+
+        {!salesTargets || salesTargets.length === 0 ? (
+          <div className="text-center py-12">
+            <Target className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No Sales Targets Yet</h3>
+            <p className="text-slate-600">Click "Set New Target" to create targets for your sales reps.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {salesTargets.map((target) => (
+              <div
+                key={target.id}
+                className="border border-slate-200 rounded-lg p-5 hover:border-orange-300 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Users className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">
+                        {target.sales_rep?.full_name}
+                      </h3>
+                      <p className="text-sm text-slate-600">{target.sales_rep?.email}</p>
+                    </div>
+                  </div>
+                  {getStatusBadge(target.status)}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500">Period Type</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {formatPeriodType(target.period_type)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500">Duration</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {new Date(target.period_start).toLocaleDateString()} - {new Date(target.period_end).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-slate-400" />
+                    <div>
+                      <p className="text-xs text-slate-500">Target Amount</p>
+                      <p className="text-sm font-semibold text-orange-600">
+                        {formatCurrency(target.target_amount)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {target.notes && (
+                  <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                    <p className="text-xs text-slate-500 mb-1">Notes:</p>
+                    <p className="text-sm text-slate-700">{target.notes}</p>
+                  </div>
+                )}
+
+                {target.rejection_reason && (
+                  <div className="mt-3 p-3 bg-red-50 rounded-lg">
+                    <p className="text-xs text-red-600 mb-1">Rejection Reason:</p>
+                    <p className="text-sm text-red-700">{target.rejection_reason}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {showSetTargetForm && (
+        <SetTargetsForm
+          salesReps={salesReps || []}
+          onClose={() => setShowSetTargetForm(false)}
+        />
+      )}
     </div>
   );
 }
