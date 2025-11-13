@@ -100,7 +100,7 @@ function AppContent() {
       case '/dashboard':
         return getDashboardForRole();
       case '/quotations':
-        return hasAccess(['sales']) ? <QuotationsPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'finance', 'ceo', 'manager']) ? <QuotationsPage /> : <UnauthorizedPage />;
       case '/custom-items':
         return hasAccess(['engineering']) ? <CustomItemsPage /> : <UnauthorizedPage />;
       case '/approvals':
