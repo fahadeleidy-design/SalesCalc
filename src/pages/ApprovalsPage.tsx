@@ -23,6 +23,27 @@ export default function ApprovalsPage() {
   const [processing, setProcessing] = useState(false);
   const [viewingId, setViewingId] = useState<string | undefined>();
 
+  // Helper function to calculate actual totals from items
+  const calculateQuotationTotal = (quotation: Quotation) => {
+    if (!quotation.quotation_items || quotation.quotation_items.length === 0) {
+      return quotation.total || 0;
+    }
+
+    const subtotal = quotation.quotation_items.reduce((sum, item) => {
+      return sum + (Number(item.line_total) || 0);
+    }, 0);
+
+    const discountPercentage = Number(quotation.discount_percentage) || 0;
+    const taxPercentage = Number(quotation.tax_percentage) || 0;
+
+    const discountAmount = (subtotal * discountPercentage) / 100;
+    const afterDiscount = subtotal - discountAmount;
+    const taxAmount = (afterDiscount * taxPercentage) / 100;
+    const total = afterDiscount + taxAmount;
+
+    return total;
+  };
+
   useEffect(() => {
     loadQuotations();
   }, [profile]);
@@ -151,7 +172,7 @@ export default function ApprovalsPage() {
               <FileText className="w-6 h-6 text-orange-500" />
             </div>
             <span className="text-2xl font-bold text-slate-900">
-              {formatCurrency(quotations.reduce((sum, q) => sum + q.total, 0))}
+              {formatCurrency(quotations.reduce((sum, q) => sum + calculateQuotationTotal(q), 0))}
             </span>
           </div>
           <h3 className="text-sm font-medium text-slate-600">Total Value</h3>
@@ -217,7 +238,7 @@ export default function ApprovalsPage() {
                           <div>
                             <p className="text-sm text-slate-600">Total Amount</p>
                             <p className="font-semibold text-lg text-slate-900">
-                              {formatCurrency(quotation.total)}
+                              {formatCurrency(calculateQuotationTotal(quotation))}
                             </p>
                           </div>
                           <div>
@@ -295,7 +316,7 @@ export default function ApprovalsPage() {
                   {selectedQuotation.quotation_number} - {selectedQuotation.customer?.company_name || 'N/A'}
                 </p>
                 <p className="text-lg font-semibold text-slate-900 mt-2">
-                  {formatCurrency(selectedQuotation.total)}
+                  {formatCurrency(calculateQuotationTotal(selectedQuotation))}
                 </p>
               </div>
 
