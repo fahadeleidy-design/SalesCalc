@@ -24,9 +24,17 @@ import {
   MapPin,
   Globe,
   Briefcase,
+  ArrowRightCircle,
+  MessageSquare,
+  FileText,
+  Download,
+  Upload,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../lib/currencyUtils';
+import LeadConversionModal from '../components/crm/LeadConversionModal';
+import ActivityLogModal from '../components/crm/ActivityLogModal';
+import ActivityTimeline from '../components/crm/ActivityTimeline';
 
 interface CRMStats {
   totalLeads: number;
@@ -517,6 +525,9 @@ function LeadsView() {
 
 function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }) {
   const queryClient = useQueryClient();
+  const [showConversion, setShowConversion] = useState(false);
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -544,32 +555,60 @@ function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }
     unqualified: 'bg-slate-100 text-slate-700',
   };
 
+  const canConvert = ['qualified', 'proposal', 'negotiation'].includes(lead.lead_status);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">{lead.company_name}</h3>
-          <p className="text-sm text-slate-600">{lead.contact_name}</p>
+    <>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-slate-900 mb-1">{lead.company_name}</h3>
+            <p className="text-sm text-slate-600">{lead.contact_name}</p>
+          </div>
+          <div className="flex items-center gap-1">
+            {canConvert && (
+              <button
+                onClick={() => setShowConversion(true)}
+                className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                title="Convert to Customer"
+              >
+                <ArrowRightCircle className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={() => setShowActivityLog(true)}
+              className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+              title="Log Activity"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowTimeline(true)}
+              className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+              title="View Timeline"
+            >
+              <Clock className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => onEdit(lead)}
+              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Edit Lead"
+            >
+              <Edit2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                if (confirm('Delete this lead?')) {
+                  deleteMutation.mutate(lead.id);
+                }
+              }}
+              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Delete Lead"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onEdit(lead)}
-            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            <Edit2 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => {
-              if (confirm('Delete this lead?')) {
-                deleteMutation.mutate(lead.id);
-              }
-            }}
-            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
 
       <div className="space-y-2 mb-4">
         {lead.contact_email && (
@@ -592,22 +631,58 @@ function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }
         )}
       </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[lead.lead_status]}`}>
-          {lead.lead_status.replace('_', ' ').toUpperCase()}
-        </span>
-        <div className="flex items-center gap-1 text-amber-500">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className={`h-2 w-2 rounded-full ${
-                i < Math.floor(lead.lead_score / 20) ? 'bg-amber-500' : 'bg-slate-200'
-              }`}
-            />
-          ))}
+        <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[lead.lead_status]}`}>
+            {lead.lead_status.replace('_', ' ').toUpperCase()}
+          </span>
+          <div className="flex items-center gap-1 text-amber-500">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className={`h-2 w-2 rounded-full ${
+                  i < Math.floor(lead.lead_score / 20) ? 'bg-amber-500' : 'bg-slate-200'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+
+      {showConversion && (
+        <LeadConversionModal
+          lead={lead}
+          onClose={() => setShowConversion(false)}
+        />
+      )}
+
+      {showActivityLog && (
+        <ActivityLogModal
+          entityType="lead"
+          entityId={lead.id}
+          entityName={lead.company_name}
+          onClose={() => setShowActivityLog(false)}
+        />
+      )}
+
+      {showTimeline && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Activity Timeline</h2>
+                <p className="text-sm text-slate-600 mt-1">{lead.company_name}</p>
+              </div>
+              <button onClick={() => setShowTimeline(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <ActivityTimeline entityType="lead" entityId={lead.id} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1162,6 +1237,7 @@ function OpportunityCard({
   onEdit: (opp: Opportunity) => void;
 }) {
   const queryClient = useQueryClient();
+  const [showActivityLog, setShowActivityLog] = useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -1181,24 +1257,42 @@ function OpportunityCard({
   const companyName = opportunity.customer?.company_name || opportunity.lead?.company_name || 'Unknown';
 
   return (
-    <div
-      className="bg-slate-50 rounded-lg p-3 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200"
-      onClick={() => onEdit(opportunity)}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <h4 className="font-medium text-slate-900 text-sm">{opportunity.name}</h4>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (confirm('Delete this opportunity?')) {
-              deleteMutation.mutate(opportunity.id);
-            }
-          }}
-          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
-      </div>
+    <>
+      <div
+        className="bg-slate-50 rounded-lg p-3 hover:bg-slate-100 transition-colors border border-slate-200 group"
+      >
+        <div className="flex items-start justify-between mb-2">
+          <h4
+            className="font-medium text-slate-900 text-sm cursor-pointer flex-1"
+            onClick={() => onEdit(opportunity)}
+          >
+            {opportunity.name}
+          </h4>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowActivityLog(true);
+              }}
+              className="p-1 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+              title="Log Activity"
+            >
+              <MessageSquare className="h-3 w-3" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm('Delete this opportunity?')) {
+                  deleteMutation.mutate(opportunity.id);
+                }
+              }}
+              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+              title="Delete"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
 
       <p className="text-xs text-slate-600 mb-2">{companyName}</p>
 
@@ -1207,13 +1301,23 @@ function OpportunityCard({
         <span className="text-slate-600">{opportunity.probability}%</span>
       </div>
 
-      {opportunity.expected_close_date && (
-        <div className="flex items-center gap-1 mt-2 text-xs text-slate-500">
-          <Calendar className="h-3 w-3" />
-          <span>{new Date(opportunity.expected_close_date).toLocaleDateString()}</span>
-        </div>
+        {opportunity.expected_close_date && (
+          <div className="flex items-center gap-1 mt-2 text-xs text-slate-500">
+            <Calendar className="h-3 w-3" />
+            <span>{new Date(opportunity.expected_close_date).toLocaleDateString()}</span>
+          </div>
+        )}
+      </div>
+
+      {showActivityLog && (
+        <ActivityLogModal
+          entityType="opportunity"
+          entityId={opportunity.id}
+          entityName={opportunity.name}
+          onClose={() => setShowActivityLog(false)}
+        />
       )}
-    </div>
+    </>
   );
 }
 
