@@ -17,6 +17,7 @@ import CustomersPage from './pages/CustomersPage';
 import ProductsPage from './pages/ProductsPage';
 import CommissionsPage from './pages/CommissionsPage';
 import TargetsPage from './pages/TargetsPage';
+import TeamsPage from './pages/TeamsPage';
 import SettingsPage from './pages/SettingsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsPage from './pages/ReportsPage';
@@ -113,6 +114,8 @@ function AppContent() {
         return hasAccess(['sales', 'manager', 'ceo', 'finance', 'admin']) ? <CommissionsPage /> : <UnauthorizedPage />;
       case '/targets':
         return hasAccess(['manager', 'ceo', 'finance']) ? <TargetsPage /> : <UnauthorizedPage />;
+      case '/teams':
+        return hasAccess(['manager']) ? <TeamsPage /> : <UnauthorizedPage />;
       case '/settings':
         return hasAccess(['admin']) ? <SettingsPage /> : <UnauthorizedPage />;
       case '/notifications':

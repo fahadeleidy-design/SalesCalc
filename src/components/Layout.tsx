@@ -93,6 +93,12 @@ const navigationItems: NavItem[] = [
     roles: ['manager', 'ceo', 'finance'],
   },
   {
+    label: 'Teams',
+    icon: Users,
+    path: '/teams',
+    roles: ['manager'],
+  },
+  {
     label: 'Reports',
     icon: BarChart3,
     path: '/reports',
