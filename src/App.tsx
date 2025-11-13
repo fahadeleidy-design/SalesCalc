@@ -112,7 +112,7 @@ function AppContent() {
       case '/commissions':
         return hasAccess(['sales', 'manager', 'ceo', 'finance', 'admin']) ? <CommissionsPage /> : <UnauthorizedPage />;
       case '/targets':
-        return hasAccess(['manager', 'ceo']) ? <TargetsPage /> : <UnauthorizedPage />;
+        return hasAccess(['manager', 'ceo', 'finance']) ? <TargetsPage /> : <UnauthorizedPage />;
       case '/settings':
         return hasAccess(['admin']) ? <SettingsPage /> : <UnauthorizedPage />;
       case '/notifications':

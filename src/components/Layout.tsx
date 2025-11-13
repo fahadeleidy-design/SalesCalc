@@ -90,7 +90,7 @@ const navigationItems: NavItem[] = [
     label: 'Targets',
     icon: Target,
     path: '/targets',
-    roles: ['manager', 'ceo'],
+    roles: ['manager', 'ceo', 'finance'],
   },
   {
     label: 'Reports',
