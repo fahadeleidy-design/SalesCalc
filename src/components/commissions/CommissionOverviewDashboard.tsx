@@ -1,36 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { DollarSign, TrendingUp, Users, Percent, Award, Calendar } from 'lucide-react';
-import { useTeamCommissions, useManagerCommission } from '../../hooks/useCommissions';
-import { useTeamTargets } from '../../hooks/useTargets';
+import { useAllSalesCommissions, useAllManagerCommissions } from '../../hooks/useCommissions';
 
 export function CommissionOverviewDashboard() {
-  const [selectedPeriod, setSelectedPeriod] = useState<{
-    start: string;
-    end: string;
-  } | null>(null);
+  // Get all sales rep commissions
+  const { data: salesCommissions, isLoading: salesLoading } = useAllSalesCommissions();
 
-  // Get all approved team targets (we'll use the first manager's targets as default)
-  const { data: teamTargets, isLoading: targetsLoading } = useTeamTargets();
-  const approvedTargets = teamTargets?.filter((t) => t.status === 'approved') || [];
-
-  // Set the first target as default if available
-  const defaultTarget = approvedTargets[0];
-  const periodStart = selectedPeriod?.start || defaultTarget?.period_start || '';
-  const periodEnd = selectedPeriod?.end || defaultTarget?.period_end || '';
-
-  // Get team commissions (all sales reps)
-  const { data: teamCommissions, isLoading: teamCommissionsLoading } = useTeamCommissions(
-    defaultTarget?.manager_id || '',
-    periodStart,
-    periodEnd
-  );
-
-  // Get manager commission
-  const { data: managerCommission, isLoading: managerCommissionLoading } = useManagerCommission(
-    defaultTarget?.manager_id || '',
-    periodStart,
-    periodEnd
-  );
+  // Get all manager commissions
+  const { data: managerCommissions, isLoading: managersLoading } = useAllManagerCommissions();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-SA', {
@@ -47,14 +24,14 @@ export function CommissionOverviewDashboard() {
   };
 
   // Calculate totals
-  const totalSalesRepCommission = teamCommissions?.reduce((sum, c) => sum + c.commissionAmount, 0) || 0;
-  const totalManagerCommission = managerCommission?.commissionAmount || 0;
+  const totalSalesRepCommission = salesCommissions?.reduce((sum, c) => sum + c.commissionAmount, 0) || 0;
+  const totalManagerCommission = managerCommissions?.reduce((sum, c) => sum + c.commissionAmount, 0) || 0;
   const totalCommissionPayout = totalSalesRepCommission + totalManagerCommission;
-  const totalTarget = teamCommissions?.reduce((sum, c) => sum + c.targetAmount, 0) || 0;
-  const totalAchieved = teamCommissions?.reduce((sum, c) => sum + c.achievedAmount, 0) || 0;
+  const totalTarget = salesCommissions?.reduce((sum, c) => sum + c.targetAmount, 0) || 0;
+  const totalAchieved = salesCommissions?.reduce((sum, c) => sum + c.achievedAmount, 0) || 0;
   const overallAchievement = totalTarget > 0 ? (totalAchieved / totalTarget) * 100 : 0;
 
-  if (targetsLoading || teamCommissionsLoading || managerCommissionLoading) {
+  if (salesLoading || managersLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
@@ -62,7 +39,9 @@ export function CommissionOverviewDashboard() {
     );
   }
 
-  if (!approvedTargets || approvedTargets.length === 0) {
+  const hasAnyCommissionData = (salesCommissions && salesCommissions.length > 0) || (managerCommissions && managerCommissions.length > 0);
+
+  if (!hasAnyCommissionData) {
     return (
       <div className="text-center py-12">
         <Award className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -74,38 +53,20 @@ export function CommissionOverviewDashboard() {
     );
   }
 
+  // Combine all commissions for the detailed table
+  const allCommissions = [
+    ...(salesCommissions || []),
+    ...(managerCommissions || []),
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <DollarSign className="h-6 w-6 text-orange-600" />
-          <h2 className="text-2xl font-bold text-gray-900">Commission Overview</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Commission Overview - All Employees</h2>
         </div>
-
-        {/* Period Selector */}
-        {approvedTargets.length > 1 && (
-          <select
-            value={selectedPeriod ? `${selectedPeriod.start}_${selectedPeriod.end}` : ''}
-            onChange={(e) => {
-              if (e.target.value) {
-                const [start, end] = e.target.value.split('_');
-                setSelectedPeriod({ start, end });
-              }
-            }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-          >
-            {approvedTargets.map((target) => (
-              <option
-                key={target.id}
-                value={`${target.period_start}_${target.period_end}`}
-              >
-                {new Date(target.period_start).toLocaleDateString()} -{' '}
-                {new Date(target.period_end).toLocaleDateString()}
-              </option>
-            ))}
-          </select>
-        )}
       </div>
 
       {/* Summary KPIs */}
@@ -118,7 +79,7 @@ export function CommissionOverviewDashboard() {
           </div>
           <p className="text-3xl font-bold">{formatCurrency(totalCommissionPayout)}</p>
           <p className="text-xs mt-2 opacity-90">
-            Sales Reps + Manager
+            Sales Reps + Managers
           </p>
         </div>
 
@@ -162,7 +123,7 @@ export function CommissionOverviewDashboard() {
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Number of Reps</span>
               <span className="text-lg font-semibold text-gray-900">
-                {teamCommissions?.length || 0}
+                {salesCommissions?.length || 0}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -175,8 +136,8 @@ export function CommissionOverviewDashboard() {
               <span className="text-sm text-gray-600">Avg Commission</span>
               <span className="text-lg font-semibold text-gray-900">
                 {formatCurrency(
-                  teamCommissions && teamCommissions.length > 0
-                    ? totalSalesRepCommission / teamCommissions.length
+                  salesCommissions && salesCommissions.length > 0
+                    ? totalSalesRepCommission / salesCommissions.length
                     : 0
                 )}
               </span>
@@ -188,34 +149,36 @@ export function CommissionOverviewDashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Award className="h-5 w-5 text-purple-600" />
-            Sales Manager
+            Sales Managers
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Manager</span>
+              <span className="text-sm text-gray-600">Number of Managers</span>
               <span className="text-lg font-semibold text-gray-900">
-                {managerCommission?.userName || 'N/A'}
+                {managerCommissions?.length || 0}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Team Achievement</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getAchievementColor(
-                managerCommission?.achievementPercentage || 0
-              )}`}>
-                {managerCommission?.achievementPercentage.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Commission</span>
+              <span className="text-sm text-gray-600">Total Commission</span>
               <span className="text-lg font-semibold text-purple-600">
                 {formatCurrency(totalManagerCommission)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Avg Commission</span>
+              <span className="text-lg font-semibold text-gray-900">
+                {formatCurrency(
+                  managerCommissions && managerCommissions.length > 0
+                    ? totalManagerCommission / managerCommissions.length
+                    : 0
+                )}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Detailed Sales Rep Table */}
+      {/* Detailed Commission Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Detailed Commission Report</h3>
         <div className="overflow-x-auto">
@@ -227,6 +190,9 @@ export function CommissionOverviewDashboard() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Role
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Period
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Target
@@ -246,66 +212,43 @@ export function CommissionOverviewDashboard() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {teamCommissions?.map((rep) => (
-                <tr key={rep.userId} className="hover:bg-gray-50">
+              {allCommissions.map((commission, index) => (
+                <tr
+                  key={`${commission.userId}-${index}`}
+                  className={commission.role === 'manager' ? 'bg-purple-50 hover:bg-purple-100' : 'hover:bg-gray-50'}
+                >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {rep.userName}
+                    {commission.userName}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
+                    {commission.role === 'sales' ? 'Sales Rep' : 'Manager'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    Sales Rep
+                    {new Date(commission.periodStart).toLocaleDateString()} - {new Date(commission.periodEnd).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(rep.targetAmount)}
+                    {formatCurrency(commission.targetAmount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(rep.achievedAmount)}
+                    {formatCurrency(commission.achievedAmount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getAchievementColor(
-                      rep.achievementPercentage
+                      commission.achievementPercentage
                     )}`}>
-                      {rep.achievementPercentage.toFixed(1)}%
+                      {commission.achievementPercentage.toFixed(1)}%
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {rep.commissionRate.toFixed(2)}%
+                    {commission.commissionRate.toFixed(2)}%
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-orange-600">
-                    {formatCurrency(rep.commissionAmount)}
+                    {formatCurrency(commission.commissionAmount)}
                   </td>
                 </tr>
               ))}
-              {managerCommission && (
-                <tr className="bg-purple-50 hover:bg-purple-100">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {managerCommission.userName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    Manager
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(managerCommission.targetAmount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(managerCommission.achievedAmount)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getAchievementColor(
-                      managerCommission.achievementPercentage
-                    )}`}>
-                      {managerCommission.achievementPercentage.toFixed(1)}%
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {managerCommission.commissionRate.toFixed(2)}%
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-purple-600">
-                    {formatCurrency(managerCommission.commissionAmount)}
-                  </td>
-                </tr>
-              )}
               <tr className="bg-gray-100 font-bold">
-                <td colSpan={6} className="px-6 py-4 text-right text-sm text-gray-900">
+                <td colSpan={7} className="px-6 py-4 text-right text-sm text-gray-900">
                   Total Payout:
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-orange-600">
