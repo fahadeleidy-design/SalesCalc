@@ -418,24 +418,26 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                Quotation #
-              </th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Customer</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Title</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Sales Rep</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Total</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Status</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Date</th>
-              <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredQuotations.map((quotation) => {
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                  Quotation #
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Customer</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Title</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Sales Rep</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Total</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Status</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Date</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredQuotations.map((quotation) => {
               const isOwnQuotation = quotation.sales_rep_id === profile?.id;
 
               return (
@@ -597,9 +599,181 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                 </tr>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+      {/* Grid View */}
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredQuotations.map((quotation) => {
+            const isOwnQuotation = quotation.sales_rep_id === profile?.id;
+
+            return (
+              <div
+                key={quotation.id}
+                className="card card-interactive animate-fade-in"
+                onClick={() => onView(quotation.id)}
+              >
+                {/* Card Header */}
+                <div className="gradient-primary p-4 text-white">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="text-xs opacity-90 mb-1">Quotation</p>
+                      <h3 className="font-bold text-lg">{quotation.quotation_number}</h3>
+                    </div>
+                    <div className="bg-white bg-opacity-20 px-2 py-1 rounded-lg text-xs font-medium backdrop-blur-sm">
+                      {formatCurrency(quotation.total)}
+                    </div>
+                  </div>
+                  <p className="text-sm opacity-95 font-medium">{quotation.title}</p>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-4 space-y-3">
+                  {/* Customer */}
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Customer</p>
+                    <p className="font-medium text-slate-900 text-sm">
+                      {quotation.customer?.company_name}
+                    </p>
+                    <p className="text-xs text-slate-600">{quotation.customer?.contact_person}</p>
+                  </div>
+
+                  {/* Sales Rep */}
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Sales Rep</p>
+                    <p className="text-sm text-slate-900">
+                      {quotation.sales_rep?.full_name || 'Unknown'}
+                      {isOwnQuotation && profile?.role === 'sales' && (
+                        <span className="text-xs text-orange-600 ml-1">(You)</span>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Status & Date */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <div>
+                      {getStatusBadge(quotation.status, quotation.submitted_to_customer_at)}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {new Date(quotation.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card Footer - Actions */}
+                <div className="px-4 pb-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onView(quotation.id);
+                      }}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium"
+                    >
+                      <Eye className="w-3 h-3" />
+                      View
+                    </button>
+
+                    {profile?.role === 'sales' && isOwnQuotation && (
+                      <>
+                        {quotation.status === 'pending_pricing' ? (
+                          <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
+                            <Clock className="w-3 h-3" />
+                            Waiting Pricing
+                          </div>
+                        ) : (
+                          (quotation.status === 'draft' || quotation.status === 'changes_requested') && (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEdit(quotation.id);
+                                }}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors font-medium"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                                Edit
+                              </button>
+                              {onDuplicate && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDuplicate(quotation.id);
+                                  }}
+                                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors font-medium"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                  Copy
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSubmit(quotation.id);
+                                }}
+                                disabled={submitting === quotation.id}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors font-medium disabled:opacity-50"
+                              >
+                                <Send className="w-3 h-3" />
+                                Submit
+                              </button>
+                            </>
+                          )
+                        )}
+
+                        {/* Submit to Customer */}
+                        {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
+                         !quotation.submitted_to_customer_at && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSubmitToCustomer(quotation.id);
+                            }}
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                          >
+                            <Mail className="w-3 h-3" />
+                            Send
+                          </button>
+                        )}
+
+                        {/* Deal Outcome Buttons */}
+                        {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
+                         !['deal_won', 'deal_lost'].includes(quotation.status) && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkWon(quotation.id, quotation.quotation_number);
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                            >
+                              <TrendingUp className="w-3 h-3" />
+                              Won
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMarkLost(quotation.id, quotation.quotation_number);
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                            >
+                              <TrendingDown className="w-3 h-3" />
+                              Lost
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Deal Outcome Modal */}
       {dealOutcomeModal && (
