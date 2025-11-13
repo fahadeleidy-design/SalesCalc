@@ -593,11 +593,16 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                       >
                         <td className="py-5 px-6">
                           <div className="flex items-start gap-4">
-                            {!item.is_custom && item.product?.image_url && (
+                            {!item.is_custom && item.product?.image_url &&
+                             (item.product.image_url.startsWith('http://') || item.product.image_url.startsWith('https://')) && (
                               <img
                                 src={item.product.image_url}
                                 alt={item.product.name}
                                 className="w-20 h-20 object-cover rounded-lg border-2 border-slate-200 flex-shrink-0 shadow-sm"
+                                onError={(e) => {
+                                  // Hide image if it fails to load
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
                               />
                             )}
                             <div className="flex-1 min-w-0">
