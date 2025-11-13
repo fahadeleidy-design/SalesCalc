@@ -1885,7 +1885,7 @@ function ActivitiesView() {
           customer:customers(company_name),
           assigned_user:profiles!crm_activities_assigned_to_fkey(full_name)
         `)
-        .order('activity_date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(50);
 
       // Filter by user's access
@@ -2017,7 +2017,7 @@ function ActivitiesView() {
                         <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(activity.activity_date).toLocaleDateString()}
+                            {new Date(activity.due_date || activity.created_at).toLocaleDateString()}
                           </span>
                           {activity.duration_minutes && (
                             <span>{activity.duration_minutes} min</span>

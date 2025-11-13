@@ -19,7 +19,7 @@ export default function ActivityLogModal({ entityType, entityId, entityName, onC
   const [formData, setFormData] = useState({
     subject: '',
     description: '',
-    activity_date: new Date().toISOString().split('T')[0],
+    due_date: new Date().toISOString().split('T')[0],
     duration_minutes: '',
     outcome: '',
     follow_up_date: '',
@@ -40,7 +40,7 @@ export default function ActivityLogModal({ entityType, entityId, entityName, onC
         activity_type: activityType,
         subject: formData.subject,
         description: formData.description || null,
-        activity_date: formData.activity_date,
+        due_date: formData.due_date,
         duration_minutes: formData.duration_minutes ? Number(formData.duration_minutes) : null,
         outcome: formData.outcome || null,
         follow_up_date: formData.follow_up_date || null,
@@ -149,8 +149,8 @@ export default function ActivityLogModal({ entityType, entityId, entityName, onC
               </label>
               <input
                 type="date"
-                value={formData.activity_date}
-                onChange={(e) => setFormData({ ...formData, activity_date: e.target.value })}
+                value={formData.due_date}
+                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
