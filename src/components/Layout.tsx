@@ -20,6 +20,7 @@ import {
   ChevronDown,
   Languages,
   ShoppingCart,
+  TrendingUp,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -91,6 +92,12 @@ const navigationItems: NavItem[] = [
     icon: ShoppingCart,
     path: '/purchase-orders',
     roles: ['finance', 'ceo', 'admin'],
+  },
+  {
+    label: 'Collection',
+    icon: TrendingUp,
+    path: '/collection',
+    roles: ['sales', 'manager', 'finance', 'ceo', 'admin'],
   },
   {
     label: 'Targets',
