@@ -35,6 +35,7 @@ import { formatCurrency } from '../lib/currencyUtils';
 import LeadConversionModal from '../components/crm/LeadConversionModal';
 import ActivityLogModal from '../components/crm/ActivityLogModal';
 import ActivityTimeline from '../components/crm/ActivityTimeline';
+import { useSalesTeam } from '../hooks/useSalesTeam';
 
 interface CRMStats {
   totalLeads: number;
@@ -389,33 +390,18 @@ function LeadsView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Fetch leads
+  // Fetch leads (RLS handles access control automatically)
   const { data: leads, isLoading } = useQuery({
     queryKey: ['crm-leads', profile?.id],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from('crm_leads')
-        .select('*')
+        .select(`
+          *,
+          assigned_user:profiles!crm_leads_assigned_to_fkey(id, full_name, email)
+        `)
         .order('created_at', { ascending: false });
 
-      // Apply access control
-      if (profile?.role === 'sales') {
-        query = query.eq('assigned_to', profile.id);
-      } else if (profile?.role === 'manager') {
-        const { data: teamMembers } = await supabase
-          .from('team_members')
-          .select('sales_rep_id')
-          .in('team_id', (
-            await supabase
-              .from('sales_teams')
-              .select('id')
-              .eq('manager_id', profile.id)
-          ).data?.map(t => t.id) || []);
-
-        query = query.in('assigned_to', teamMembers?.map(tm => tm.sales_rep_id) || []);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       return data as Lead[];
     },
@@ -689,6 +675,9 @@ function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }
 function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }) {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+  const { data: teamMembers } = useSalesTeam();
+  const canAssign = ['sales_manager', 'ceo', 'admin', 'supervisor'].includes(profile?.role || '');
+
   const [formData, setFormData] = useState({
     company_name: lead?.company_name || '',
     contact_name: lead?.contact_name || '',
@@ -706,6 +695,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
     estimated_value: lead?.estimated_value || '',
     expected_close_date: lead?.expected_close_date || '',
     notes: lead?.notes || '',
+    assigned_to: lead?.assigned_to || profile?.id || '',
   });
 
   const saveMutation = useMutation({
@@ -714,8 +704,8 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
         ...formData,
         estimated_value: formData.estimated_value ? Number(formData.estimated_value) : null,
         expected_close_date: formData.expected_close_date || null,
-        assigned_to: profile?.id,
-        created_by: profile?.id,
+        assigned_to: formData.assigned_to || profile?.id,
+        created_by: lead?.created_by || profile?.id,
       };
 
       if (lead) {
@@ -924,6 +914,30 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
                   <option value="unqualified">Unqualified</option>
                 </select>
               </div>
+
+              {canAssign && teamMembers && teamMembers.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Assign To *
+                  </label>
+                  <select
+                    value={formData.assigned_to}
+                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    required
+                  >
+                    <option value="">Select Team Member</option>
+                    {teamMembers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.full_name} ({member.role})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Assign this lead to a sales team member
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Lead Score (0-100)
@@ -1334,6 +1348,8 @@ function OpportunityModal({
 }) {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+  const { data: teamMembers } = useSalesTeam();
+  const canAssign = ['sales_manager', 'ceo', 'admin', 'supervisor'].includes(profile?.role || '');
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [formData, setFormData] = useState({
     name: opportunity?.name || '',
@@ -1346,6 +1362,7 @@ function OpportunityModal({
     description: opportunity?.description || '',
     next_step: opportunity?.next_step || '',
     notes: opportunity?.notes || '',
+    assigned_to: opportunity?.assigned_to || profile?.id || '',
   });
 
   const [newCustomerData, setNewCustomerData] = useState({
@@ -1410,8 +1427,8 @@ function OpportunityModal({
         customer_id: formData.customer_id || null,
         lead_id: formData.lead_id || null,
         expected_close_date: formData.expected_close_date || null,
-        assigned_to: profile?.id,
-        created_by: profile?.id,
+        assigned_to: formData.assigned_to || profile?.id,
+        created_by: opportunity?.created_by || profile?.id,
       };
 
       if (opportunity) {
@@ -1421,7 +1438,7 @@ function OpportunityModal({
           .eq('id', opportunity.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('crm_opportunities').insert(data);
+        const { error} = await supabase.from('crm_opportunities').insert(data);
         if (error) throw error;
       }
     },
@@ -1768,6 +1785,30 @@ function OpportunityModal({
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 />
               </div>
+
+              {canAssign && teamMembers && teamMembers.length > 0 && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Assign To *
+                  </label>
+                  <select
+                    value={formData.assigned_to}
+                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    required
+                  >
+                    <option value="">Select Team Member</option>
+                    {teamMembers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.full_name} ({member.role})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Assign this opportunity to a sales team member
+                  </p>
+                </div>
+              )}
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
