@@ -36,6 +36,14 @@ import LeadConversionModal from '../components/crm/LeadConversionModal';
 import ActivityLogModal from '../components/crm/ActivityLogModal';
 import ActivityTimeline from '../components/crm/ActivityTimeline';
 import { useSalesTeam } from '../hooks/useSalesTeam';
+import {
+  exportLeadsToExcel,
+  exportOpportunitiesToExcel,
+  importLeadsFromFile,
+  importOpportunitiesFromFile,
+  downloadLeadsTemplate,
+  downloadOpportunitiesTemplate,
+} from '../lib/crmImportExport';
 
 interface CRMStats {
   totalLeads: number;
@@ -389,6 +397,9 @@ function LeadsView() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
 
   // Fetch leads (RLS handles access control automatically)
   const { data: leads, isLoading } = useQuery({
@@ -418,6 +429,51 @@ function LeadsView() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Export leads to Excel
+  const handleExport = () => {
+    if (!leads || leads.length === 0) {
+      toast.error('No leads to export');
+      return;
+    }
+    try {
+      const exportData = filteredLeads || leads;
+      exportLeadsToExcel(exportData, `crm_leads_export_${new Date().toISOString().split('T')[0]}`);
+      toast.success(`Exported ${exportData.length} leads successfully`);
+    } catch (error) {
+      toast.error('Failed to export leads');
+      console.error(error);
+    }
+  };
+
+  // Import leads from file
+  const handleImport = async () => {
+    if (!importFile || !profile?.id) return;
+
+    setImporting(true);
+    try {
+      const result = await importLeadsFromFile(importFile, profile.id);
+
+      if (result.success > 0) {
+        toast.success(`Successfully imported ${result.success} leads`);
+        queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
+      }
+
+      if (result.errors.length > 0) {
+        const errorMessage = result.errors.slice(0, 3).join('\n');
+        toast.error(`Import completed with errors:\n${errorMessage}${result.errors.length > 3 ? `\n...and ${result.errors.length - 3} more errors` : ''}`);
+        console.error('Import errors:', result.errors);
+      }
+
+      setShowImportModal(false);
+      setImportFile(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to import leads');
+      console.error(error);
+    } finally {
+      setImporting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -449,13 +505,31 @@ function LeadsView() {
             <option value="lost">Lost</option>
             <option value="unqualified">Unqualified</option>
           </select>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
-          >
-            <Plus className="h-5 w-5" />
-            Add Lead
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+              title="Export leads to Excel"
+            >
+              <Download className="h-5 w-5" />
+              Export
+            </button>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+              title="Import leads from Excel"
+            >
+              <Upload className="h-5 w-5" />
+              Import
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
+            >
+              <Plus className="h-5 w-5" />
+              Add Lead
+            </button>
+          </div>
         </div>
       </div>
 
@@ -504,6 +578,79 @@ function LeadsView() {
             setEditingLead(null);
           }}
         />
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <h2 className="text-xl font-bold text-slate-900">Import Leads</h2>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportFile(null);
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-medium text-blue-900 mb-2">Import Instructions</h3>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <li>Download the template to see required format</li>
+                  <li>Fill in your lead data (Company Name and Contact Name are required)</li>
+                  <li>Save as Excel (.xlsx) or CSV file</li>
+                  <li>Upload the file below</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={downloadLeadsTemplate}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors"
+              >
+                <Download className="h-5 w-5" />
+                Download Template
+              </button>
+
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="w-full"
+                />
+                {importFile && (
+                  <p className="mt-2 text-sm text-slate-600">
+                    Selected: {importFile.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleImport}
+                  disabled={!importFile || importing}
+                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {importing ? 'Importing...' : 'Import Leads'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportFile(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1014,6 +1161,9 @@ function OpportunitiesView() {
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<string>('all');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
 
   // Fetch opportunities
   const { data: opportunities, isLoading } = useQuery({
@@ -1108,6 +1258,51 @@ function OpportunitiesView() {
     closed_lost: filteredOpportunities?.filter(o => o.stage === 'closed_lost') || [],
   };
 
+  // Export opportunities to Excel
+  const handleExport = () => {
+    if (!opportunities || opportunities.length === 0) {
+      toast.error('No opportunities to export');
+      return;
+    }
+    try {
+      const exportData = filteredOpportunities || opportunities;
+      exportOpportunitiesToExcel(exportData, `crm_opportunities_export_${new Date().toISOString().split('T')[0]}`);
+      toast.success(`Exported ${exportData.length} opportunities successfully`);
+    } catch (error) {
+      toast.error('Failed to export opportunities');
+      console.error(error);
+    }
+  };
+
+  // Import opportunities from file
+  const handleImport = async () => {
+    if (!importFile || !profile?.id) return;
+
+    setImporting(true);
+    try {
+      const result = await importOpportunitiesFromFile(importFile, profile.id);
+
+      if (result.success > 0) {
+        toast.success(`Successfully imported ${result.success} opportunities`);
+        queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
+      }
+
+      if (result.errors.length > 0) {
+        const errorMessage = result.errors.slice(0, 3).join('\n');
+        toast.error(`Import completed with errors:\n${errorMessage}${result.errors.length > 3 ? `\n...and ${result.errors.length - 3} more errors` : ''}`);
+        console.error('Import errors:', result.errors);
+      }
+
+      setShowImportModal(false);
+      setImportFile(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to import opportunities');
+      console.error(error);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Search and Filter */}
@@ -1137,13 +1332,31 @@ function OpportunitiesView() {
             <option value="closed_won">Closed Won</option>
             <option value="closed_lost">Closed Lost</option>
           </select>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
-          >
-            <Plus className="h-5 w-5" />
-            Add Opportunity
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+              title="Export opportunities to Excel"
+            >
+              <Download className="h-5 w-5" />
+              Export
+            </button>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+              title="Import opportunities from Excel"
+            >
+              <Upload className="h-5 w-5" />
+              Import
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
+            >
+              <Plus className="h-5 w-5" />
+              Add Opportunity
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1195,6 +1408,79 @@ function OpportunitiesView() {
             setEditingOpportunity(null);
           }}
         />
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <h2 className="text-xl font-bold text-slate-900">Import Opportunities</h2>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportFile(null);
+                }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-medium text-blue-900 mb-2">Import Instructions</h3>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <li>Download the template to see required format</li>
+                  <li>Fill in your opportunity data (Name and Amount are required)</li>
+                  <li>Save as Excel (.xlsx) or CSV file</li>
+                  <li>Upload the file below</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={downloadOpportunitiesTemplate}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors"
+              >
+                <Download className="h-5 w-5" />
+                Download Template
+              </button>
+
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="w-full"
+                />
+                {importFile && (
+                  <p className="mt-2 text-sm text-slate-600">
+                    Selected: {importFile.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleImport}
+                  disabled={!importFile || importing}
+                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {importing ? 'Importing...' : 'Import Opportunities'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportFile(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
