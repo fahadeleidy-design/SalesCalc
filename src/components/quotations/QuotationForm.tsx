@@ -124,8 +124,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
       is_custom: false,
       quantity: 1,
       unit_price: product.unit_price,
-      discount_percentage: 0,
-      discount_amount: 0,
+      base_unit_price: product.unit_price, // Track base price
       line_total: product.unit_price,
       modifications: '',
       needs_engineering_review: false,
@@ -148,8 +147,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
       custom_description: data.description,
       quantity: 1,
       unit_price: 0,
-      discount_percentage: 0,
-      discount_amount: 0,
+      base_unit_price: 0, // Track base price
       line_total: 0,
       custom_item_status: 'pending',
       customItemRequest: data,
@@ -160,17 +158,35 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
 
   const updateItem = (index: number, field: string, value: any) => {
     const updatedItems = [...items];
-    const item = { ...updatedItems[index], [field]: value };
+    const item = { ...updatedItems[index] };
 
-    const quantity = item.quantity || 0;
+    // Handle quantity - round to integer
+    if (field === 'quantity') {
+      value = Math.round(parseFloat(value) || 1);
+      if (value < 1) value = 1;
+    }
+
+    // Handle price - enforce floor (can only increase)
+    if (field === 'unit_price') {
+      const newPrice = parseFloat(value) || 0;
+      const basePrice = item.base_unit_price || item.product?.unit_price || 0;
+
+      // Check if trying to decrease below base price
+      if (basePrice > 0 && newPrice < basePrice && !item.is_custom) {
+        alert(`Price cannot be less than base price (${formatCurrency(basePrice)}). Sales can only increase prices.`);
+        return; // Don't update
+      }
+      value = newPrice;
+    }
+
+    item[field] = value;
+
+    // Simple calculation: quantity × unit_price (no per-item discount)
+    const quantity = Math.round(item.quantity || 1);
     const unitPrice = item.unit_price || 0;
-    const discountPercentage = item.discount_percentage || 0;
+    const lineTotal = quantity * unitPrice;
 
-    const subtotal = quantity * unitPrice;
-    const discountAmount = (subtotal * discountPercentage) / 100;
-    const lineTotal = subtotal - discountAmount;
-
-    item.discount_amount = discountAmount;
+    item.quantity = quantity;
     item.line_total = lineTotal;
 
     updatedItems[index] = item;
@@ -263,10 +279,9 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
           product_id: item.product_id || null,
           is_custom: item.is_custom,
           custom_description: item.custom_description || null,
-          quantity: item.quantity,
+          quantity: Math.round(item.quantity || 1), // Ensure integer
           unit_price: item.unit_price,
-          discount_percentage: item.discount_percentage,
-          discount_amount: item.discount_amount,
+          base_unit_price: item.base_unit_price || item.product?.unit_price || item.unit_price,
           line_total: item.line_total,
           custom_item_status: needsEngineering ? 'pending' : null,
           notes: item.notes || null,
@@ -588,29 +603,38 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                           )}
                         </div>
                         <div className="col-span-3 md:col-span-2">
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Qty</label>
+                          <label className="text-xs font-medium text-slate-600 mb-1 block">
+                            Qty
+                            <span className="ml-1 text-xs text-slate-500">(integer)</span>
+                          </label>
                           <input
                             type="number"
                             value={item.quantity}
                             onChange={(e) =>
-                              updateItem(index, 'quantity', validateQuantity(e.target.value))
+                              updateItem(index, 'quantity', e.target.value)
                             }
-                            min="0"
-                            step="0.01"
+                            min="1"
+                            step="1"
                             className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
                             onBlur={(e) => {
                               if (!e.target.value || parseFloat(e.target.value) <= 0) {
                                 updateItem(index, 'quantity', 1);
                               }
                             }}
+                            title="Quantity must be a whole number (integer)"
                           />
                         </div>
                         <div className="col-span-3 md:col-span-2">
                           <label className="text-xs font-medium text-slate-600 mb-1 block">
                             Unit Price
+                            {!item.is_custom && item.base_unit_price && (
+                              <span className="ml-1 text-xs text-slate-500">
+                                (Base: {formatCurrency(item.base_unit_price || item.product?.unit_price || 0)})
+                              </span>
+                            )}
                             {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
-                              <span className="ml-1 text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                                Locked
+                              <span className="ml-1 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                                Can only increase
                               </span>
                             )}
                             {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
@@ -623,14 +647,12 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             type="number"
                             value={item.unit_price}
                             onChange={(e) =>
-                              updateItem(index, 'unit_price', validatePrice(e.target.value))
+                              updateItem(index, 'unit_price', e.target.value)
                             }
-                            min="0"
+                            min={item.base_unit_price || item.product?.unit_price || 0}
                             step="0.01"
                             className={`w-full px-2 py-1 border border-slate-300 rounded text-sm ${
                               (
-                                // Disable for sales/manager on standard products
-                                ((profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom) ||
                                 // Disable for sales/manager on engineering-priced items
                                 ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
                                 // Disable for everyone on pending custom items
@@ -640,20 +662,14 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                 : ''
                             }`}
                             disabled={
-                              // Disable for sales/manager on standard products
-                              ((profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom) ||
                               // Disable for sales/manager on engineering-priced items
                               ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
                               // Disable for everyone on pending custom items
                               (item.is_custom && item.custom_item_status === 'pending')
                             }
-                            readOnly={
-                              ((profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom) ||
-                              ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced')
-                            }
                             title={
-                              (profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom
-                                ? 'Product unit price is locked. Contact admin to change product pricing.'
+                              !item.is_custom && item.base_unit_price
+                                ? `Base price: ${formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}. You can increase the price but cannot decrease below this.`
                                 : item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager')
                                 ? 'This price was set by Engineering and cannot be changed. Contact Engineering for price adjustments.'
                                 : item.is_custom && item.custom_item_status === 'pending'
@@ -661,9 +677,9 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                 : ''
                             }
                           />
-                          {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              Product price is locked
+                          {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && item.base_unit_price && (
+                            <p className="text-xs text-amber-600 mt-0.5">
+                              Can increase price, cannot decrease below base
                             </p>
                           )}
                           {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
@@ -671,20 +687,6 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                               Contact Engineering to change
                             </p>
                           )}
-                        </div>
-                        <div className="col-span-3 md:col-span-2">
-                          <label className="text-xs font-medium text-slate-600 mb-1 block">Disc %</label>
-                          <input
-                            type="number"
-                            value={item.discount_percentage}
-                            onChange={(e) =>
-                              updateItem(index, 'discount_percentage', validateDiscount(e.target.value))
-                            }
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            className="w-full px-2 py-1 border border-slate-300 rounded text-sm"
-                          />
                         </div>
                         <div className="col-span-3 md:col-span-1">
                           <label className="text-xs font-medium text-slate-600 mb-1 block">Total</label>
