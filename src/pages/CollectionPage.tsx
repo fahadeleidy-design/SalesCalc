@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DollarSign, TrendingUp, Clock, FileText, AlertCircle, CheckCircle, Plus, Eye, Sparkles } from 'lucide-react';
+import { DollarSign, TrendingUp, Clock, FileText, AlertCircle, CheckCircle, Plus, Eye, Sparkles, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -23,12 +23,28 @@ export default function CollectionPage() {
   const [approvingPayment, setApprovingPayment] = useState<string | null>(null);
 
   const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useCollectionSummary();
-  const { data: expectedSales, isLoading: expectedLoading } = useExpectedSales();
+  const { data: expectedSales, isLoading: expectedLoading, refetch: refetchExpectedSales } = useExpectedSales();
   const { data: downPayments, isLoading: downPaymentLoading, refetch: refetchDownPayments } = useDownPaymentPending();
-  const { data: wipSchedules, isLoading: wipLoading } = useWorkInProgress();
-  const { data: invoices, isLoading: invoicesLoading } = useIssuedInvoices();
+  const { data: wipSchedules, isLoading: wipLoading, refetch: refetchWip } = useWorkInProgress();
+  const { data: invoices, isLoading: invoicesLoading, refetch: refetchInvoices } = useIssuedInvoices();
 
   const isLoading = summaryLoading || expectedLoading || downPaymentLoading || wipLoading || invoicesLoading;
+
+  const handleRefreshAll = async () => {
+    toast.loading('Refreshing collection data...', { id: 'refresh-collection' });
+    try {
+      await Promise.all([
+        refetchSummary(),
+        refetchExpectedSales(),
+        refetchDownPayments(),
+        refetchWip(),
+        refetchInvoices(),
+      ]);
+      toast.success('Collection data refreshed!', { id: 'refresh-collection' });
+    } catch (error) {
+      toast.error('Failed to refresh data', { id: 'refresh-collection' });
+    }
+  };
 
   /**
    * Handle Down Payment Collection
@@ -321,17 +337,28 @@ export default function CollectionPage() {
           <h1 className="text-3xl font-bold text-slate-900">Collection Management</h1>
           <p className="text-slate-600 mt-1">Track and manage revenue collection across all stages</p>
         </div>
-        <button
-          onClick={() => setShowEnhanced(!showEnhanced)}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-            showEnhanced
-              ? 'bg-orange-600 text-white hover:bg-orange-700'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-          }`}
-        >
-          <Sparkles className="w-4 h-4" />
-          {showEnhanced ? 'Show Standard View' : 'Show Enhanced Tools'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefreshAll}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh all collection data"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <button
+            onClick={() => setShowEnhanced(!showEnhanced)}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              showEnhanced
+                ? 'bg-orange-600 text-white hover:bg-orange-700'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            {showEnhanced ? 'Show Standard View' : 'Show Enhanced Tools'}
+          </button>
+        </div>
       </div>
 
       {/* Enhanced View Toggle */}
