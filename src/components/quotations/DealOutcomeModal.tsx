@@ -35,6 +35,8 @@ export default function DealOutcomeModal({
   const [lostReason, setLostReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [notes, setNotes] = useState('');
+  const [poNumber, setPoNumber] = useState('');
+  const [poDate, setPoDate] = useState(new Date().toISOString().split('T')[0]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,6 +44,12 @@ export default function DealOutcomeModal({
 
     if (!profile) {
       toast.error('User not authenticated');
+      return;
+    }
+
+    // Validate PO number if deal is won
+    if (outcome === 'won' && (!poNumber || poNumber.trim() === '')) {
+      toast.error('Please provide PO number from customer');
       return;
     }
 
@@ -58,10 +66,10 @@ export default function DealOutcomeModal({
 
     try {
       if (outcome === 'won') {
-        const { data, error } = await supabase.rpc('mark_deal_won', {
+        const { data, error } = await supabase.rpc('mark_quotation_won', {
           p_quotation_id: quotationId,
-          p_marked_by: profile.id,
-          p_notes: notes || null
+          p_po_number: poNumber,
+          p_po_date: poDate
         });
 
         if (error) throw error;
@@ -71,7 +79,7 @@ export default function DealOutcomeModal({
           throw new Error(result.error || 'Failed to mark deal as won');
         }
 
-        toast.success('Deal marked as won - Pending Finance Approval');
+        toast.success('Deal marked as won! Down payment now pending in Collections.');
       } else {
         const finalReason = lostReason === 'Other' ? customReason : lostReason;
 
@@ -142,18 +150,53 @@ export default function DealOutcomeModal({
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {outcome === 'won' ? (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-green-900 mb-1">Congratulations! 🎉</h3>
-                  <p className="text-sm text-green-700">
-                    You're about to mark this quotation as a won deal. This will update the
-                    deal status and record the success in your metrics.
-                  </p>
+            <>
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-green-900 mb-1">Congratulations! 🎉</h3>
+                    <p className="text-sm text-green-700 mb-2">
+                      Customer has accepted! Please provide PO details below.
+                    </p>
+                    <p className="text-sm text-green-700">
+                      After submission, the down payment will appear in Collections pending Finance approval.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* PO Number */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Purchase Order (PO) Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={poNumber}
+                  onChange={(e) => setPoNumber(e.target.value)}
+                  placeholder="Enter PO number from customer"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* PO Date */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  PO Received Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={poDate}
+                  onChange={(e) => setPoDate(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  required
+                  disabled={submitting}
+                />
+              </div>
+            </>
           ) : (
             <>
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">

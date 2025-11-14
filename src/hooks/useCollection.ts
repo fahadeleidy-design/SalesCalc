@@ -93,47 +93,28 @@ export function useDownPaymentPending() {
   return useQuery<CollectionCategory[]>({
     queryKey: ['down-payment-pending'],
     queryFn: async () => {
-      // Get deal_won quotations
-      const { data: quotations, error: quotError } = await supabase
-        .from('quotations')
-        .select(`
-          id,
-          quotation_number,
-          total,
-          deal_won_at,
-          customer:customers(id, company_name),
-          sales_rep:profiles!sales_rep_id(full_name)
-        `)
-        .eq('status', 'deal_won')
-        .order('deal_won_at', { ascending: true });
+      // Use the new down_payments_due view
+      const { data, error } = await supabase
+        .from('down_payments_due')
+        .select('*')
+        .order('days_pending', { ascending: false });
 
-      if (quotError) throw quotError;
+      if (error) throw error;
 
-      // Get quotations with paid down payments
-      const { data: paidSchedules, error: schedError } = await supabase
-        .from('payment_schedules')
-        .select('quotation_id')
-        .eq('status', 'paid')
-        .ilike('milestone_name', '%down%payment%');
-
-      if (schedError) throw schedError;
-
-      const paidQuotationIds = new Set((paidSchedules || []).map(s => s.quotation_id));
-
-      // Filter out quotations with paid down payments
-      const pending = (quotations || []).filter(q => !paidQuotationIds.has(q.id));
-
-      return pending.map((q: any) => ({
-        id: q.id,
-        quotation_id: q.id,
-        quotation_number: q.quotation_number,
-        customer_name: q.customer?.company_name || 'N/A',
-        customer_id: q.customer?.id,
-        amount: q.total,
-        due_date: q.deal_won_at,
+      return (data || []).map((item: any) => ({
+        id: item.quotation_id,
+        quotation_id: item.quotation_id,
+        quotation_number: item.quotation_number,
+        customer_name: item.customer_name || 'N/A',
+        customer_id: item.customer_id,
+        amount: item.down_payment_amount,
+        due_date: item.po_received_date,
+        po_number: item.po_number,
+        days_pending: item.days_pending,
+        priority: item.priority,
         status: 'pending',
-        days_overdue: q.deal_won_at ? Math.floor((new Date().getTime() - new Date(q.deal_won_at).getTime()) / (1000 * 60 * 60 * 24)) : 0,
-        sales_rep_name: q.sales_rep?.full_name || 'N/A',
+        days_overdue: item.days_pending || 0,
+        sales_rep_name: item.sales_rep_name || 'N/A',
       }));
     },
   });

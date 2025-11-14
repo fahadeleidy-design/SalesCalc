@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { DollarSign, TrendingUp, Clock, FileText, AlertCircle, CheckCircle, Plus, Eye, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 import CollectionEnhancedView from '../components/collection/CollectionEnhancedView';
 import {
   useCollectionSummary,
@@ -18,14 +20,51 @@ export default function CollectionPage() {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('expected');
   const [showEnhanced, setShowEnhanced] = useState(false);
+  const [approvingPayment, setApprovingPayment] = useState<string | null>(null);
 
-  const { data: summary, isLoading: summaryLoading } = useCollectionSummary();
+  const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useCollectionSummary();
   const { data: expectedSales, isLoading: expectedLoading } = useExpectedSales();
-  const { data: downPayments, isLoading: downPaymentLoading } = useDownPaymentPending();
+  const { data: downPayments, isLoading: downPaymentLoading, refetch: refetchDownPayments } = useDownPaymentPending();
   const { data: wipSchedules, isLoading: wipLoading } = useWorkInProgress();
   const { data: invoices, isLoading: invoicesLoading } = useIssuedInvoices();
 
   const isLoading = summaryLoading || expectedLoading || downPaymentLoading || wipLoading || invoicesLoading;
+
+  const handleApproveDownPayment = async (quotationId: string, amount: number) => {
+    if (!profile || !['finance', 'admin'].includes(profile.role)) {
+      toast.error('Only Finance team can approve down payments');
+      return;
+    }
+
+    const paymentRef = prompt('Enter payment reference number (optional):');
+    const notes = prompt('Enter any notes (optional):');
+
+    setApprovingPayment(quotationId);
+
+    try {
+      const { data, error } = await supabase.rpc('finance_approve_won_deal', {
+        p_quotation_id: quotationId,
+        p_payment_reference: paymentRef || null,
+        p_notes: notes || null
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; message?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to approve down payment');
+      }
+
+      toast.success(`Down payment of ${formatCurrency(amount)} collected!`);
+      refetchDownPayments();
+      refetchSummary();
+    } catch (error: any) {
+      console.error('Error approving down payment:', error);
+      toast.error(error.message || 'Failed to approve down payment');
+    } finally {
+      setApprovingPayment(null);
+    }
+  };
 
   // Role-based access
   const canViewAll = ['ceo', 'finance', 'admin'].includes(profile?.role || '');
@@ -256,22 +295,47 @@ export default function CollectionPage() {
                   {downPayments && downPayments.length > 0 ? (
                     <div className="space-y-3">
                       {downPayments.map((item) => (
-                        <div key={item.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between">
+                        <div key={item.id} className="border border-orange-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-orange-50 to-white">
+                          <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
                                 <span className="font-semibold text-slate-900">{item.quotation_number}</span>
-                                {getStatusBadge(item.status, item.days_overdue)}
+                                {item.priority === 'overdue' ? (
+                                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                                    Overdue {item.days_pending}d
+                                  </span>
+                                ) : item.priority === 'urgent' ? (
+                                  <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                                    Urgent {item.days_pending}d
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                    {item.days_pending}d pending
+                                  </span>
+                                )}
                               </div>
-                              <p className="text-slate-600 mb-1">{item.customer_name}</p>
+                              <p className="text-slate-700 font-medium mb-1">{item.customer_name}</p>
                               <p className="text-sm text-slate-500">Sales Rep: {item.sales_rep_name}</p>
+                              {(item as any).po_number && (
+                                <p className="text-sm text-slate-600 mt-1">PO: {(item as any).po_number}</p>
+                              )}
                             </div>
                             <div className="text-right">
-                              <p className="text-2xl font-bold text-slate-900">{formatCurrency(item.amount)}</p>
+                              <p className="text-2xl font-bold text-orange-600">{formatCurrency(item.amount)}</p>
                               {item.due_date && (
                                 <p className="text-sm text-slate-500 mt-1">
-                                  Deal won: {format(new Date(item.due_date), 'MMM dd, yyyy')}
+                                  PO Date: {format(new Date(item.due_date), 'MMM dd, yyyy')}
                                 </p>
+                              )}
+                              {['finance', 'admin'].includes(profile?.role || '') && (
+                                <button
+                                  onClick={() => handleApproveDownPayment(item.quotation_id, item.amount)}
+                                  disabled={approvingPayment === item.quotation_id}
+                                  className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  {approvingPayment === item.quotation_id ? 'Collecting...' : 'Collect Payment'}
+                                </button>
                               )}
                             </div>
                           </div>
