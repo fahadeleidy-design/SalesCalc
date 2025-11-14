@@ -176,33 +176,42 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
     }
 
     try {
+      toast.loading('Generating job order...', { id: 'job-order' });
+
       // Check if job order already exists
-      const { data: existingJobOrder } = await supabase
+      const { data: existingJobOrder, error: checkError } = await supabase
         .from('job_orders')
-        .select('job_order_number')
+        .select(`
+          *,
+          customer:customers(*),
+          job_order_items:job_order_items(*)
+        `)
         .eq('quotation_id', quotation.id)
         .maybeSingle();
 
+      if (checkError) throw checkError;
+
+      let jobOrderId: string;
+
       if (existingJobOrder) {
-        toast.error(`Job order ${existingJobOrder.job_order_number} already exists for this quotation`);
-        return;
+        // Job order already exists, use it
+        jobOrderId = existingJobOrder.id;
+        toast.success('Job Order already exists. Generating PDF...', { id: 'job-order' });
+      } else {
+        // Create new job order
+        const { data, error } = await supabase.rpc('create_job_order_from_quotation', {
+          p_quotation_id: quotation.id,
+          p_priority: 'normal',
+          p_due_date: null,
+          p_production_notes: null,
+        });
+
+        if (error) throw error;
+        jobOrderId = data;
+        toast.success('Job order created successfully!', { id: 'job-order' });
       }
 
-      toast.loading('Generating job order...', { id: 'job-order' });
-
-      // Call the function to create job order
-      const { data: jobOrderId, error } = await supabase.rpc('create_job_order_from_quotation', {
-        p_quotation_id: quotation.id,
-        p_priority: 'normal',
-        p_due_date: null,
-        p_production_notes: null,
-      });
-
-      if (error) throw error;
-
-      toast.success('Job order created successfully!', { id: 'job-order' });
-
-      // Fetch the created job order with all details
+      // Fetch the job order with all details
       const { data: jobOrder, error: fetchError } = await supabase
         .from('job_orders')
         .select(`

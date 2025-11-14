@@ -234,15 +234,39 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
     try {
       setGeneratingJobOrder(quotationId);
 
-      // Call the database function to create job order
-      const { data, error } = await supabase.rpc('create_job_order_from_quotation', {
-        p_quotation_id: quotationId,
-        p_priority: 'normal'
-      });
+      // First check if job order already exists
+      const { data: existingJobOrder, error: checkError } = await supabase
+        .from('job_orders')
+        .select(`
+          *,
+          customer:customers(*),
+          items:job_order_items(*),
+          quotation:quotations(quotation_number)
+        `)
+        .eq('quotation_id', quotationId)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (checkError) throw checkError;
 
-      // Fetch the created job order with items and quotation number
+      let jobOrderId: string;
+
+      if (existingJobOrder) {
+        // Job order already exists, use it
+        jobOrderId = existingJobOrder.id;
+        toast.success('Job Order already exists. Generating PDF...');
+      } else {
+        // Create new job order
+        const { data, error } = await supabase.rpc('create_job_order_from_quotation', {
+          p_quotation_id: quotationId,
+          p_priority: 'normal'
+        });
+
+        if (error) throw error;
+        jobOrderId = data;
+        toast.success('Job Order created successfully!');
+      }
+
+      // Fetch the job order with all details
       const { data: jobOrder, error: fetchError } = await supabase
         .from('job_orders')
         .select(`
@@ -251,7 +275,7 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
           items:job_order_items(*),
           quotation:quotations(quotation_number)
         `)
-        .eq('id', data)
+        .eq('id', jobOrderId)
         .single();
 
       if (fetchError) throw fetchError;
@@ -265,7 +289,6 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
       // Export to PDF
       await exportJobOrderPDF(jobOrderWithQuotation);
 
-      toast.success('Job Order generated successfully!');
       loadQuotations();
     } catch (error: any) {
       console.error('Error generating job order:', error);
