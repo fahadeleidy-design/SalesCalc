@@ -609,9 +609,10 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                             </button>
                           )}
 
-                          {/* Deal Outcome Buttons - Show when approved (even after submitted to customer) but not yet decided */}
+                          {/* Deal Outcome Buttons - Show ONLY after submitted to customer and not yet decided */}
                           {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
-                           !['deal_won', 'deal_lost'].includes(quotation.status) && (
+                           quotation.submitted_to_customer_at &&
+                           !['deal_won', 'deal_lost', 'pending_won'].includes(quotation.status) && (
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={(e) => {
@@ -883,13 +884,14 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                             className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
                           >
                             <Mail className="w-3 h-3" />
-                            Send
+                            Send to Customer
                           </button>
                         )}
 
-                        {/* Deal Outcome Buttons */}
+                        {/* Deal Outcome Buttons - Show ONLY after submitted to customer */}
                         {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
-                         !['deal_won', 'deal_lost'].includes(quotation.status) && (
+                         quotation.submitted_to_customer_at &&
+                         !['deal_won', 'deal_lost', 'pending_won'].includes(quotation.status) && (
                           <>
                             <button
                               onClick={(e) => {
