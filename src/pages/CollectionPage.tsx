@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import CollectionEnhancedView from '../components/collection/CollectionEnhancedView';
+import PaymentScheduleModal from '../components/finance/PaymentScheduleModal';
 import {
   useCollectionSummary,
   useExpectedSales,
@@ -21,6 +22,8 @@ export default function CollectionPage() {
   const [activeTab, setActiveTab] = useState<TabType>('expected');
   const [showEnhanced, setShowEnhanced] = useState(false);
   const [approvingPayment, setApprovingPayment] = useState<string | null>(null);
+  const [showPaymentScheduleModal, setShowPaymentScheduleModal] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
 
   const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useCollectionSummary();
   const { data: expectedSales, isLoading: expectedLoading, refetch: refetchExpectedSales } = useExpectedSales();
@@ -47,78 +50,76 @@ export default function CollectionPage() {
   };
 
   /**
-   * Handle Down Payment Collection
+   * Handle Define Payment Schedule
    *
    * WORKFLOW:
    * 1. Sales marks deal as "Won" after receiving PO → Status: "Pending Won"
    * 2. Finance sees it in "Down Payment Due" tab
-   * 3. Finance clicks "Collect Payment" (this function)
-   * 4. System confirms down payment received → Status: "Deal Won"
-   * 5. Down payment automatically marked as collected
-   * 6. Payment record created
-   * 7. Milestone payments become active for tracking
+   * 3. Finance clicks "Define Payment Schedule" (this function)
+   * 4. Finance enters:
+   *    - Down payment amount received and date
+   *    - Payment reference
+   *    - Milestone names, amounts, and due dates
+   * 5. System confirms and saves payment schedule → Status: "Deal Won"
+   * 6. Down payment marked as collected
+   * 7. Milestone payments created and tracked
    * 8. Work can begin on the project
    *
-   * This single action:
-   * - Approves the won deal
-   * - Records down payment collection
-   * - Activates milestone tracking
+   * This action:
+   * - Collects down payment with custom amount
+   * - Defines all milestone payments
+   * - Gives Finance full control over payment terms
    */
-  const handleApproveDownPayment = async (quotationId: string, amount: number) => {
+  const handleOpenPaymentSchedule = async (quotation: any) => {
     if (!profile || !['finance', 'admin'].includes(profile.role)) {
-      toast.error('Only Finance team can approve down payments');
+      toast.error('Only Finance team can define payment schedules');
       return;
     }
 
-    const confirmed = window.confirm(
-      `CONFIRM DOWN PAYMENT COLLECTION\n\n` +
-      `Amount: ${formatCurrency(amount)}\n\n` +
-      `By clicking OK, you confirm that:\n` +
-      `• The down payment has been received\n` +
-      `• This will mark the deal as "Won"\n` +
-      `• The payment will be recorded\n` +
-      `• Work can begin on this project\n\n` +
-      `Continue?`
-    );
+    setSelectedQuotation(quotation);
+    setShowPaymentScheduleModal(true);
+  };
 
-    if (!confirmed) return;
+  const handleSubmitPaymentSchedule = async (
+    downPayment: { amount: number; date: string; reference: string; notes: string },
+    milestones: any[]
+  ) => {
+    if (!selectedQuotation) return;
 
-    const paymentRef = prompt(
-      'Enter payment reference number:\n' +
-      '(Bank transaction ID, cheque number, or receipt number)'
-    );
-
-    const notes = prompt(
-      'Enter payment details (optional):\n' +
-      'e.g., "Bank transfer received from main account"'
-    );
-
-    setApprovingPayment(quotationId);
+    setApprovingPayment(selectedQuotation.quotation_id);
 
     try {
-      const { data, error } = await supabase.rpc('finance_approve_won_deal', {
-        p_quotation_id: quotationId,
-        p_payment_reference: paymentRef || null,
-        p_notes: notes || null
+      const { data, error } = await supabase.rpc('finance_define_payment_schedule', {
+        p_quotation_id: selectedQuotation.quotation_id,
+        p_down_payment_amount: downPayment.amount,
+        p_down_payment_date: downPayment.date,
+        p_payment_reference: downPayment.reference,
+        p_payment_notes: downPayment.notes || null,
+        p_milestones: JSON.stringify(milestones),
       });
 
       if (error) throw error;
 
-      const result = data as { success: boolean; error?: string; message?: string };
+      const result = data as { success: boolean; error?: string; message?: string; total_scheduled?: number };
       if (!result.success) {
-        throw new Error(result.error || 'Failed to approve down payment');
+        throw new Error(result.error || 'Failed to define payment schedule');
       }
 
       toast.success(
-        `Down payment of ${formatCurrency(amount)} collected! Deal marked as Won. ` +
-        `Milestone payments are now active.`,
+        `Payment schedule defined! Down payment of ${formatCurrency(downPayment.amount)} collected. ` +
+        `${milestones.length} milestone(s) created.`,
         { duration: 5000 }
       );
+
+      setShowPaymentScheduleModal(false);
+      setSelectedQuotation(null);
       refetchDownPayments();
       refetchSummary();
+      refetchWip();
     } catch (error: any) {
-      console.error('Error approving down payment:', error);
-      toast.error(error.message || 'Failed to approve down payment');
+      console.error('Error defining payment schedule:', error);
+      toast.error(error.message || 'Failed to define payment schedule');
+      throw error; // Re-throw to keep modal open
     } finally {
       setApprovingPayment(null);
     }
@@ -504,12 +505,12 @@ export default function CollectionPage() {
                               )}
                               {['finance', 'admin'].includes(profile?.role || '') && (
                                 <button
-                                  onClick={() => handleApproveDownPayment(item.quotation_id, item.amount)}
+                                  onClick={() => handleOpenPaymentSchedule(item)}
                                   disabled={approvingPayment === item.quotation_id}
                                   className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
-                                  <CheckCircle className="w-4 h-4" />
-                                  {approvingPayment === item.quotation_id ? 'Collecting...' : 'Collect Payment'}
+                                  <DollarSign className="w-4 h-4" />
+                                  {approvingPayment === item.quotation_id ? 'Processing...' : 'Define Payment Schedule'}
                                 </button>
                               )}
                             </div>
@@ -665,6 +666,21 @@ export default function CollectionPage() {
           )}
         </div>
       </div>
+
+      {/* Payment Schedule Modal */}
+      {selectedQuotation && (
+        <PaymentScheduleModal
+          isOpen={showPaymentScheduleModal}
+          onClose={() => {
+            setShowPaymentScheduleModal(false);
+            setSelectedQuotation(null);
+          }}
+          onSubmit={handleSubmitPaymentSchedule}
+          quotationTotal={selectedQuotation.amount}
+          quotationNumber={selectedQuotation.quotation_number}
+          customerName={selectedQuotation.customer_name}
+        />
+      )}
     </div>
   );
 }
