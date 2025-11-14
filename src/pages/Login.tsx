@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import MultiUserWarning from '../components/auth/MultiUserWarning';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -9,7 +10,15 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-  const { signIn } = useAuth();
+  const [showMultiUserWarning, setShowMultiUserWarning] = useState(false);
+  const { signIn, user, profile } = useAuth();
+
+  // Show warning if user is already logged in
+  useEffect(() => {
+    if (user && email && email !== user.email) {
+      setShowMultiUserWarning(true);
+    }
+  }, [user, email]);
 
   // Signup form state
   const [signupData, setSignupData] = useState({
@@ -132,21 +141,47 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
-        <div className="flex flex-col items-center mb-8">
-          <img src="/logo.svg" alt="Special Offices" className="h-16 w-auto mb-4" />
-          <p className="text-slate-600 mt-2">Sales Quotation System</p>
-        </div>
+    <>
+      <MultiUserWarning
+        isOpen={showMultiUserWarning}
+        onClose={() => setShowMultiUserWarning(false)}
+        currentUser={profile?.email}
+        newUser={email}
+      />
 
-        {!showSignup ? (
-          <>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+          <div className="flex flex-col items-center mb-8">
+            <img src="/logo.svg" alt="Special Offices" className="h-16 w-auto mb-4" />
+            <p className="text-slate-600 mt-2">Sales Quotation System</p>
+          </div>
+
+          {/* Multi-User Info Banner */}
+          {!showSignup && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-blue-800 font-medium mb-1">
+                Testing Multiple Users?
+              </p>
+              <p className="text-xs text-blue-700">
+                Use incognito windows or different browsers for each user to avoid session conflicts.
+                <button
+                  onClick={() => setShowMultiUserWarning(true)}
+                  className="text-blue-600 underline hover:text-blue-800 ml-1"
+                >
+                  Learn more
+                </button>
+              </p>
+            </div>
+          )}
+
+          {!showSignup ? (
+            <>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
@@ -353,7 +388,8 @@ export default function Login() {
             </form>
           </>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
