@@ -66,6 +66,112 @@ export default function CollectionPage() {
     }
   };
 
+  const handleCollectMilestonePayment = async (scheduleId: string, totalAmount: number, paidAmount: number) => {
+    if (!profile || !['finance', 'admin'].includes(profile.role)) {
+      toast.error('Only Finance team can collect payments');
+      return;
+    }
+
+    const remaining = totalAmount - (paidAmount || 0);
+    const amountStr = prompt(`Enter amount to collect (Remaining: ${formatCurrency(remaining)}):`);
+    if (!amountStr) return;
+
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Invalid amount');
+      return;
+    }
+
+    if (amount > remaining) {
+      toast.error(`Amount exceeds remaining balance of ${formatCurrency(remaining)}`);
+      return;
+    }
+
+    const paymentMethod = prompt('Payment method (bank_transfer/cash/cheque):', 'bank_transfer');
+    const paymentRef = prompt('Payment reference number (optional):');
+    const notes = prompt('Additional notes (optional):');
+
+    setApprovingPayment(scheduleId);
+
+    try {
+      const { data, error } = await supabase.rpc('collect_milestone_payment', {
+        p_schedule_id: scheduleId,
+        p_amount_collected: amount,
+        p_payment_method: paymentMethod || 'bank_transfer',
+        p_payment_reference: paymentRef || null,
+        p_notes: notes || null
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; message?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to collect payment');
+      }
+
+      toast.success(`Payment of ${formatCurrency(amount)} collected!`);
+      refetchSummary();
+    } catch (error: any) {
+      console.error('Error collecting payment:', error);
+      toast.error(error.message || 'Failed to collect payment');
+    } finally {
+      setApprovingPayment(null);
+    }
+  };
+
+  const handleCollectInvoicePayment = async (invoiceId: string, totalAmount: number, paidAmount: number) => {
+    if (!profile || !['finance', 'admin'].includes(profile.role)) {
+      toast.error('Only Finance team can collect payments');
+      return;
+    }
+
+    const remaining = totalAmount - (paidAmount || 0);
+    const amountStr = prompt(`Enter amount to collect (Remaining: ${formatCurrency(remaining)}):`);
+    if (!amountStr) return;
+
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Invalid amount');
+      return;
+    }
+
+    if (amount > remaining) {
+      toast.error(`Amount exceeds remaining balance of ${formatCurrency(remaining)}`);
+      return;
+    }
+
+    const paymentMethod = prompt('Payment method (bank_transfer/cash/cheque):', 'bank_transfer');
+    const paymentRef = prompt('Payment reference number (optional):');
+    const notes = prompt('Additional notes (optional):');
+
+    setApprovingPayment(invoiceId);
+
+    try {
+      const { data, error } = await supabase.rpc('collect_invoice_payment', {
+        p_invoice_id: invoiceId,
+        p_amount_collected: amount,
+        p_payment_method: paymentMethod || 'bank_transfer',
+        p_payment_reference: paymentRef || null,
+        p_notes: notes || null
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; message?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to collect payment');
+      }
+
+      toast.success(`Payment of ${formatCurrency(amount)} collected!`);
+      refetchSummary();
+    } catch (error: any) {
+      console.error('Error collecting payment:', error);
+      toast.error(error.message || 'Failed to collect payment');
+    } finally {
+      setApprovingPayment(null);
+    }
+  };
+
   // Role-based access
   const canViewAll = ['ceo', 'finance', 'admin'].includes(profile?.role || '');
   const canViewTeam = ['manager'].includes(profile?.role || '');
@@ -357,14 +463,22 @@ export default function CollectionPage() {
                   {wipSchedules && wipSchedules.length > 0 ? (
                     <div className="space-y-3">
                       {wipSchedules.map((schedule) => (
-                        <div key={schedule.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between">
+                        <div key={schedule.id} className="border border-purple-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-purple-50 to-white">
+                          <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
                                 <span className="font-semibold text-slate-900">{schedule.milestone_name}</span>
-                                {getStatusBadge(schedule.status)}
+                                {schedule.status === 'partial' ? (
+                                  <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                                    Partial
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                                    Pending
+                                  </span>
+                                )}
                               </div>
-                              <p className="text-slate-600 mb-1">
+                              <p className="text-slate-700 font-medium mb-1">
                                 {(schedule.quotation as any)?.quotation_number} - {(schedule.quotation as any)?.customer?.company_name}
                               </p>
                               {schedule.milestone_description && (
@@ -375,7 +489,7 @@ export default function CollectionPage() {
                               </p>
                             </div>
                             <div className="text-right">
-                              <p className="text-2xl font-bold text-slate-900">
+                              <p className="text-2xl font-bold text-purple-600">
                                 {formatCurrency(schedule.amount - (schedule.paid_amount || 0))}
                               </p>
                               {schedule.paid_amount && schedule.paid_amount > 0 && (
@@ -386,6 +500,16 @@ export default function CollectionPage() {
                               <p className="text-sm text-slate-500 mt-1">
                                 Due: {format(new Date(schedule.due_date), 'MMM dd, yyyy')}
                               </p>
+                              {['finance', 'admin'].includes(profile?.role || '') && (
+                                <button
+                                  onClick={() => handleCollectMilestonePayment(schedule.id, schedule.amount, schedule.paid_amount || 0)}
+                                  disabled={approvingPayment === schedule.id}
+                                  className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                  <DollarSign className="w-4 h-4" />
+                                  {approvingPayment === schedule.id ? 'Collecting...' : 'Collect Payment'}
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -406,17 +530,29 @@ export default function CollectionPage() {
                   {invoices && invoices.length > 0 ? (
                     <div className="space-y-3">
                       {invoices.map((invoice) => (
-                        <div key={invoice.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between">
+                        <div key={invoice.id} className="border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-r from-green-50 to-white">
+                          <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
                                 <span className="font-semibold text-slate-900">{invoice.invoice_number}</span>
-                                {getStatusBadge(invoice.status)}
+                                {invoice.status === 'partial' ? (
+                                  <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                                    Partial
+                                  </span>
+                                ) : invoice.status === 'overdue' ? (
+                                  <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                                    Overdue
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                    Pending
+                                  </span>
+                                )}
                                 <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full">
                                   {invoice.invoice_type.replace('_', ' ').toUpperCase()}
                                 </span>
                               </div>
-                              <p className="text-slate-600 mb-1">{(invoice.customer as any)?.company_name}</p>
+                              <p className="text-slate-700 font-medium mb-1">{(invoice.customer as any)?.company_name}</p>
                               {invoice.quotation_id && (
                                 <p className="text-sm text-slate-500">
                                   Quotation: {(invoice.quotation as any)?.quotation_number}
@@ -424,7 +560,7 @@ export default function CollectionPage() {
                               )}
                             </div>
                             <div className="text-right">
-                              <p className="text-2xl font-bold text-slate-900">{formatCurrency(invoice.balance)}</p>
+                              <p className="text-2xl font-bold text-green-600">{formatCurrency(invoice.balance)}</p>
                               {invoice.paid_amount > 0 && (
                                 <p className="text-sm text-slate-500">
                                   Paid: {formatCurrency(invoice.paid_amount)} of {formatCurrency(invoice.total)}
@@ -433,6 +569,16 @@ export default function CollectionPage() {
                               <p className="text-sm text-slate-500 mt-1">
                                 Due: {format(new Date(invoice.due_date), 'MMM dd, yyyy')}
                               </p>
+                              {['finance', 'admin'].includes(profile?.role || '') && invoice.balance > 0 && (
+                                <button
+                                  onClick={() => handleCollectInvoicePayment(invoice.id, invoice.total, invoice.paid_amount)}
+                                  disabled={approvingPayment === invoice.id}
+                                  className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                  <DollarSign className="w-4 h-4" />
+                                  {approvingPayment === invoice.id ? 'Collecting...' : 'Collect Payment'}
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
