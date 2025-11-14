@@ -30,14 +30,52 @@ export default function CollectionPage() {
 
   const isLoading = summaryLoading || expectedLoading || downPaymentLoading || wipLoading || invoicesLoading;
 
+  /**
+   * Handle Down Payment Collection
+   *
+   * WORKFLOW:
+   * 1. Sales marks deal as "Won" after receiving PO → Status: "Pending Won"
+   * 2. Finance sees it in "Down Payment Due" tab
+   * 3. Finance clicks "Collect Payment" (this function)
+   * 4. System confirms down payment received → Status: "Deal Won"
+   * 5. Down payment automatically marked as collected
+   * 6. Payment record created
+   * 7. Milestone payments become active for tracking
+   * 8. Work can begin on the project
+   *
+   * This single action:
+   * - Approves the won deal
+   * - Records down payment collection
+   * - Activates milestone tracking
+   */
   const handleApproveDownPayment = async (quotationId: string, amount: number) => {
     if (!profile || !['finance', 'admin'].includes(profile.role)) {
       toast.error('Only Finance team can approve down payments');
       return;
     }
 
-    const paymentRef = prompt('Enter payment reference number (optional):');
-    const notes = prompt('Enter any notes (optional):');
+    const confirmed = window.confirm(
+      `CONFIRM DOWN PAYMENT COLLECTION\n\n` +
+      `Amount: ${formatCurrency(amount)}\n\n` +
+      `By clicking OK, you confirm that:\n` +
+      `• The down payment has been received\n` +
+      `• This will mark the deal as "Won"\n` +
+      `• The payment will be recorded\n` +
+      `• Work can begin on this project\n\n` +
+      `Continue?`
+    );
+
+    if (!confirmed) return;
+
+    const paymentRef = prompt(
+      'Enter payment reference number:\n' +
+      '(Bank transaction ID, cheque number, or receipt number)'
+    );
+
+    const notes = prompt(
+      'Enter payment details (optional):\n' +
+      'e.g., "Bank transfer received from main account"'
+    );
 
     setApprovingPayment(quotationId);
 
@@ -55,7 +93,11 @@ export default function CollectionPage() {
         throw new Error(result.error || 'Failed to approve down payment');
       }
 
-      toast.success(`Down payment of ${formatCurrency(amount)} collected!`);
+      toast.success(
+        `Down payment of ${formatCurrency(amount)} collected! Deal marked as Won. ` +
+        `Milestone payments are now active.`,
+        { duration: 5000 }
+      );
       refetchDownPayments();
       refetchSummary();
     } catch (error: any) {
