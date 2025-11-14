@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Eye, CreditCard as Edit2, Send, CircleCheck as CheckCircle, Circle as XCircle, Clock, Search, Trash2, Copy, Mail, TrendingUp, TrendingDown } from 'lucide-react';
+import { FileText, Eye, CreditCard as Edit2, Send, CircleCheck as CheckCircle, Circle as XCircle, Clock, Search, Trash2, Copy, Mail, TrendingUp, TrendingDown, Briefcase } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
@@ -8,6 +8,7 @@ import { formatCurrency } from '../../lib/currencyUtils';
 import DealOutcomeModal from './DealOutcomeModal';
 import toast from 'react-hot-toast';
 import { SkeletonTable } from '../ui/SkeletonLoader';
+import { exportJobOrderPDF } from '../../lib/jobOrderPdfExport';
 
 type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   customer: Database['public']['Tables']['customers']['Row'];
@@ -31,6 +32,7 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [generatingJobOrder, setGeneratingJobOrder] = useState<string | null>(null);
   const [dealOutcomeModal, setDealOutcomeModal] = useState<{
     quotationId: string;
     quotationNumber: string;
@@ -226,6 +228,51 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
       quotationNumber,
       outcome: 'lost'
     });
+  };
+
+  const handleGenerateJobOrder = async (quotationId: string) => {
+    try {
+      setGeneratingJobOrder(quotationId);
+
+      // Call the database function to create job order
+      const { data, error } = await supabase.rpc('create_job_order_from_quotation', {
+        p_quotation_id: quotationId,
+        p_priority: 'normal'
+      });
+
+      if (error) throw error;
+
+      // Fetch the created job order with items and quotation number
+      const { data: jobOrder, error: fetchError } = await supabase
+        .from('job_orders')
+        .select(`
+          *,
+          customer:customers(*),
+          items:job_order_items(*),
+          quotation:quotations(quotation_number)
+        `)
+        .eq('id', data)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Add quotation_number to the job order object
+      const jobOrderWithQuotation = {
+        ...jobOrder,
+        quotation_number: jobOrder.quotation?.quotation_number || 'N/A'
+      };
+
+      // Export to PDF
+      await exportJobOrderPDF(jobOrderWithQuotation);
+
+      toast.success('Job Order generated successfully!');
+      loadQuotations();
+    } catch (error: any) {
+      console.error('Error generating job order:', error);
+      toast.error(error.message || 'Failed to generate job order');
+    } finally {
+      setGeneratingJobOrder(null);
+    }
   };
 
   const handleDealOutcomeSuccess = () => {
@@ -764,6 +811,21 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                               Lost
                             </button>
                           </>
+                        )}
+
+                        {/* Generate Job Order Button for Won Deals */}
+                        {quotation.status === 'deal_won' && (profile?.role === 'sales' || profile?.role === 'manager') && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleGenerateJobOrder(quotation.id);
+                            }}
+                            disabled={generatingJobOrder === quotation.id}
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Briefcase className="w-3 h-3" />
+                            {generatingJobOrder === quotation.id ? 'Generating...' : 'Generate Job Order'}
+                          </button>
                         )}
                       </>
                     )}
