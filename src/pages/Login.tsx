@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
-import MultiUserWarning from '../components/auth/MultiUserWarning';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,15 +9,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
-  const [showMultiUserWarning, setShowMultiUserWarning] = useState(false);
-  const { signIn, user, profile } = useAuth();
-
-  // Show warning if user is already logged in
-  useEffect(() => {
-    if (user && email && email !== user.email) {
-      setShowMultiUserWarning(true);
-    }
-  }, [user, email]);
+  const { signIn } = useAuth();
 
   // Signup form state
   const [signupData, setSignupData] = useState({
@@ -141,40 +132,26 @@ export default function Login() {
   };
 
   return (
-    <>
-      <MultiUserWarning
-        isOpen={showMultiUserWarning}
-        onClose={() => setShowMultiUserWarning(false)}
-        currentUser={profile?.email}
-        newUser={email}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+        <div className="flex flex-col items-center mb-8">
+          <img src="/logo.svg" alt="Special Offices" className="h-16 w-auto mb-4" />
+          <p className="text-slate-600 mt-2">Sales Quotation System</p>
+        </div>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
-          <div className="flex flex-col items-center mb-8">
-            <img src="/logo.svg" alt="Special Offices" className="h-16 w-auto mb-4" />
-            <p className="text-slate-600 mt-2">Sales Quotation System</p>
+        {/* Multi-Tab Support Banner */}
+        {!showSignup && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+            <p className="text-xs text-green-800 font-medium mb-1">
+              ✅ Multi-Tab Sessions Enabled
+            </p>
+            <p className="text-xs text-green-700">
+              You can now login with different users in different tabs of the same browser.
+            </p>
           </div>
+        )}
 
-          {/* Multi-User Info Banner */}
-          {!showSignup && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-xs text-blue-800 font-medium mb-1">
-                Testing Multiple Users?
-              </p>
-              <p className="text-xs text-blue-700">
-                Use incognito windows or different browsers for each user to avoid session conflicts.
-                <button
-                  onClick={() => setShowMultiUserWarning(true)}
-                  className="text-blue-600 underline hover:text-blue-800 ml-1"
-                >
-                  Learn more
-                </button>
-              </p>
-            </div>
-          )}
-
-          {!showSignup ? (
+        {!showSignup ? (
             <>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
@@ -388,8 +365,7 @@ export default function Login() {
             </form>
           </>
         )}
-        </div>
       </div>
-    </>
+    </div>
   );
 }

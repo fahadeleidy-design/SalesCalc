@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserRole } from '../lib/database.types';
-import toast from 'react-hot-toast';
 
 interface Profile {
   id: string;
@@ -82,16 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       (async () => {
-        // Notify user if they were signed out
-        if (event === 'SIGNED_OUT' && user) {
-          toast.error(
-            'You have been signed out. This happens when you sign out from another tab or window.',
-            { duration: 5000 }
-          );
-        }
-
         setSession(session);
         setUser(session?.user ?? null);
 
