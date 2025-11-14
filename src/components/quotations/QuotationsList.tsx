@@ -629,8 +629,43 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                               </button>
                             </div>
                           )}
+
+                          {/* Generate Job Order Button for Won Deals - List View */}
+                          {quotation.status === 'deal_won' && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleGenerateJobOrder(quotation.id);
+                              }}
+                              disabled={generatingJobOrder === quotation.id}
+                              className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Generate Job Order"
+                            >
+                              <Briefcase className="w-3 h-3" />
+                              <span className="hidden sm:inline">{generatingJobOrder === quotation.id ? 'Generating...' : 'Job Order'}</span>
+                            </button>
+                          )}
                         </>
                       )}
+
+                      {/* Manager can generate job orders for all won deals */}
+                      {profile?.role === 'manager' && quotation.status === 'deal_won' && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleGenerateJobOrder(quotation.id);
+                          }}
+                          disabled={generatingJobOrder === quotation.id}
+                          className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Generate Job Order"
+                        >
+                          <Briefcase className="w-3 h-3" />
+                          <span className="hidden sm:inline">{generatingJobOrder === quotation.id ? 'Generating...' : 'Job Order'}</span>
+                        </button>
+                      )}
+
                       {profile?.role === 'admin' && (
                         <button
                           onClick={() => handleDelete(quotation.id)}
