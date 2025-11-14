@@ -71,7 +71,7 @@ export default function DealOutcomeModal({
           throw new Error(result.error || 'Failed to mark deal as won');
         }
 
-        toast.success('Deal marked as won! 🎉');
+        toast.success('Deal marked as won - Pending Finance Approval');
       } else {
         const finalReason = lostReason === 'Other' ? customReason : lostReason;
 

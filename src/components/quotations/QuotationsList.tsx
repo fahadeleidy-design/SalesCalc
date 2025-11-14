@@ -339,10 +339,20 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
         className: 'bg-red-100 text-red-700',
         icon: <XCircle className="w-3 h-3" />,
       },
+      pending_won: {
+        label: 'Pending Finance Approval (Won)',
+        className: 'bg-amber-100 text-amber-700',
+        icon: <Clock className="w-3 h-3" />,
+      },
       deal_won: {
         label: 'Deal Won',
         className: 'bg-teal-100 text-teal-700',
         icon: <CheckCircle className="w-3 h-3" />,
+      },
+      deal_lost: {
+        label: 'Deal Lost',
+        className: 'bg-gray-100 text-gray-700',
+        icon: <XCircle className="w-3 h-3" />,
       },
       pending_pricing: {
         label: 'Pending Pricing',
@@ -666,6 +676,62 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                         </button>
                       )}
 
+                      {/* Finance can approve/reject won deals */}
+                      {profile?.role === 'finance' && quotation.status === 'pending_won' && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              try {
+                                const { data, error } = await supabase.rpc('approve_won_deal', {
+                                  p_quotation_id: quotation.id,
+                                  p_approved_by: profile.id
+                                });
+                                if (error) throw error;
+                                const result = data as { success: boolean; error?: string };
+                                if (!result.success) throw new Error(result.error);
+                                toast.success('Won deal approved!');
+                                loadQuotations();
+                              } catch (error: any) {
+                                toast.error(error.message || 'Failed to approve');
+                              }
+                            }}
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
+                            title="Approve Won Deal"
+                          >
+                            <CheckCircle className="w-3 h-3" />
+                            <span className="hidden sm:inline">Approve</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const reason = prompt('Rejection reason:');
+                              if (!reason) return;
+                              supabase.rpc('reject_won_deal', {
+                                p_quotation_id: quotation.id,
+                                p_rejected_by: profile.id,
+                                p_reason: reason
+                              }).then(({ data, error }) => {
+                                if (error) throw error;
+                                const result = data as { success: boolean; error?: string };
+                                if (!result.success) throw new Error(result.error);
+                                toast.success('Won deal rejected');
+                                loadQuotations();
+                              }).catch((error: any) => {
+                                toast.error(error.message || 'Failed to reject');
+                              });
+                            }}
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
+                            title="Reject Won Deal"
+                          >
+                            <XCircle className="w-3 h-3" />
+                            <span className="hidden sm:inline">Reject</span>
+                          </button>
+                        </div>
+                      )}
+
                       {profile?.role === 'admin' && (
                         <button
                           onClick={() => handleDelete(quotation.id)}
@@ -861,6 +927,58 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                             <Briefcase className="w-3 h-3" />
                             {generatingJobOrder === quotation.id ? 'Generating...' : 'Generate Job Order'}
                           </button>
+                        )}
+
+                        {/* Finance Approve/Reject Won Deals - Grid View */}
+                        {quotation.status === 'pending_won' && profile?.role === 'finance' && (
+                          <>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const { data, error } = await supabase.rpc('approve_won_deal', {
+                                    p_quotation_id: quotation.id,
+                                    p_approved_by: profile.id
+                                  });
+                                  if (error) throw error;
+                                  const result = data as { success: boolean; error?: string };
+                                  if (!result.success) throw new Error(result.error);
+                                  toast.success('Won deal approved!');
+                                  loadQuotations();
+                                } catch (error: any) {
+                                  toast.error(error.message || 'Failed to approve');
+                                }
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                            >
+                              <CheckCircle className="w-3 h-3" />
+                              Approve Won Deal
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const reason = prompt('Rejection reason:');
+                                if (!reason) return;
+                                supabase.rpc('reject_won_deal', {
+                                  p_quotation_id: quotation.id,
+                                  p_rejected_by: profile.id,
+                                  p_reason: reason
+                                }).then(({ data, error }) => {
+                                  if (error) throw error;
+                                  const result = data as { success: boolean; error?: string };
+                                  if (!result.success) throw new Error(result.error);
+                                  toast.success('Won deal rejected');
+                                  loadQuotations();
+                                }).catch((error: any) => {
+                                  toast.error(error.message || 'Failed to reject');
+                                });
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+                            >
+                              <XCircle className="w-3 h-3" />
+                              Reject
+                            </button>
+                          </>
                         )}
                       </>
                     )}
