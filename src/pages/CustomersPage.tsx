@@ -599,22 +599,14 @@ export default function CustomersPage() {
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white"
                     >
                       <option value="">Select Industry Sector</option>
-                      <option value="financial_sector">Financial Sector (Banks, Insurance, Investment)</option>
-                      <option value="educational_sector">Educational Sector (Schools, Universities, Training)</option>
-                      <option value="health_sector">Health Sector (Hospitals, Clinics, Healthcare)</option>
-                      <option value="telecommunications_sector">Telecommunications Sector (Telecom, ISPs)</option>
-                      <option value="manufacturing_sector">Manufacturing Sector (Factories, Production)</option>
-                      <option value="retail_sector">Retail Sector (Stores, E-commerce, Shopping)</option>
-                      <option value="hospitality_sector">Hospitality Sector (Hotels, Restaurants, Tourism)</option>
-                      <option value="technology_sector">Technology Sector (IT, Software, Startups)</option>
-                      <option value="construction_sector">Construction Sector (Building, Real Estate Development)</option>
-                      <option value="transportation_sector">Transportation Sector (Logistics, Shipping, Airlines)</option>
-                      <option value="energy_sector">Energy Sector (Oil, Gas, Renewable Energy)</option>
-                      <option value="real_estate_sector">Real Estate Sector (Property Management, Brokers)</option>
-                      <option value="media_entertainment_sector">Media & Entertainment Sector (Publishing, Broadcasting)</option>
-                      <option value="agriculture_sector">Agriculture Sector (Farming, Food Production)</option>
-                      <option value="legal_services_sector">Legal Services Sector (Law Firms, Legal Consulting)</option>
-                      <option value="consulting_services_sector">Consulting Services Sector (Business, Management Consulting)</option>
+                      <option value="government">Government</option>
+                      <option value="financial">Financial (Banks, Insurance, Investment)</option>
+                      <option value="telecommunications">Telecommunications (Telecom, ISPs)</option>
+                      <option value="corporate_private">Corporate & Private</option>
+                      <option value="healthcare">Healthcare (Hospitals, Clinics, Medical)</option>
+                      <option value="education">Education (Schools, Universities, Training)</option>
+                      <option value="hospitality">Hospitality (Hotels, Restaurants, Tourism)</option>
+                      <option value="startups_tech">Startups & Tech (IT, Software, Technology)</option>
                     </select>
                     <p className="text-xs text-slate-600 mt-2">
                       ℹ️ Sector classification helps track market penetration and tailor solutions to industry needs.
