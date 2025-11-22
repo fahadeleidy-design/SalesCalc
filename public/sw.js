@@ -1,7 +1,7 @@
-const CACHE_NAME = 'salescalc-v3'; // Increment version for new features
-const STATIC_CACHE = 'salescalc-static-v3';
-const DYNAMIC_CACHE = 'salescalc-dynamic-v3';
-const OFFLINE_CACHE = 'salescalc-offline-v3';
+const CACHE_NAME = 'salescalc-v4'; // Increment version for new features
+const STATIC_CACHE = 'salescalc-static-v4';
+const DYNAMIC_CACHE = 'salescalc-dynamic-v4';
+const OFFLINE_CACHE = 'salescalc-offline-v4';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -14,7 +14,7 @@ const STATIC_ASSETS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker v3...');
+  console.log('[SW] Installing service worker v4...');
   
   event.waitUntil(
     caches.open(STATIC_CACHE)
@@ -34,7 +34,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker v3...');
+  console.log('[SW] Activating service worker v4...');
   
   event.waitUntil(
     caches.keys()
