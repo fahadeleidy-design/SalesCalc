@@ -283,14 +283,14 @@ export default function EngineeringDashboard() {
                             <span>Requested by {request.requester.full_name}</span>
                           </div>
 
-                          {request.quoted_unit_price && (
+                          {request.engineering_price && (
                             <div className="flex items-center gap-4 text-sm mb-2">
                               <div className="flex items-center gap-1 text-green-700 font-medium">
                                 <DollarSign className="w-4 h-4" />
-                                Unit Price: ${Number(request.quoted_unit_price).toFixed(2)}
+                                Unit Price: ${Number(request.engineering_price).toFixed(2)}
                               </div>
                               <div className="text-slate-600">
-                                Total: ${(Number(request.quoted_unit_price) * request.quotation_item.quantity).toFixed(2)}
+                                Total: ${(Number(request.engineering_price) * request.quotation_item.quantity).toFixed(2)}
                               </div>
                             </div>
                           )}
