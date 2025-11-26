@@ -72,17 +72,24 @@ export default function CustomersPage() {
     }
 
     try {
+      // Convert empty strings to null for enum fields
+      const customerData = {
+        ...formData,
+        customer_type: formData.customer_type || null,
+        sector: formData.sector || null,
+      };
+
       if (editingCustomer) {
         const { error } = await supabase
           .from('customers')
-          .update(formData as any)
+          .update(customerData as any)
           .eq('id', editingCustomer.id);
 
         if (error) throw error;
         alert('Customer updated successfully');
       } else {
         const { error } = await supabase.from('customers').insert([{
-          ...formData,
+          ...customerData,
           created_by: profile?.id
         } as any]);
 
@@ -177,8 +184,8 @@ export default function CustomersPage() {
           city: city || '',
           country: country || '',
           tax_id: tax_id || '',
-          customer_type: customer_type || null,
-          sector: sector || null,
+          customer_type: customer_type?.trim() || null,
+          sector: sector?.trim() || null,
           notes: notes || '',
         });
       }
