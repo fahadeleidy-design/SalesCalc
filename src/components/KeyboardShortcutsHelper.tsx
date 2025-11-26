@@ -25,7 +25,7 @@ export default function KeyboardShortcutsHelper() {
     return (
       <button
         onClick={() => setShow(true)}
-        className="fixed bottom-4 right-4 p-3 bg-slate-900 text-white rounded-full shadow-lg hover:bg-slate-800 transition-all z-50"
+        className="fixed bottom-24 right-6 p-3 bg-slate-900 text-white rounded-full shadow-lg hover:bg-slate-800 transition-all z-40 hover:scale-110"
         title="Keyboard Shortcuts (Ctrl+K)"
       >
         <Keyboard className="w-5 h-5" />

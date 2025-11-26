@@ -290,7 +290,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        <main className="p-6">{children}</main>
+        <main className="p-6 pb-32">{children}</main>
       </div>
 
       {/* Keyboard Shortcuts Helper */}
