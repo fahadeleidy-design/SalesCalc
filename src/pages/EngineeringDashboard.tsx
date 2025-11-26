@@ -61,8 +61,16 @@ export default function EngineeringDashboard() {
         .gte('priced_at', today.toISOString()),
     ]);
 
-    setRequests((pendingResult.data as any) || []);
-    setPricedRequests((pricedResult.data as any) || []);
+    // Filter out requests with missing quotation or quotation_item data
+    const validPendingRequests = ((pendingResult.data as any) || []).filter(
+      (req: any) => req.quotation && req.quotation_item && req.requester
+    );
+    const validPricedRequests = ((pricedResult.data as any) || []).filter(
+      (req: any) => req.quotation && req.quotation_item && req.requester
+    );
+
+    setRequests(validPendingRequests);
+    setPricedRequests(validPricedRequests);
     setCompletedToday(completedResult.data?.length || 0);
     setLoading(false);
   };
@@ -197,10 +205,10 @@ export default function EngineeringDashboard() {
                         <div className="flex items-center gap-4 text-sm text-slate-600">
                           <span className="flex items-center gap-1">
                             <FileText className="w-4 h-4" />
-                            {request.quotation.quotation_number}
+                            {request.quotation?.quotation_number || 'N/A'}
                           </span>
-                          <span>Quantity: {request.quotation_item.quantity}</span>
-                          <span>Requested by {request.requester.full_name}</span>
+                          <span>Quantity: {request.quotation_item?.quantity || 0}</span>
+                          <span>Requested by {request.requester?.full_name || 'Unknown'}</span>
                           <span className="text-slate-400">
                             {new Date(request.created_at).toLocaleDateString()}
                           </span>
@@ -277,10 +285,10 @@ export default function EngineeringDashboard() {
                           <div className="flex items-center gap-4 text-sm text-slate-600 mb-2">
                             <span className="flex items-center gap-1">
                               <FileText className="w-4 h-4" />
-                              {request.quotation.quotation_number}
+                              {request.quotation?.quotation_number || 'N/A'}
                             </span>
-                            <span>Quantity: {request.quotation_item.quantity}</span>
-                            <span>Requested by {request.requester.full_name}</span>
+                            <span>Quantity: {request.quotation_item?.quantity || 0}</span>
+                            <span>Requested by {request.requester?.full_name || 'Unknown'}</span>
                           </div>
 
                           {request.engineering_price && (
@@ -290,7 +298,7 @@ export default function EngineeringDashboard() {
                                 Unit Price: ${Number(request.engineering_price).toFixed(2)}
                               </div>
                               <div className="text-slate-600">
-                                Total: ${(Number(request.engineering_price) * request.quotation_item.quantity).toFixed(2)}
+                                Total: ${(Number(request.engineering_price) * (request.quotation_item?.quantity || 0)).toFixed(2)}
                               </div>
                             </div>
                           )}
