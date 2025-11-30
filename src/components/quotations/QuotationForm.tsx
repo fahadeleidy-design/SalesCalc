@@ -112,7 +112,14 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         discount_percentage: quotationData.discount_percentage,
         tax_percentage: quotationData.tax_percentage,
       });
-      setItems(quotationData.quotation_items || []);
+
+      // Ensure boolean fields are properly typed
+      const loadedItems = (quotationData.quotation_items || []).map((item: any) => ({
+        ...item,
+        is_custom: Boolean(item.is_custom),
+        needs_engineering_review: Boolean(item.needs_engineering_review),
+      }));
+      setItems(loadedItems);
     }
   };
 
@@ -277,7 +284,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         return {
           quotation_id: savedQuotationId!,
           product_id: item.product_id || null,
-          is_custom: item.is_custom,
+          is_custom: Boolean(item.is_custom), // Ensure boolean
           custom_description: item.custom_description || null,
           quantity: Math.round(item.quantity || 1), // Ensure integer
           unit_price: item.unit_price,
@@ -286,7 +293,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
           custom_item_status: needsEngineering ? 'pending' : null,
           notes: item.notes || null,
           modifications: item.modifications || null,
-          needs_engineering_review: hasModifications,
+          needs_engineering_review: Boolean(hasModifications), // Ensure boolean
           sort_order: index,
         };
       });
