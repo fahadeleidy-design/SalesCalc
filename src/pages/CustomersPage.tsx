@@ -438,13 +438,16 @@ export default function CustomersPage() {
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button
-                    onClick={() => handleDelete(customer.id)}
-                    className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {/* Only admins, managers, and CEO can delete customers */}
+                  {['admin', 'manager', 'ceo'].includes(profile?.role || '') && (
+                    <button
+                      onClick={() => handleDelete(customer.id)}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
 
