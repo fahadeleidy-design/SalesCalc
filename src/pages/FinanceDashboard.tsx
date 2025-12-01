@@ -433,7 +433,7 @@ export default function FinanceDashboard() {
           .from('purchase_orders')
           .select('id')
           .eq('quotation_id', quot.id)
-          .single();
+          .maybeSingle();
 
         if (!existingPO) {
           quotationsWithoutPO.push(quot);
