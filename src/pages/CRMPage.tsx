@@ -847,22 +847,33 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const data = {
+      const baseData = {
         ...formData,
         estimated_value: formData.estimated_value ? Number(formData.estimated_value) : null,
         expected_close_date: formData.expected_close_date || null,
-        assigned_to: formData.assigned_to || profile?.id,
-        created_by: lead?.created_by || profile?.id,
       };
 
       if (lead) {
+        // Update existing lead
+        const updateData = {
+          ...baseData,
+          assigned_to: formData.assigned_to || profile?.id,
+        };
         const { error } = await supabase
           .from('crm_leads')
-          .update(data)
+          .update(updateData)
           .eq('id', lead.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('crm_leads').insert(data);
+        // Create new lead - let database set created_by and assigned_to defaults
+        const insertData = {
+          ...baseData,
+          // Only include assigned_to if it's explicitly set by a manager/ceo
+          ...(formData.assigned_to && formData.assigned_to !== profile?.id
+            ? { assigned_to: formData.assigned_to }
+            : {}),
+        };
+        const { error } = await supabase.from('crm_leads').insert(insertData);
         if (error) throw error;
       }
     },
@@ -1707,24 +1718,35 @@ function OpportunityModal({
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const data = {
+      const baseData = {
         ...formData,
         amount: Number(formData.amount) || 0,
         customer_id: formData.customer_id || null,
         lead_id: formData.lead_id || null,
         expected_close_date: formData.expected_close_date || null,
-        assigned_to: formData.assigned_to || profile?.id,
-        created_by: opportunity?.created_by || profile?.id,
       };
 
       if (opportunity) {
+        // Update existing opportunity
+        const updateData = {
+          ...baseData,
+          assigned_to: formData.assigned_to || profile?.id,
+        };
         const { error } = await supabase
           .from('crm_opportunities')
-          .update(data)
+          .update(updateData)
           .eq('id', opportunity.id);
         if (error) throw error;
       } else {
-        const { error} = await supabase.from('crm_opportunities').insert(data);
+        // Create new opportunity - let database set created_by and assigned_to defaults
+        const insertData = {
+          ...baseData,
+          // Only include assigned_to if it's explicitly set
+          ...(formData.assigned_to && formData.assigned_to !== profile?.id
+            ? { assigned_to: formData.assigned_to }
+            : {}),
+        };
+        const { error } = await supabase.from('crm_opportunities').insert(insertData);
         if (error) throw error;
       }
     },

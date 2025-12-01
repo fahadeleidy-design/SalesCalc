@@ -45,8 +45,6 @@ export default function ActivityLogModal({ entityType, entityId, entityName, onC
         outcome: formData.outcome || null,
         follow_up_date: formData.follow_up_date || null,
         completed: formData.completed,
-        assigned_to: profile?.id,
-        created_by: profile?.id,
         [`${entityType}_id`]: entityId,
       };
 

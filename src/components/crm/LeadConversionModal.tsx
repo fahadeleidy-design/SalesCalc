@@ -53,7 +53,6 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
         industry: lead.industry,
         customer_type: 'business',
         payment_terms: 'net_30',
-        created_by: profile?.id,
       };
 
       const { data: customer, error: customerError } = await supabase
@@ -84,8 +83,6 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
           expected_close_date: opportunityData.expected_close_date || null,
           description: opportunityData.description || null,
           next_step: opportunityData.next_step || null,
-          assigned_to: profile?.id,
-          created_by: profile?.id,
         };
 
         const { error: oppError } = await supabase
@@ -103,8 +100,6 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
           description: `Lead "${lead.company_name}" was successfully converted to a customer${createOpportunity ? ' with an opportunity created' : ''}`,
           lead_id: lead.id,
           customer_id: customer.id,
-          assigned_to: profile?.id,
-          created_by: profile?.id,
           completed: true,
         });
 
