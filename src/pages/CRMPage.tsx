@@ -506,22 +506,27 @@ function LeadsView() {
             <option value="unqualified">Unqualified</option>
           </select>
           <div className="flex gap-2">
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-              title="Export leads to Excel"
-            >
-              <Download className="h-5 w-5" />
-              Export
-            </button>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-              title="Import leads from Excel"
-            >
-              <Upload className="h-5 w-5" />
-              Import
-            </button>
+            {/* Only managers, CEO, and admins can import/export */}
+            {['manager', 'ceo', 'admin'].includes(profile?.role || '') && (
+              <>
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+                  title="Export leads to Excel"
+                >
+                  <Download className="h-5 w-5" />
+                  Export
+                </button>
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+                  title="Import leads from Excel"
+                >
+                  <Upload className="h-5 w-5" />
+                  Import
+                </button>
+              </>
+            )}
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
@@ -1344,22 +1349,27 @@ function OpportunitiesView() {
             <option value="closed_lost">Closed Lost</option>
           </select>
           <div className="flex gap-2">
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-              title="Export opportunities to Excel"
-            >
-              <Download className="h-5 w-5" />
-              Export
-            </button>
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-              title="Import opportunities from Excel"
-            >
-              <Upload className="h-5 w-5" />
-              Import
-            </button>
+            {/* Only managers, CEO, and admins can import/export */}
+            {['manager', 'ceo', 'admin'].includes(profile?.role || '') && (
+              <>
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+                  title="Export opportunities to Excel"
+                >
+                  <Download className="h-5 w-5" />
+                  Export
+                </button>
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+                  title="Import opportunities from Excel"
+                >
+                  <Upload className="h-5 w-5" />
+                  Import
+                </button>
+              </>
+            )}
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
