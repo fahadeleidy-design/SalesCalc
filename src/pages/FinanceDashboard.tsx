@@ -19,7 +19,10 @@ import {
   CreditCard,
   ArrowUpCircle,
   Activity,
-  Zap
+  Zap,
+  Package,
+  Building2,
+  Plus
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,6 +30,8 @@ import { formatCurrency } from '../lib/currencyUtils';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import toast from 'react-hot-toast';
 import DownPaymentConfigModal from '../components/finance/DownPaymentConfigModal';
+import SupplierManagementModal from '../components/finance/SupplierManagementModal';
+import CreatePOModal from '../components/finance/CreatePOModal';
 
 interface FinanceMetrics {
   total_revenue: number;
@@ -77,7 +82,7 @@ export default function FinanceDashboard() {
     start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
   });
-  const [activeTab, setActiveTab] = useState<'overview' | 'quotations' | 'commissions' | 'reports' | 'collections'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'quotations' | 'commissions' | 'reports' | 'collections' | 'purchase_orders'>('overview');
   const [collectionData, setCollectionData] = useState<any>(null);
   const [actionQueue, setActionQueue] = useState<any[]>([]);
   const [dailyReport, setDailyReport] = useState<any>(null);
@@ -89,11 +94,19 @@ export default function FinanceDashboard() {
   const [showDownPaymentModal, setShowDownPaymentModal] = useState(false);
   const [selectedQuotationForPayment, setSelectedQuotationForPayment] = useState<any>(null);
   const [pendingWonDeals, setPendingWonDeals] = useState<any[]>([]);
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [showCreatePOModal, setShowCreatePOModal] = useState(false);
+  const [selectedQuotationForPO, setSelectedQuotationForPO] = useState<any>(null);
+  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+  const [approvedQuotationsForPO, setApprovedQuotationsForPO] = useState<any[]>([]);
 
   useEffect(() => {
     loadFinanceData();
     if (activeTab === 'collections') {
       loadCollectionData();
+    }
+    if (activeTab === 'purchase_orders') {
+      loadPurchaseOrdersData();
     }
   }, [dateRange, activeTab]);
 
@@ -389,6 +402,59 @@ export default function FinanceDashboard() {
     }
   };
 
+  const loadPurchaseOrdersData = async () => {
+    try {
+      // Load purchase orders
+      const { data: poData, error: poError } = await supabase
+        .from('finance_po_summary')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (poError) throw poError;
+      setPurchaseOrders(poData || []);
+
+      // Load approved quotations that need PO
+      const { data: quotationsData, error: quotationsError } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          customer:customers(company_name)
+        `)
+        .in('status', ['approved', 'deal_won'])
+        .order('created_at', { ascending: false });
+
+      if (quotationsError) throw quotationsError;
+
+      // Filter quotations that don't have PO yet
+      const quotationsWithoutPO = [];
+      for (const quot of quotationsData || []) {
+        const { data: existingPO } = await supabase
+          .from('purchase_orders')
+          .select('id')
+          .eq('quotation_id', quot.id)
+          .single();
+
+        if (!existingPO) {
+          quotationsWithoutPO.push(quot);
+        }
+      }
+
+      setApprovedQuotationsForPO(quotationsWithoutPO);
+    } catch (error: any) {
+      console.error('Error loading PO data:', error);
+      toast.error('Failed to load purchase orders data');
+    }
+  };
+
+  const handleCreatePO = (quotation: any) => {
+    setSelectedQuotationForPO({
+      ...quotation,
+      customer_name: quotation.customer?.company_name || 'Unknown',
+    });
+    setShowCreatePOModal(true);
+  };
+
   const handleApproveCommission = async (calculationId: string) => {
     try {
       if (!profile?.id) {
@@ -574,6 +640,22 @@ export default function FinanceDashboard() {
               {dailyReport?.overdue_count > 0 && (
                 <span className="ml-1 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   {dailyReport.overdue_count}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('purchase_orders')}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'purchase_orders'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              Purchase Orders
+              {approvedQuotationsForPO.length > 0 && (
+                <span className="ml-1 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {approvedQuotationsForPO.length}
                 </span>
               )}
             </button>
@@ -1069,6 +1151,142 @@ export default function FinanceDashboard() {
               )}
             </div>
           )}
+
+          {/* Purchase Orders Tab */}
+          {activeTab === 'purchase_orders' && (
+            <div className="space-y-6">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-900">Purchase Order Management</h3>
+                <button
+                  onClick={() => setShowSupplierModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Building2 className="w-4 h-4" />
+                  Manage Suppliers
+                </button>
+              </div>
+
+              {/* Quotations Needing PO */}
+              {approvedQuotationsForPO.length > 0 && (
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-300">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Package className="w-6 h-6 text-blue-600" />
+                    <h3 className="text-lg font-bold text-blue-900">
+                      Ready for Purchase Order ({approvedQuotationsForPO.length})
+                    </h3>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-4">
+                    These approved deals need purchase orders created to proceed with manufacturing.
+                  </p>
+                  <div className="space-y-3">
+                    {approvedQuotationsForPO.map((quotation) => (
+                      <div
+                        key={quotation.id}
+                        className="bg-white rounded-lg p-4 border border-blue-200 flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900">{quotation.quotation_number}</span>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {quotation.status}
+                            </span>
+                          </div>
+                          <div className="text-sm text-slate-600 mt-1">
+                            {quotation.customer?.company_name || 'Unknown Customer'}
+                          </div>
+                          <div className="text-lg font-bold text-blue-600 mt-1">
+                            {formatCurrency(quotation.total)}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleCreatePO(quotation)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Create PO
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Purchase Orders List */}
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <div className="p-4 bg-slate-50 border-b border-slate-200">
+                  <h3 className="font-semibold text-slate-900">Recent Purchase Orders</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase">PO Number</th>
+                        <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase">Supplier</th>
+                        <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase">Quotation</th>
+                        <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase">Customer</th>
+                        <th className="py-3 px-4 text-right text-xs font-semibold text-slate-600 uppercase">Total</th>
+                        <th className="py-3 px-4 text-center text-xs font-semibold text-slate-600 uppercase">Items</th>
+                        <th className="py-3 px-4 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                        <th className="py-3 px-4 text-left text-xs font-semibold text-slate-600 uppercase">Delivery Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {purchaseOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-12 text-center text-slate-500">
+                            <Package className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                            <p className="font-medium">No Purchase Orders Yet</p>
+                            <p className="text-sm">Create your first PO from approved quotations above</p>
+                          </td>
+                        </tr>
+                      ) : (
+                        purchaseOrders.map((po) => (
+                          <tr key={po.id} className="border-b border-slate-100 hover:bg-slate-50">
+                            <td className="py-3 px-4">
+                              <div className="font-medium text-slate-900">{po.po_number}</div>
+                              <div className="text-xs text-slate-500">
+                                {format(new Date(po.po_date), 'MMM d, yyyy')}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="text-sm font-medium text-slate-900">{po.supplier_name}</div>
+                              <div className="text-xs text-slate-500">{po.supplier_code || 'N/A'}</div>
+                            </td>
+                            <td className="py-3 px-4 text-sm text-slate-900">{po.quotation_number}</td>
+                            <td className="py-3 px-4 text-sm text-slate-600">{po.customer_name}</td>
+                            <td className="py-3 px-4 text-right text-sm font-bold text-slate-900">
+                              {formatCurrency(po.total)}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {po.item_count} items
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                po.status === 'draft' ? 'bg-slate-100 text-slate-800' :
+                                po.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                                po.status === 'acknowledged' ? 'bg-green-100 text-green-800' :
+                                po.status === 'in_production' ? 'bg-purple-100 text-purple-800' :
+                                po.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                'bg-slate-100 text-slate-800'
+                              }`}>
+                                {po.status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-sm text-slate-600">
+                              {po.required_delivery_date ? format(new Date(po.required_delivery_date), 'MMM d, yyyy') : 'N/A'}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1081,6 +1299,29 @@ export default function FinanceDashboard() {
             setSelectedQuotationForPayment(null);
           }}
           onSubmit={handleSubmitPaymentConfig}
+        />
+      )}
+
+      {/* Supplier Management Modal */}
+      {showSupplierModal && (
+        <SupplierManagementModal
+          onClose={() => setShowSupplierModal(false)}
+          onSupplierAdded={() => loadPurchaseOrdersData()}
+        />
+      )}
+
+      {/* Create PO Modal */}
+      {showCreatePOModal && selectedQuotationForPO && (
+        <CreatePOModal
+          quotation={selectedQuotationForPO}
+          onClose={() => {
+            setShowCreatePOModal(false);
+            setSelectedQuotationForPO(null);
+          }}
+          onSuccess={() => {
+            loadPurchaseOrdersData();
+            loadFinanceData();
+          }}
         />
       )}
     </div>
