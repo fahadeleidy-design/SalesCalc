@@ -563,14 +563,98 @@ function LeadsView() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLeads.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              onEdit={setEditingLead}
-            />
-          ))}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Company</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Contact</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Source</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Score</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Est. Value</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {filteredLeads.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-slate-900">{lead.company_name}</div>
+                          <div className="text-sm text-slate-500">{lead.industry || 'N/A'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm">
+                        <div className="font-medium text-slate-900">{lead.contact_name}</div>
+                        <div className="text-slate-500">{lead.contact_email || lead.contact_phone || 'N/A'}</div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        lead.lead_status === 'qualified'
+                          ? 'bg-green-100 text-green-800'
+                          : lead.lead_status === 'new'
+                          ? 'bg-blue-100 text-blue-800'
+                          : lead.lead_status === 'contacted'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-slate-100 text-slate-800'
+                      }`}>
+                        {lead.lead_status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900">{lead.lead_source}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-slate-200 rounded-full h-2 max-w-[60px]">
+                          <div
+                            className="bg-orange-500 h-2 rounded-full"
+                            style={{ width: `${lead.lead_score}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-slate-900">{lead.lead_score}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                      {lead.estimated_value ? formatCurrency(lead.estimated_value) : '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingLead(lead)}
+                          className="p-1.5 text-slate-600 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this lead?')) {
+                              supabase.from('crm_leads').delete().eq('id', lead.id).then(() => {
+                                toast.success('Lead deleted');
+                                queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
+                              });
+                            }
+                          }}
+                          className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -1406,15 +1490,115 @@ function OpportunitiesView() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Object.entries(stageGroups).map(([stage, opps]) => (
-            <PipelineColumn
-              key={stage}
-              stage={stage}
-              opportunities={opps}
-              onEdit={setEditingOpportunity}
-            />
-          ))}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Opportunity</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Customer/Lead</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Stage</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Amount</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Probability</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Expected Close</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {filteredOpportunities.map((opp) => (
+                  <tr key={opp.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <Target className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-slate-900">{opp.name}</div>
+                          {opp.next_step && (
+                            <div className="text-sm text-slate-500">Next: {opp.next_step}</div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm">
+                        {opp.customer ? (
+                          <>
+                            <div className="font-medium text-slate-900">{opp.customer.company_name}</div>
+                            <div className="text-slate-500">Customer</div>
+                          </>
+                        ) : opp.lead ? (
+                          <>
+                            <div className="font-medium text-slate-900">{opp.lead.company_name}</div>
+                            <div className="text-slate-500">Lead</div>
+                          </>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        opp.stage === 'Closed Won'
+                          ? 'bg-green-100 text-green-800'
+                          : opp.stage === 'Closed Lost'
+                          ? 'bg-red-100 text-red-800'
+                          : opp.stage === 'Negotiation'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {opp.stage}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                      {formatCurrency(opp.amount)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-slate-200 rounded-full h-2 max-w-[60px]">
+                          <div
+                            className="bg-orange-500 h-2 rounded-full"
+                            style={{ width: `${opp.probability}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium text-slate-900">{opp.probability}%</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900">
+                      {opp.expected_close_date
+                        ? new Date(opp.expected_close_date).toLocaleDateString()
+                        : '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingOpportunity(opp)}
+                          className="p-1.5 text-slate-600 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this opportunity?')) {
+                              supabase.from('crm_opportunities').delete().eq('id', opp.id).then(() => {
+                                toast.success('Opportunity deleted');
+                                queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
+                              });
+                            }
+                          }}
+                          className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
