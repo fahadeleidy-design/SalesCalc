@@ -26,6 +26,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import toast from 'react-hot-toast';
+import DownPaymentConfigModal from '../components/finance/DownPaymentConfigModal';
 
 interface FinanceMetrics {
   total_revenue: number;
@@ -85,6 +86,9 @@ export default function FinanceDashboard() {
   const [showCollectModal, setShowCollectModal] = useState(false);
   const [showPromiseModal, setShowPromiseModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
+  const [showDownPaymentModal, setShowDownPaymentModal] = useState(false);
+  const [selectedQuotationForPayment, setSelectedQuotationForPayment] = useState<any>(null);
+  const [pendingWonDeals, setPendingWonDeals] = useState<any[]>([]);
 
   useEffect(() => {
     loadFinanceData();
@@ -183,6 +187,20 @@ export default function FinanceDashboard() {
 
       if (forecastError) throw forecastError;
       setForecast(forecastData || []);
+
+      // Load pending won deals awaiting payment configuration
+      const { data: pendingDeals, error: pendingError } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          customer:customers(company_name, email, phone)
+        `)
+        .in('status', ['approved', 'pending_won'])
+        .is('down_payment_collected_at', null)
+        .order('created_at', { ascending: false });
+
+      if (pendingError) throw pendingError;
+      setPendingWonDeals(pendingDeals || []);
     } catch (error: any) {
       console.error('Error loading collection data:', error);
       toast.error('Failed to load collection data');
@@ -303,6 +321,71 @@ export default function FinanceDashboard() {
     } catch (error: any) {
       console.error('Error generating reminders:', error);
       toast.error('Failed to generate reminders');
+    }
+  };
+
+  const handleConfigurePayment = (quotation: any) => {
+    setSelectedQuotationForPayment({
+      ...quotation,
+      customer_name: quotation.customer?.company_name || 'Unknown',
+      total: quotation.total,
+    });
+    setShowDownPaymentModal(true);
+  };
+
+  const handleSubmitPaymentConfig = async (downPayment: any, milestones: any[]) => {
+    try {
+      toast.loading('Configuring payment schedule...', { id: 'config-payment' });
+
+      // First, record down payment using finance_record_down_payment
+      const { data: dpData, error: dpError } = await supabase.rpc('finance_record_down_payment', {
+        p_quotation_id: selectedQuotationForPayment.id,
+        p_down_payment_amount: downPayment.amount,
+        p_payment_date: downPayment.date,
+        p_payment_reference: downPayment.reference,
+        p_payment_method: downPayment.method,
+        p_notes: downPayment.notes || null,
+      });
+
+      if (dpError) throw dpError;
+
+      const dpResult = dpData as { success: boolean; error?: string; invoice_number?: string };
+      if (!dpResult.success) {
+        throw new Error(dpResult.error || 'Failed to record down payment');
+      }
+
+      // Then add each milestone using finance_add_payment_milestone
+      for (const milestone of milestones) {
+        const { data: msData, error: msError } = await supabase.rpc('finance_add_payment_milestone', {
+          p_quotation_id: selectedQuotationForPayment.id,
+          p_milestone_name: milestone.name,
+          p_milestone_description: milestone.description,
+          p_amount: milestone.amount,
+          p_due_date: milestone.due_date,
+          p_notes: null,
+        });
+
+        if (msError) throw msError;
+
+        const msResult = msData as { success: boolean; error?: string };
+        if (!msResult.success) {
+          throw new Error(msResult.error || `Failed to add milestone: ${milestone.name}`);
+        }
+      }
+
+      toast.success(
+        `Payment schedule configured! Down payment invoice ${dpResult.invoice_number} created. ${milestones.length} milestone invoices generated.`,
+        { id: 'config-payment', duration: 5000 }
+      );
+
+      setShowDownPaymentModal(false);
+      setSelectedQuotationForPayment(null);
+      loadCollectionData();
+      loadFinanceData();
+    } catch (error: any) {
+      console.error('Error configuring payment:', error);
+      toast.error(error.message || 'Failed to configure payment schedule', { id: 'config-payment' });
+      throw error; // Re-throw to keep modal open
     }
   };
 
@@ -784,6 +867,55 @@ export default function FinanceDashboard() {
                 </div>
               )}
 
+              {/* Pending Won Deals - Awaiting Payment Configuration */}
+              {pendingWonDeals.length > 0 && (
+                <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-6 border-2 border-amber-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <ArrowUpCircle className="w-6 h-6 text-amber-600" />
+                      <h3 className="text-lg font-bold text-amber-900">
+                        Awaiting Payment Configuration ({pendingWonDeals.length})
+                      </h3>
+                    </div>
+                  </div>
+                  <p className="text-sm text-amber-700 mb-4">
+                    These deals have been won but need payment schedule configuration. Configure down payment and milestones to activate collection tracking.
+                  </p>
+                  <div className="space-y-3">
+                    {pendingWonDeals.map((quotation) => (
+                      <div
+                        key={quotation.id}
+                        className="bg-white rounded-lg p-4 border border-amber-200 flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900">{quotation.quotation_number}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              quotation.status === 'pending_won' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {quotation.status}
+                            </span>
+                          </div>
+                          <div className="text-sm text-slate-600 mt-1">
+                            {quotation.customer?.company_name || 'Unknown Customer'}
+                          </div>
+                          <div className="text-lg font-bold text-amber-600 mt-1">
+                            {formatCurrency(quotation.total)}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleConfigurePayment(quotation)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                        >
+                          <DollarSign className="w-4 h-4" />
+                          Configure Payment
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-slate-900">Priority Collection Queue</h3>
@@ -939,6 +1071,18 @@ export default function FinanceDashboard() {
           )}
         </div>
       </div>
+
+      {/* Down Payment Configuration Modal */}
+      {showDownPaymentModal && selectedQuotationForPayment && (
+        <DownPaymentConfigModal
+          quotation={selectedQuotationForPayment}
+          onClose={() => {
+            setShowDownPaymentModal(false);
+            setSelectedQuotationForPayment(null);
+          }}
+          onSubmit={handleSubmitPaymentConfig}
+        />
+      )}
     </div>
   );
 }
