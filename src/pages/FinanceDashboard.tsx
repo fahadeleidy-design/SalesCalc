@@ -881,72 +881,129 @@ export default function FinanceDashboard() {
             <div className="space-y-6">
               {/* Daily Collection Report */}
               {dailyReport && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                      <span className="text-sm font-medium text-green-700">Today</span>
-                    </div>
-                    <div className="text-xl font-bold text-green-900">
-                      {formatCurrency(dailyReport.collected_today)}
-                    </div>
-                    <div className="text-xs text-green-600 mt-1">
-                      {dailyReport.payments_today} payments
+                <>
+                  {/* DOWN PAYMENT SECTION - NEW */}
+                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-6 border-2 border-amber-300">
+                    <h3 className="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">
+                      <DollarSign className="w-6 h-6" />
+                      Down Payments Due from Won Deals
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white rounded-lg p-4 border-2 border-amber-400">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="w-5 h-5 text-amber-600" />
+                          <span className="text-sm font-medium text-amber-700">Pending Down Payments</span>
+                        </div>
+                        <div className="text-2xl font-bold text-amber-900">
+                          {formatCurrency(dailyReport.pending_down_payments_total || 0)}
+                        </div>
+                        <div className="text-xs text-amber-600 mt-1">
+                          {dailyReport.pending_down_payments_count || 0} deals awaiting collection
+                        </div>
+                        <div className="text-xs text-amber-700 mt-2 font-medium">
+                          ⚡ Action Required by Finance
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border border-green-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <span className="text-sm font-medium text-green-700">Today</span>
+                        </div>
+                        <div className="text-xl font-bold text-green-900">
+                          {formatCurrency(dailyReport.down_payments_collected_today_total || 0)}
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          {dailyReport.down_payments_collected_today || 0} down payments
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border border-blue-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="w-5 h-5 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-700">This Month</span>
+                        </div>
+                        <div className="text-xl font-bold text-blue-900">
+                          {formatCurrency(dailyReport.down_payments_collected_month_total || 0)}
+                        </div>
+                        <div className="text-xs text-blue-600 mt-1">
+                          {dailyReport.down_payments_collected_month || 0} down payments
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-5 h-5 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-700">This Week</span>
-                    </div>
-                    <div className="text-xl font-bold text-blue-900">
-                      {formatCurrency(dailyReport.collected_this_week)}
-                    </div>
-                    <div className="text-xs text-blue-600 mt-1">
-                      {dailyReport.payments_this_week} payments
-                    </div>
-                  </div>
+                  {/* MILESTONE PAYMENTS SECTION */}
+                  <div className="bg-white rounded-xl p-4 border border-slate-200">
+                    <h3 className="text-base font-semibold text-slate-900 mb-3">Milestone Payments</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <span className="text-xs font-medium text-green-700">Today</span>
+                        </div>
+                        <div className="text-lg font-bold text-green-900">
+                          {formatCurrency(dailyReport.collected_today)}
+                        </div>
+                        <div className="text-xs text-green-600 mt-1">
+                          {dailyReport.payments_today} payments
+                        </div>
+                      </div>
 
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-5 h-5 text-purple-600" />
-                      <span className="text-sm font-medium text-purple-700">This Month</span>
-                    </div>
-                    <div className="text-xl font-bold text-purple-900">
-                      {formatCurrency(dailyReport.collected_this_month)}
-                    </div>
-                    <div className="text-xs text-purple-600 mt-1">
-                      {dailyReport.payments_this_month} payments
-                    </div>
-                  </div>
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="w-5 h-5 text-blue-600" />
+                          <span className="text-xs font-medium text-blue-700">This Week</span>
+                        </div>
+                        <div className="text-lg font-bold text-blue-900">
+                          {formatCurrency(dailyReport.collected_this_week)}
+                        </div>
+                        <div className="text-xs text-blue-600 mt-1">
+                          {dailyReport.payments_this_week} payments
+                        </div>
+                      </div>
 
-                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="w-5 h-5 text-yellow-600" />
-                      <span className="text-sm font-medium text-yellow-700">Outstanding</span>
-                    </div>
-                    <div className="text-xl font-bold text-yellow-900">
-                      {formatCurrency(dailyReport.outstanding_total)}
-                    </div>
-                    <div className="text-xs text-yellow-600 mt-1">
-                      {dailyReport.outstanding_count} pending
-                    </div>
-                  </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="w-5 h-5 text-purple-600" />
+                          <span className="text-xs font-medium text-purple-700">This Month</span>
+                        </div>
+                        <div className="text-lg font-bold text-purple-900">
+                          {formatCurrency(dailyReport.collected_this_month)}
+                        </div>
+                        <div className="text-xs text-purple-600 mt-1">
+                          {dailyReport.payments_this_month} payments
+                        </div>
+                      </div>
 
-                  <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="w-5 h-5 text-red-600" />
-                      <span className="text-sm font-medium text-red-700">Overdue</span>
-                    </div>
-                    <div className="text-xl font-bold text-red-900">
-                      {formatCurrency(dailyReport.overdue_total)}
-                    </div>
-                    <div className="text-xs text-red-600 mt-1">
-                      {dailyReport.overdue_count} overdue
+                      <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Clock className="w-5 h-5 text-yellow-600" />
+                          <span className="text-xs font-medium text-yellow-700">Outstanding</span>
+                        </div>
+                        <div className="text-lg font-bold text-yellow-900">
+                          {formatCurrency(dailyReport.outstanding_total)}
+                        </div>
+                        <div className="text-xs text-yellow-600 mt-1">
+                          {dailyReport.outstanding_count} pending
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertCircle className="w-5 h-5 text-red-600" />
+                          <span className="text-xs font-medium text-red-700">Overdue</span>
+                        </div>
+                        <div className="text-lg font-bold text-red-900">
+                          {formatCurrency(dailyReport.overdue_total)}
+                        </div>
+                        <div className="text-xs text-red-600 mt-1">
+                          {dailyReport.overdue_count} overdue
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </>
               )}
 
               {/* Pending Won Deals - Awaiting Payment Configuration */}
