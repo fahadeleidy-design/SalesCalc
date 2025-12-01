@@ -13,6 +13,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -57,6 +58,7 @@ interface CommissionReview {
 }
 
 export default function FinanceDashboard() {
+  const { profile } = useAuth();
   const [metrics, setMetrics] = useState<FinanceMetrics | null>(null);
   const [quotations, setQuotations] = useState<QuotationSummary[]>([]);
   const [commissions, setCommissions] = useState<CommissionReview[]>([]);
@@ -133,14 +135,16 @@ export default function FinanceDashboard() {
 
   const handleApproveCommission = async (calculationId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!profile?.id) {
+        toast.error('Profile not found');
+        return;
+      }
 
       const { error } = await supabase
         .from('commission_approvals')
         .upsert({
           calculation_id: calculationId,
-          reviewer_id: user.id,
+          reviewer_id: profile.id,
           status: 'approved',
           approved_at: new Date().toISOString(),
         });
@@ -155,14 +159,16 @@ export default function FinanceDashboard() {
 
   const handleReviewQuotation = async (quotationId: string, status: string, notes: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!profile?.id) {
+        toast.error('Profile not found');
+        return;
+      }
 
       const { error } = await supabase
         .from('finance_reviews')
         .upsert({
           quotation_id: quotationId,
-          reviewer_id: user.id,
+          reviewer_id: profile.id,
           review_status: status,
           notes,
         });

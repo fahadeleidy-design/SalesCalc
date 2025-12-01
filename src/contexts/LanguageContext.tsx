@@ -63,7 +63,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         await supabase
           .from('profiles')
           .update({ preferred_language: lang })
-          .eq('id', user.id);
+          .eq('user_id', user.id);
       }
     } catch (error) {
       console.error('Error saving language preference:', error);
