@@ -925,10 +925,10 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
     city: lead?.city || '',
     address: lead?.address || '',
     website: lead?.website || '',
-    lead_source: lead?.lead_source || 'other',
-    lead_status: lead?.lead_status || 'new',
-    lead_score: lead?.lead_score || 50,
-    estimated_value: lead?.estimated_value || '',
+    lead_source: lead?.lead_source || '',
+    lead_status: 'new',
+    lead_score: 50,
+    estimated_value: null,
     expected_close_date: lead?.expected_close_date || '',
     notes: lead?.notes || '',
     assigned_to: lead?.assigned_to || profile?.id || '',
@@ -1127,38 +1127,20 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Source</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Lead Source *
+                </label>
                 <select
                   value={formData.lead_source}
                   onChange={(e) => setFormData({ ...formData, lead_source: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  required
                 >
+                  <option value="">Select Source</option>
                   <option value="website">Website</option>
-                  <option value="referral">Referral</option>
-                  <option value="cold_call">Cold Call</option>
-                  <option value="email_campaign">Email Campaign</option>
-                  <option value="social_media">Social Media</option>
-                  <option value="event">Event</option>
-                  <option value="partner">Partner</option>
-                  <option value="direct">Direct</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                <select
-                  value={formData.lead_status}
-                  onChange={(e) => setFormData({ ...formData, lead_status: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                >
-                  <option value="new">New</option>
-                  <option value="contacted">Contacted</option>
-                  <option value="qualified">Qualified</option>
-                  <option value="proposal">Proposal</option>
-                  <option value="negotiation">Negotiation</option>
-                  <option value="converted">Converted</option>
-                  <option value="lost">Lost</option>
-                  <option value="unqualified">Unqualified</option>
+                  <option value="visit">Visit</option>
+                  <option value="call">Call</option>
+                  <option value="reference">Reference</option>
                 </select>
               </div>
 
@@ -1185,30 +1167,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
                   </p>
                 </div>
               )}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Lead Score (0-100)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.lead_score}
-                  onChange={(e) => setFormData({ ...formData, lead_score: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Estimated Value (SAR)
-                </label>
-                <input
-                  type="number"
-                  value={formData.estimated_value}
-                  onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Expected Close Date
