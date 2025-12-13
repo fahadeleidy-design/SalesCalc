@@ -35,6 +35,7 @@ import { formatCurrency } from '../lib/currencyUtils';
 import LeadConversionModal from '../components/crm/LeadConversionModal';
 import ActivityLogModal from '../components/crm/ActivityLogModal';
 import ActivityTimeline from '../components/crm/ActivityTimeline';
+import QuickActivityLogModal from '../components/crm/QuickActivityLogModal';
 import { useSalesTeam } from '../hooks/useSalesTeam';
 import {
   exportLeadsToExcel,
@@ -2573,45 +2574,14 @@ function ActivitiesView() {
         )}
       </div>
 
-      {/* Activity Log Modal - For general activities */}
+      {/* Quick Activity Log Modal */}
       {showActivityModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Log Activity</h2>
-                <p className="text-sm text-slate-600 mt-1">Record a customer interaction or task</p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowActivityModal(false);
-                  refetch();
-                }}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                <strong>Note:</strong> To log an activity for a specific lead, opportunity, or customer, please navigate to their detail page and use the "Log Activity" button there.
-              </p>
-              <p className="text-sm text-slate-600">
-                General activity logging coming soon. For now, please log activities from the specific entity pages (Leads or Opportunities tabs).
-              </p>
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => {
-                    setShowActivityModal(false);
-                  }}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <QuickActivityLogModal
+          onClose={() => {
+            setShowActivityModal(false);
+            refetch();
+          }}
+        />
       )}
     </div>
   );
