@@ -2259,7 +2259,7 @@ function OpportunityModal({
                     setFormData({
                       ...formData,
                       stage,
-                      probability: stageProbabilities[stage] || formData.probability
+                      probability: stageProbabilities[stage] !== undefined ? stageProbabilities[stage] : formData.probability
                     });
                   }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
