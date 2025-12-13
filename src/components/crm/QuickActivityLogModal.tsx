@@ -56,9 +56,9 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
       if (entityType === 'lead') {
         query = supabase
           .from('crm_leads')
-          .select('id, name, company')
+          .select('id, contact_name, company_name')
           .order('created_at', { ascending: false });
-        nameField = 'name';
+        nameField = 'contact_name';
       } else if (entityType === 'opportunity') {
         query = supabase
           .from('crm_opportunities')
@@ -80,7 +80,7 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
         name: entityType === 'opportunity'
           ? `${item.title} ${item.customer ? `(${item.customer.name})` : ''}`
           : entityType === 'lead'
-          ? `${item.name}${item.company ? ` - ${item.company}` : ''}`
+          ? `${item.contact_name}${item.company_name ? ` - ${item.company_name}` : ''}`
           : item.name,
         type: entityType,
       })) || [];
