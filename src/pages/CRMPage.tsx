@@ -1871,11 +1871,60 @@ function OpportunityModal({
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      let finalCustomerId = formData.customer_id || null;
+      let finalLeadId = formData.lead_id || null;
+
+      // If creating opportunity from a lead, automatically create customer
+      if (!opportunity && formData.lead_id && !formData.customer_id) {
+        // Fetch lead data
+        const { data: leadData, error: leadError } = await supabase
+          .from('crm_leads')
+          .select('*')
+          .eq('id', formData.lead_id)
+          .single();
+
+        if (leadError) throw new Error('Failed to fetch lead data');
+
+        // Create customer from lead data
+        const customerData = {
+          company_name: leadData.company_name,
+          contact_name: leadData.contact_name,
+          contact_email: leadData.contact_email || '',
+          contact_phone: leadData.contact_phone || '',
+          country: leadData.country || 'Saudi Arabia',
+          city: leadData.city || '',
+          address: leadData.address || '',
+          industry: leadData.industry || '',
+          customer_type: 'business',
+          payment_terms: 'net_30',
+          created_by: profile?.id,
+        };
+
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert(customerData)
+          .select()
+          .single();
+
+        if (customerError) throw new Error('Failed to create customer from lead');
+
+        finalCustomerId = newCustomer.id;
+
+        // Update lead status to converted
+        await supabase
+          .from('crm_leads')
+          .update({ lead_status: 'converted' })
+          .eq('id', formData.lead_id);
+
+        queryClient.invalidateQueries({ queryKey: ['customers-list'] });
+        queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
+      }
+
       const baseData = {
         ...formData,
         amount: Number(formData.amount) || 0,
-        customer_id: formData.customer_id || null,
-        lead_id: formData.lead_id || null,
+        customer_id: finalCustomerId,
+        lead_id: finalLeadId,
         expected_close_date: formData.expected_close_date || null,
       };
 
