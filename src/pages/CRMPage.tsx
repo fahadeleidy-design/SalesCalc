@@ -1063,12 +1063,15 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Email *
+                </label>
                 <input
                   type="email"
                   value={formData.contact_email}
                   onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  required
                 />
               </div>
               <div>
@@ -1197,7 +1200,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
         <div className="flex items-center gap-3 p-6 border-t border-slate-200">
           <button
             onClick={() => saveMutation.mutate()}
-            disabled={!formData.company_name || !formData.contact_name || saveMutation.isPending}
+            disabled={!formData.company_name || !formData.contact_name || !formData.contact_email || saveMutation.isPending}
             className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saveMutation.isPending ? 'Saving...' : lead ? 'Update Lead' : 'Create Lead'}
@@ -1818,16 +1821,15 @@ function OpportunityModal({
 
   const [newCustomerData, setNewCustomerData] = useState({
     company_name: '',
-    contact_name: '',
-    contact_email: '',
-    contact_phone: '',
+    contact_person: '',
+    email: '',
+    phone: '',
     country: 'Saudi Arabia',
     city: '',
     address: '',
     tax_id: '',
     industry: '',
     customer_type: 'direct_sales',
-    payment_terms: 'net_30',
   });
 
   const createCustomerMutation = useMutation({
@@ -1852,16 +1854,15 @@ function OpportunityModal({
       setShowNewCustomerForm(false);
       setNewCustomerData({
         company_name: '',
-        contact_name: '',
-        contact_email: '',
-        contact_phone: '',
+        contact_person: '',
+        email: '',
+        phone: '',
         country: 'Saudi Arabia',
         city: '',
         address: '',
         tax_id: '',
         industry: '',
         customer_type: 'business',
-        payment_terms: 'net_30',
       });
       toast.success('Customer created successfully');
     },
@@ -1889,15 +1890,14 @@ function OpportunityModal({
         // Create customer from lead data
         const customerData = {
           company_name: leadData.company_name,
-          contact_name: leadData.contact_name,
-          contact_email: leadData.contact_email || '',
-          contact_phone: leadData.contact_phone || '',
+          contact_person: leadData.contact_name,
+          email: leadData.contact_email,
+          phone: leadData.contact_phone || null,
           country: leadData.country || 'Saudi Arabia',
-          city: leadData.city || '',
-          address: leadData.address || '',
-          industry: leadData.industry || '',
+          city: leadData.city || null,
+          address: leadData.address || null,
+          industry: leadData.industry || null,
           customer_type: 'business',
-          payment_terms: 'net_30',
           created_by: profile?.id,
         };
 
@@ -2075,20 +2075,23 @@ function OpportunityModal({
                       </label>
                       <input
                         type="text"
-                        value={newCustomerData.contact_name}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, contact_name: e.target.value })}
+                        value={newCustomerData.contact_person}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, contact_person: e.target.value })}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Email *
+                      </label>
                       <input
                         type="email"
-                        value={newCustomerData.contact_email}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, contact_email: e.target.value })}
+                        value={newCustomerData.email}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        required
                       />
                     </div>
 
@@ -2096,8 +2099,8 @@ function OpportunityModal({
                       <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
                       <input
                         type="tel"
-                        value={newCustomerData.contact_phone}
-                        onChange={(e) => setNewCustomerData({ ...newCustomerData, contact_phone: e.target.value })}
+                        value={newCustomerData.phone}
+                        onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       />
                     </div>
@@ -2225,7 +2228,8 @@ function OpportunityModal({
                         onClick={() => createCustomerMutation.mutate()}
                         disabled={
                           !newCustomerData.company_name ||
-                          !newCustomerData.contact_name ||
+                          !newCustomerData.contact_person ||
+                          !newCustomerData.email ||
                           (newCustomerData.customer_type === 'direct_sales' && !newCustomerData.industry) ||
                           createCustomerMutation.isPending
                         }

@@ -44,15 +44,14 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
     mutationFn: async () => {
       const customerData = {
         company_name: lead.company_name,
-        contact_name: lead.contact_name,
-        contact_email: lead.contact_email,
-        contact_phone: lead.contact_phone,
+        contact_person: lead.contact_name,
+        email: lead.contact_email,
+        phone: lead.contact_phone || null,
         country: lead.country,
-        city: lead.city,
-        address: lead.address,
-        industry: lead.industry,
+        city: lead.city || null,
+        address: lead.address || null,
+        industry: lead.industry || null,
         customer_type: 'business',
-        payment_terms: 'net_30',
       };
 
       const { data: customer, error: customerError } = await supabase
