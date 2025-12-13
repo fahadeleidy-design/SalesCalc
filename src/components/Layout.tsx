@@ -21,11 +21,14 @@ import {
   Languages,
   ShoppingCart,
   TrendingUp,
+  Plus,
+  Pencil,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
 import KeyboardShortcutsHelper from './KeyboardShortcutsHelper';
 import CommandPalette from './CommandPalette';
+import QuickActivityLogModal from './crm/QuickActivityLogModal';
 
 interface LayoutProps {
   children: ReactNode;
@@ -138,6 +141,7 @@ export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showQuickActivityLog, setShowQuickActivityLog] = useState(false);
 
   const handleSignOut = async () => {
     resetNavigation();
@@ -180,6 +184,15 @@ export default function Layout({ children }: LayoutProps) {
           <img src="/logo.svg" alt="Special Offices" className="h-8" />
         </div>
         <div className="flex items-center gap-2">
+          {(profile?.role === 'sales' || profile?.role === 'manager' || profile?.role === 'ceo') && (
+            <button
+              onClick={() => setShowQuickActivityLog(true)}
+              className="p-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+              title="Quick Log Activity"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
             className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
@@ -269,6 +282,16 @@ export default function Layout({ children }: LayoutProps) {
           </h2>
           <div className="flex items-center gap-4">
             <GlobalSearch />
+            {(profile?.role === 'sales' || profile?.role === 'manager' || profile?.role === 'ceo') && (
+              <button
+                onClick={() => setShowQuickActivityLog(true)}
+                className="flex items-center gap-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm"
+                title="Quick Log Activity"
+              >
+                <Pencil className="w-4 h-4" />
+                <span className="text-sm font-medium">Log Activity</span>
+              </button>
+            )}
             <button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
               className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
@@ -298,6 +321,11 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Command Palette */}
       <CommandPalette />
+
+      {/* Quick Activity Log Modal */}
+      {showQuickActivityLog && (
+        <QuickActivityLogModal onClose={() => setShowQuickActivityLog(false)} />
+      )}
     </div>
   );
 }
