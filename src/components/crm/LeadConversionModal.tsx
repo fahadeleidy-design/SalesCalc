@@ -33,8 +33,8 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
   const [opportunityData, setOpportunityData] = useState({
     name: `${lead.company_name} - Initial Opportunity`,
     amount: lead.estimated_value || '',
-    stage: 'qualification',
-    probability: 50,
+    stage: 'creating_proposition',
+    probability: 35,
     expected_close_date: '',
     description: '',
     next_step: 'Schedule initial meeting',
@@ -210,13 +210,27 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
                   </label>
                   <select
                     value={opportunityData.stage}
-                    onChange={(e) => setOpportunityData({ ...opportunityData, stage: e.target.value })}
+                    onChange={(e) => {
+                      const stage = e.target.value;
+                      const stageProbabilities: Record<string, number> = {
+                        creating_proposition: 35,
+                        proposition_accepted: 60,
+                        going_our_way: 80,
+                        closing: 90,
+                        closed_won: 100,
+                      };
+                      setOpportunityData({
+                        ...opportunityData,
+                        stage,
+                        probability: stageProbabilities[stage] || opportunityData.probability
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   >
-                    <option value="qualification">Qualification</option>
-                    <option value="needs_analysis">Needs Analysis</option>
-                    <option value="proposal">Proposal</option>
-                    <option value="negotiation">Negotiation</option>
+                    <option value="creating_proposition">Creating Proposition</option>
+                    <option value="proposition_accepted">Proposition Accepted</option>
+                    <option value="going_our_way">Going Our Way</option>
+                    <option value="closing">Closing</option>
                   </select>
                 </div>
 
@@ -231,6 +245,7 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
                     value={opportunityData.probability}
                     onChange={(e) => setOpportunityData({ ...opportunityData, probability: Number(e.target.value) })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    readOnly
                   />
                 </div>
 

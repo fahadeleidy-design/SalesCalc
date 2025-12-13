@@ -1312,11 +1312,10 @@ function OpportunitiesView() {
 
   // Group by stage for pipeline view
   const stageGroups = {
-    prospecting: filteredOpportunities?.filter(o => o.stage === 'prospecting') || [],
-    qualification: filteredOpportunities?.filter(o => o.stage === 'qualification') || [],
-    needs_analysis: filteredOpportunities?.filter(o => o.stage === 'needs_analysis') || [],
-    proposal: filteredOpportunities?.filter(o => o.stage === 'proposal') || [],
-    negotiation: filteredOpportunities?.filter(o => o.stage === 'negotiation') || [],
+    creating_proposition: filteredOpportunities?.filter(o => o.stage === 'creating_proposition') || [],
+    proposition_accepted: filteredOpportunities?.filter(o => o.stage === 'proposition_accepted') || [],
+    going_our_way: filteredOpportunities?.filter(o => o.stage === 'going_our_way') || [],
+    closing: filteredOpportunities?.filter(o => o.stage === 'closing') || [],
     closed_won: filteredOpportunities?.filter(o => o.stage === 'closed_won') || [],
     closed_lost: filteredOpportunities?.filter(o => o.stage === 'closed_lost') || [],
   };
@@ -1387,11 +1386,10 @@ function OpportunitiesView() {
             className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="all">All Stages</option>
-            <option value="prospecting">Prospecting</option>
-            <option value="qualification">Qualification</option>
-            <option value="needs_analysis">Needs Analysis</option>
-            <option value="proposal">Proposal</option>
-            <option value="negotiation">Negotiation</option>
+            <option value="creating_proposition">Creating Proposition</option>
+            <option value="proposition_accepted">Proposition Accepted</option>
+            <option value="going_our_way">Going Our Way</option>
+            <option value="closing">Closing</option>
             <option value="closed_won">Closed Won</option>
             <option value="closed_lost">Closed Lost</option>
           </select>
@@ -1664,11 +1662,10 @@ function PipelineColumn({
   onEdit: (opp: Opportunity) => void;
 }) {
   const stageConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-    prospecting: { label: 'Prospecting', color: 'text-slate-700', bgColor: 'bg-slate-100' },
-    qualification: { label: 'Qualification', color: 'text-blue-700', bgColor: 'bg-blue-100' },
-    needs_analysis: { label: 'Needs Analysis', color: 'text-purple-700', bgColor: 'bg-purple-100' },
-    proposal: { label: 'Proposal', color: 'text-orange-700', bgColor: 'bg-orange-100' },
-    negotiation: { label: 'Negotiation', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+    creating_proposition: { label: 'Creating Proposition', color: 'text-slate-700', bgColor: 'bg-slate-100' },
+    proposition_accepted: { label: 'Proposition Accepted', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+    going_our_way: { label: 'Going Our Way', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+    closing: { label: 'Closing', color: 'text-amber-700', bgColor: 'bg-amber-100' },
     closed_won: { label: 'Closed Won', color: 'text-green-700', bgColor: 'bg-green-100' },
     closed_lost: { label: 'Closed Lost', color: 'text-red-700', bgColor: 'bg-red-100' },
   };
@@ -1809,9 +1806,9 @@ function OpportunityModal({
     name: opportunity?.name || '',
     customer_id: opportunity?.customer_id || '',
     lead_id: opportunity?.lead_id || '',
-    stage: opportunity?.stage || 'prospecting',
+    stage: opportunity?.stage || 'creating_proposition',
     amount: opportunity?.amount || '',
-    probability: opportunity?.probability || 50,
+    probability: opportunity?.probability || 35,
     expected_close_date: opportunity?.expected_close_date || '',
     description: opportunity?.description || '',
     next_step: opportunity?.next_step || '',
@@ -2249,14 +2246,28 @@ function OpportunityModal({
                 <label className="block text-sm font-medium text-slate-700 mb-1">Stage *</label>
                 <select
                   value={formData.stage}
-                  onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+                  onChange={(e) => {
+                    const stage = e.target.value;
+                    const stageProbabilities: Record<string, number> = {
+                      creating_proposition: 35,
+                      proposition_accepted: 60,
+                      going_our_way: 80,
+                      closing: 90,
+                      closed_won: 100,
+                      closed_lost: 0,
+                    };
+                    setFormData({
+                      ...formData,
+                      stage,
+                      probability: stageProbabilities[stage] || formData.probability
+                    });
+                  }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 >
-                  <option value="prospecting">Prospecting</option>
-                  <option value="qualification">Qualification</option>
-                  <option value="needs_analysis">Needs Analysis</option>
-                  <option value="proposal">Proposal</option>
-                  <option value="negotiation">Negotiation</option>
+                  <option value="creating_proposition">Creating Proposition</option>
+                  <option value="proposition_accepted">Proposition Accepted</option>
+                  <option value="going_our_way">Going Our Way</option>
+                  <option value="closing">Closing</option>
                   <option value="closed_won">Closed Won</option>
                   <option value="closed_lost">Closed Lost</option>
                 </select>
@@ -2277,16 +2288,20 @@ function OpportunityModal({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Probability (0-100%)
+                  Probability (%)
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.probability}
-                  onChange={(e) => setFormData({ ...formData, probability: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.probability}
+                    onChange={(e) => setFormData({ ...formData, probability: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    readOnly
+                  />
+                  <span className="text-sm text-slate-500 whitespace-nowrap">Auto-set by stage</span>
+                </div>
               </div>
 
               <div>
