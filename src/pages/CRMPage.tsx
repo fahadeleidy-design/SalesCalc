@@ -1142,9 +1142,14 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
                 >
                   <option value="">Select Source</option>
                   <option value="website">Website</option>
-                  <option value="visit">Visit</option>
-                  <option value="call">Call</option>
-                  <option value="reference">Reference</option>
+                  <option value="referral">Referral</option>
+                  <option value="cold_call">Cold Call</option>
+                  <option value="email_campaign">Email Campaign</option>
+                  <option value="social_media">Social Media</option>
+                  <option value="event">Event</option>
+                  <option value="partner">Partner</option>
+                  <option value="direct">Direct</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
 

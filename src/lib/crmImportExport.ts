@@ -168,7 +168,7 @@ export async function importLeadsFromFile(file: File, userId: string): Promise<{
               city: row['City'] || row['city'] || null,
               address: row['Address'] || row['address'] || null,
               website: row['Website'] || row['website'] || null,
-              lead_source: (row['Lead Source'] || row['lead_source'] || 'import').toLowerCase().replace(/\s+/g, '_'),
+              lead_source: (row['Lead Source'] || row['lead_source'] || 'other').toLowerCase().replace(/\s+/g, '_'),
               lead_status: (row['Status'] || row['lead_status'] || 'new').toLowerCase().replace(/\s+/g, '_'),
               lead_score: parseInt(row['Score'] || row['lead_score']) || 0,
               estimated_value: parseFloat(row['Estimated Value'] || row['estimated_value']) || null,
@@ -182,6 +182,12 @@ export async function importLeadsFromFile(file: File, userId: string): Promise<{
             if (!leadData.company_name || !leadData.contact_name) {
               errors.push(`Row ${i + 2}: Missing required fields (Company Name or Contact Name)`);
               continue;
+            }
+
+            // Validate enum values
+            const validLeadSources = ['website', 'referral', 'cold_call', 'email_campaign', 'social_media', 'event', 'partner', 'direct', 'other'];
+            if (leadData.lead_source && !validLeadSources.includes(leadData.lead_source)) {
+              leadData.lead_source = 'other';
             }
 
             // Insert into database
