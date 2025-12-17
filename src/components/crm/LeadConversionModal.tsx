@@ -51,7 +51,7 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
         city: lead.city || null,
         address: lead.address || null,
         industry: lead.industry || null,
-        customer_type: 'business',
+        customer_type: 'direct_sales',
       };
 
       const { data: customer, error: customerError } = await supabase

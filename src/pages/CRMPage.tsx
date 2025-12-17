@@ -1864,7 +1864,7 @@ function OpportunityModal({
         address: '',
         tax_id: '',
         industry: '',
-        customer_type: 'business',
+        customer_type: 'direct_sales',
       });
       toast.success('Customer created successfully');
     },
@@ -1899,7 +1899,7 @@ function OpportunityModal({
           city: leadData.city || null,
           address: leadData.address || null,
           industry: leadData.industry || null,
-          customer_type: 'business',
+          customer_type: 'direct_sales',
           created_by: profile?.id,
         };
 
