@@ -17,20 +17,20 @@ export function useSalesTeam() {
     queryFn: async () => {
       if (!profile) return [];
 
-      // Sales Manager and CEO can see all sales reps and supervisors
-      if (profile.role === 'sales_manager' || profile.role === 'ceo' || profile.role === 'admin') {
+      // Manager, CEO and Admin can see all sales reps
+      if (profile.role === 'manager' || profile.role === 'ceo' || profile.role === 'admin') {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, email, role')
-          .in('role', ['sales', 'supervisor'])
+          .eq('role', 'sales')
           .order('full_name');
 
         if (error) throw error;
         return data as TeamMember[];
       }
 
-      // Supervisors can see their team members
-      if (profile.role === 'supervisor') {
+      // Managers can also see their team members
+      if (profile.role === 'manager') {
         const { data, error } = await supabase
           .from('sales_team_members')
           .select(`
