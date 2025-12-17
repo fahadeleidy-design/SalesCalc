@@ -969,6 +969,27 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
     assigned_to: lead?.assigned_to || profile?.id || '',
   });
 
+  const convertToOpportunityMutation = useMutation({
+    mutationFn: async (leadId: string) => {
+      const { data, error } = await supabase.rpc('convert_lead_to_opportunity', {
+        p_lead_id: leadId,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Lead converted to opportunity and customer created successfully');
+      onClose();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to convert lead to opportunity');
+    },
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const baseData = {
@@ -1244,6 +1265,20 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
           >
             {saveMutation.isPending ? 'Saving...' : lead ? 'Update Lead' : 'Create Lead'}
           </button>
+          {lead && ['qualified', 'proposal', 'negotiation'].includes(lead.lead_status) && (
+            <button
+              onClick={() => {
+                if (confirm('Convert this lead to opportunity and create a customer automatically?')) {
+                  convertToOpportunityMutation.mutate(lead.id);
+                }
+              }}
+              disabled={convertToOpportunityMutation.isPending}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              <Target className="h-4 w-4" />
+              {convertToOpportunityMutation.isPending ? 'Converting...' : 'Transfer to Opportunity'}
+            </button>
+          )}
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
