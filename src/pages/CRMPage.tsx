@@ -767,6 +767,26 @@ function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }
     },
   });
 
+  const convertToOpportunityMutation = useMutation({
+    mutationFn: async (leadId: string) => {
+      const { data, error } = await supabase.rpc('convert_lead_to_opportunity', {
+        p_lead_id: leadId,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
+      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Lead converted to opportunity and customer created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to convert lead to opportunity');
+    },
+  });
+
   const statusColors: Record<string, string> = {
     new: 'bg-blue-100 text-blue-700',
     contacted: 'bg-purple-100 text-purple-700',
@@ -790,13 +810,27 @@ function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }
           </div>
           <div className="flex items-center gap-1">
             {canConvert && (
-              <button
-                onClick={() => setShowConversion(true)}
-                className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                title="Convert to Customer"
-              >
-                <ArrowRightCircle className="h-4 w-4" />
-              </button>
+              <>
+                <button
+                  onClick={() => setShowConversion(true)}
+                  className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                  title="Convert to Customer"
+                >
+                  <ArrowRightCircle className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm('Convert this lead to opportunity and create a customer automatically?')) {
+                      convertToOpportunityMutation.mutate(lead.id);
+                    }
+                  }}
+                  disabled={convertToOpportunityMutation.isPending}
+                  className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Transfer to Opportunity"
+                >
+                  <Target className="h-4 w-4" />
+                </button>
+              </>
             )}
             <button
               onClick={() => setShowActivityLog(true)}
