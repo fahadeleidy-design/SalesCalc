@@ -913,7 +913,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const { data: teamMembers } = useSalesTeam();
-  const canAssign = ['sales_manager', 'ceo', 'admin', 'supervisor'].includes(profile?.role || '');
+  const canAssign = ['manager', 'ceo', 'admin'].includes(profile?.role || '');
 
   const [formData, setFormData] = useState({
     company_name: lead?.company_name || '',
@@ -1800,7 +1800,7 @@ function OpportunityModal({
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const { data: teamMembers } = useSalesTeam();
-  const canAssign = ['sales_manager', 'ceo', 'admin', 'supervisor'].includes(profile?.role || '');
+  const canAssign = ['manager', 'ceo', 'admin'].includes(profile?.role || '');
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [formData, setFormData] = useState({
     name: opportunity?.name || '',
