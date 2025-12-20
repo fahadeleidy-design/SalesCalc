@@ -33,8 +33,8 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
   const [opportunityData, setOpportunityData] = useState({
     name: `${lead.company_name} - Initial Opportunity`,
     amount: lead.estimated_value || '',
-    stage: 'creating_proposition',
-    probability: 35,
+    stage: 'prospecting',
+    probability: 20,
     expected_close_date: '',
     description: '',
     next_step: 'Schedule initial meeting',
@@ -42,67 +42,13 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
 
   const convertMutation = useMutation({
     mutationFn: async () => {
-      const customerData = {
-        company_name: lead.company_name,
-        contact_person: lead.contact_name,
-        email: lead.contact_email,
-        phone: lead.contact_phone || null,
-        country: lead.country,
-        city: lead.city || null,
-        address: lead.address || null,
-        industry: lead.industry || null,
-        customer_type: 'direct_sales',
-      };
+      const { data, error } = await supabase.rpc('convert_lead_to_opportunity', {
+        p_lead_id: lead.id
+      });
 
-      const { data: customer, error: customerError } = await supabase
-        .from('customers')
-        .insert(customerData)
-        .select()
-        .single();
+      if (error) throw error;
 
-      if (customerError) throw customerError;
-
-      await supabase
-        .from('crm_leads')
-        .update({
-          lead_status: 'converted',
-          converted_to_customer_id: customer.id,
-          converted_at: new Date().toISOString(),
-        })
-        .eq('id', lead.id);
-
-      if (createOpportunity) {
-        const oppData = {
-          name: opportunityData.name,
-          customer_id: customer.id,
-          lead_id: lead.id,
-          stage: opportunityData.stage,
-          amount: Number(opportunityData.amount) || 0,
-          probability: opportunityData.probability,
-          expected_close_date: opportunityData.expected_close_date || null,
-          description: opportunityData.description || null,
-          next_step: opportunityData.next_step || null,
-        };
-
-        const { error: oppError } = await supabase
-          .from('crm_opportunities')
-          .insert(oppData);
-
-        if (oppError) throw oppError;
-      }
-
-      const { error: activityError } = await supabase
-        .from('crm_activities')
-        .insert({
-          activity_type: 'conversion',
-          subject: `Lead converted to customer: ${lead.company_name}`,
-          description: `Lead "${lead.company_name}" was successfully converted to a customer${createOpportunity ? ' with an opportunity created' : ''}`,
-          lead_id: lead.id,
-          customer_id: customer.id,
-          completed: true,
-        });
-
-      return customer;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
@@ -213,10 +159,11 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
                     onChange={(e) => {
                       const stage = e.target.value;
                       const stageProbabilities: Record<string, number> = {
-                        creating_proposition: 35,
-                        proposition_accepted: 60,
-                        going_our_way: 80,
-                        closing: 90,
+                        prospecting: 20,
+                        qualification: 40,
+                        needs_analysis: 50,
+                        proposal: 65,
+                        negotiation: 80,
                         closed_won: 100,
                       };
                       setOpportunityData({
@@ -227,10 +174,11 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
                     }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   >
-                    <option value="creating_proposition">Creating Proposition</option>
-                    <option value="proposition_accepted">Proposition Accepted</option>
-                    <option value="going_our_way">Going Our Way</option>
-                    <option value="closing">Closing</option>
+                    <option value="prospecting">Prospecting</option>
+                    <option value="qualification">Qualification</option>
+                    <option value="needs_analysis">Needs Analysis</option>
+                    <option value="proposal">Proposal</option>
+                    <option value="negotiation">Negotiation</option>
                   </select>
                 </div>
 

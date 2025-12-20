@@ -1386,10 +1386,11 @@ function OpportunitiesView() {
 
   // Group by stage for pipeline view
   const stageGroups = {
-    creating_proposition: filteredOpportunities?.filter(o => o.stage === 'creating_proposition') || [],
-    proposition_accepted: filteredOpportunities?.filter(o => o.stage === 'proposition_accepted') || [],
-    going_our_way: filteredOpportunities?.filter(o => o.stage === 'going_our_way') || [],
-    closing: filteredOpportunities?.filter(o => o.stage === 'closing') || [],
+    prospecting: filteredOpportunities?.filter(o => o.stage === 'prospecting') || [],
+    qualification: filteredOpportunities?.filter(o => o.stage === 'qualification') || [],
+    needs_analysis: filteredOpportunities?.filter(o => o.stage === 'needs_analysis') || [],
+    proposal: filteredOpportunities?.filter(o => o.stage === 'proposal') || [],
+    negotiation: filteredOpportunities?.filter(o => o.stage === 'negotiation') || [],
     closed_won: filteredOpportunities?.filter(o => o.stage === 'closed_won') || [],
     closed_lost: filteredOpportunities?.filter(o => o.stage === 'closed_lost') || [],
   };
@@ -1460,10 +1461,11 @@ function OpportunitiesView() {
             className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="all">All Stages</option>
-            <option value="creating_proposition">Creating Proposition</option>
-            <option value="proposition_accepted">Proposition Accepted</option>
-            <option value="going_our_way">Going Our Way</option>
-            <option value="closing">Closing</option>
+            <option value="prospecting">Prospecting</option>
+            <option value="qualification">Qualification</option>
+            <option value="needs_analysis">Needs Analysis</option>
+            <option value="proposal">Proposal</option>
+            <option value="negotiation">Negotiation</option>
             <option value="closed_won">Closed Won</option>
             <option value="closed_lost">Closed Lost</option>
           </select>
@@ -1736,10 +1738,11 @@ function PipelineColumn({
   onEdit: (opp: Opportunity) => void;
 }) {
   const stageConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-    creating_proposition: { label: 'Creating Proposition', color: 'text-slate-700', bgColor: 'bg-slate-100' },
-    proposition_accepted: { label: 'Proposition Accepted', color: 'text-blue-700', bgColor: 'bg-blue-100' },
-    going_our_way: { label: 'Going Our Way', color: 'text-orange-700', bgColor: 'bg-orange-100' },
-    closing: { label: 'Closing', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+    prospecting: { label: 'Prospecting', color: 'text-slate-700', bgColor: 'bg-slate-100' },
+    qualification: { label: 'Qualification', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+    needs_analysis: { label: 'Needs Analysis', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+    proposal: { label: 'Proposal', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+    negotiation: { label: 'Negotiation', color: 'text-amber-700', bgColor: 'bg-amber-100' },
     closed_won: { label: 'Closed Won', color: 'text-green-700', bgColor: 'bg-green-100' },
     closed_lost: { label: 'Closed Lost', color: 'text-red-700', bgColor: 'bg-red-100' },
   };
@@ -1880,7 +1883,7 @@ function OpportunityModal({
     name: opportunity?.name || '',
     customer_id: opportunity?.customer_id || '',
     lead_id: opportunity?.lead_id || '',
-    stage: opportunity?.stage || 'creating_proposition',
+    stage: opportunity?.stage || 'prospecting',
     amount: opportunity?.amount || '',
     probability: opportunity?.probability || 35,
     expected_close_date: opportunity?.expected_close_date || '',
@@ -2323,10 +2326,11 @@ function OpportunityModal({
                   onChange={(e) => {
                     const stage = e.target.value;
                     const stageProbabilities: Record<string, number> = {
-                      creating_proposition: 35,
-                      proposition_accepted: 60,
-                      going_our_way: 80,
-                      closing: 90,
+                      prospecting: 20,
+                      qualification: 40,
+                      needs_analysis: 50,
+                      proposal: 65,
+                      negotiation: 80,
                       closed_won: 100,
                       closed_lost: 0,
                     };
@@ -2338,10 +2342,11 @@ function OpportunityModal({
                   }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 >
-                  <option value="creating_proposition">Creating Proposition</option>
-                  <option value="proposition_accepted">Proposition Accepted</option>
-                  <option value="going_our_way">Going Our Way</option>
-                  <option value="closing">Closing</option>
+                  <option value="prospecting">Prospecting</option>
+                  <option value="qualification">Qualification</option>
+                  <option value="needs_analysis">Needs Analysis</option>
+                  <option value="proposal">Proposal</option>
+                  <option value="negotiation">Negotiation</option>
                   <option value="closed_won">Closed Won</option>
                   <option value="closed_lost">Closed Lost</option>
                 </select>
