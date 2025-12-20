@@ -113,11 +113,13 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         tax_percentage: quotationData.tax_percentage,
       });
 
-      // Ensure boolean fields are properly typed
+      // Ensure boolean fields are properly typed and preserve product data
       const loadedItems = (quotationData.quotation_items || []).map((item: any) => ({
         ...item,
         is_custom: Boolean(item.is_custom),
         needs_engineering_review: Boolean(item.needs_engineering_review),
+        base_unit_price: item.base_unit_price || item.product?.unit_price || item.unit_price,
+        product: item.product || null,
       }));
       setItems(loadedItems);
     }
