@@ -44,6 +44,11 @@ import LeadConversionModal from '../components/crm/LeadConversionModal';
 import ActivityLogModal from '../components/crm/ActivityLogModal';
 import ActivityTimeline from '../components/crm/ActivityTimeline';
 import QuickActivityLogModal from '../components/crm/QuickActivityLogModal';
+import EmailTemplatesManager from '../components/crm/EmailTemplatesManager';
+import SalesForecastBoard from '../components/crm/SalesForecastBoard';
+import WorkflowAutomation from '../components/crm/WorkflowAutomation';
+import DocumentManager from '../components/crm/DocumentManager';
+import SalesCoachingPanel from '../components/crm/SalesCoachingPanel';
 import { useSalesTeam } from '../hooks/useSalesTeam';
 import {
   exportLeadsToExcel,
@@ -113,7 +118,7 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching'>('overview');
 
   // Fetch CRM stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -272,10 +277,15 @@ export default function CRMPage() {
             { id: 'leads', label: 'Leads', icon: Users },
             { id: 'opportunities', label: 'Opportunities', icon: TrendingUp },
             { id: 'pipeline', label: 'Pipeline', icon: Target },
+            { id: 'forecast', label: 'Forecast', icon: TrendingUp },
             { id: 'activities', label: 'Activities', icon: Calendar },
             { id: 'analytics', label: 'Analytics', icon: LineChart },
             { id: 'intelligence', label: 'Revenue Intelligence', icon: TrendingUp },
             { id: 'sequences', label: 'Sequences', icon: Zap },
+            { id: 'templates', label: 'Email Templates', icon: Mail },
+            { id: 'automation', label: 'Automation', icon: Zap },
+            { id: 'documents', label: 'Documents', icon: FileText },
+            { id: 'coaching', label: 'Coaching', icon: Target },
             { id: 'tasks', label: 'Tasks', icon: ClipboardCheck },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -352,10 +362,15 @@ export default function CRMPage() {
       {activeTab === 'leads' && <LeadsView />}
       {activeTab === 'opportunities' && <OpportunitiesView />}
       {activeTab === 'pipeline' && <PipelineKanban />}
+      {activeTab === 'forecast' && <SalesForecastBoard />}
       {activeTab === 'activities' && <ActivitiesView />}
       {activeTab === 'analytics' && <CRMAnalyticsDashboard />}
       {activeTab === 'intelligence' && <RevenueIntelligence />}
       {activeTab === 'sequences' && <SalesSequences />}
+      {activeTab === 'templates' && <EmailTemplatesManager />}
+      {activeTab === 'automation' && <WorkflowAutomation />}
+      {activeTab === 'documents' && <DocumentManager />}
+      {activeTab === 'coaching' && <SalesCoachingPanel />}
       {activeTab === 'tasks' && <TasksManager showAll={true} />}
     </div>
   );
