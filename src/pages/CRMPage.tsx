@@ -31,9 +31,13 @@ import {
   Upload,
   LineChart,
   ClipboardCheck,
+  Zap,
 } from 'lucide-react';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import TasksManager from '../components/crm/TasksManager';
+import PipelineKanban from '../components/crm/PipelineKanban';
+import RevenueIntelligence from '../components/crm/RevenueIntelligence';
+import SalesSequences from '../components/crm/SalesSequences';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../lib/currencyUtils';
 import LeadConversionModal from '../components/crm/LeadConversionModal';
@@ -109,7 +113,7 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences'>('overview');
 
   // Fetch CRM stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -267,8 +271,11 @@ export default function CRMPage() {
             { id: 'overview', label: 'Overview', icon: BarChart3 },
             { id: 'leads', label: 'Leads', icon: Users },
             { id: 'opportunities', label: 'Opportunities', icon: TrendingUp },
+            { id: 'pipeline', label: 'Pipeline', icon: Target },
             { id: 'activities', label: 'Activities', icon: Calendar },
             { id: 'analytics', label: 'Analytics', icon: LineChart },
+            { id: 'intelligence', label: 'Revenue Intelligence', icon: TrendingUp },
+            { id: 'sequences', label: 'Sequences', icon: Zap },
             { id: 'tasks', label: 'Tasks', icon: ClipboardCheck },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -344,8 +351,11 @@ export default function CRMPage() {
 
       {activeTab === 'leads' && <LeadsView />}
       {activeTab === 'opportunities' && <OpportunitiesView />}
+      {activeTab === 'pipeline' && <PipelineKanban />}
       {activeTab === 'activities' && <ActivitiesView />}
       {activeTab === 'analytics' && <CRMAnalyticsDashboard />}
+      {activeTab === 'intelligence' && <RevenueIntelligence />}
+      {activeTab === 'sequences' && <SalesSequences />}
       {activeTab === 'tasks' && <TasksManager showAll={true} />}
     </div>
   );
