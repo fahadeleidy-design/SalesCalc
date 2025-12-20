@@ -29,7 +29,11 @@ import {
   FileText,
   Download,
   Upload,
+  LineChart,
+  ClipboardCheck,
 } from 'lucide-react';
+import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
+import TasksManager from '../components/crm/TasksManager';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../lib/currencyUtils';
 import LeadConversionModal from '../components/crm/LeadConversionModal';
@@ -105,7 +109,7 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks'>('overview');
 
   // Fetch CRM stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -258,19 +262,21 @@ export default function CRMPage() {
 
       {/* Tab Navigation */}
       <div className="border-b border-slate-200">
-        <nav className="flex gap-6">
+        <nav className="flex gap-6 overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: BarChart3 },
             { id: 'leads', label: 'Leads', icon: Users },
             { id: 'opportunities', label: 'Opportunities', icon: TrendingUp },
             { id: 'activities', label: 'Activities', icon: Calendar },
+            { id: 'analytics', label: 'Analytics', icon: LineChart },
+            { id: 'tasks', label: 'Tasks', icon: ClipboardCheck },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-orange-600 text-orange-600'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
@@ -339,6 +345,8 @@ export default function CRMPage() {
       {activeTab === 'leads' && <LeadsView />}
       {activeTab === 'opportunities' && <OpportunitiesView />}
       {activeTab === 'activities' && <ActivitiesView />}
+      {activeTab === 'analytics' && <CRMAnalyticsDashboard />}
+      {activeTab === 'tasks' && <TasksManager showAll={true} />}
     </div>
   );
 }
