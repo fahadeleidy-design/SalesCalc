@@ -93,12 +93,13 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
           const taxAmount = (afterDiscount * (quotation as any).tax_percentage) / 100;
           const total = afterDiscount + taxAmount;
 
-          // Check if all custom items are now priced
+          // Check if all items that need pricing are now priced
+          // Check for any items with pending custom_item_status (regardless of is_custom flag)
+          // because items can have custom_item_requests even if is_custom is false
           const { data: remainingPendingItems } = await supabase
             .from('quotation_items')
             .select('id')
             .eq('quotation_id', request.quotation_id)
-            .or('is_custom.eq.true,needs_engineering_review.eq.true')
             .eq('custom_item_status', 'pending');
 
           // If no more pending items and quotation is in pending_pricing status, change to draft
