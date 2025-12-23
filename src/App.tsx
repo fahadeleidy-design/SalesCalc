@@ -19,6 +19,7 @@ import CommissionsPage from './pages/CommissionsPage';
 import TargetsPage from './pages/TargetsPage';
 import TeamsPage from './pages/TeamsPage';
 import CRMPage from './pages/CRMPage';
+import EnhancedCRMPage from './pages/EnhancedCRMPage';
 import SettingsPage from './pages/SettingsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsPage from './pages/ReportsPage';
@@ -119,6 +120,8 @@ function AppContent() {
       case '/teams':
         return hasAccess(['manager']) ? <TeamsPage /> : <UnauthorizedPage />;
       case '/crm':
+        return hasAccess(['sales', 'manager', 'ceo']) ? <EnhancedCRMPage /> : <UnauthorizedPage />;
+      case '/crm-classic':
         return hasAccess(['sales', 'manager', 'ceo']) ? <CRMPage /> : <UnauthorizedPage />;
       case '/settings':
         return hasAccess(['admin']) ? <SettingsPage /> : <UnauthorizedPage />;
