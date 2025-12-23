@@ -1419,11 +1419,10 @@ function OpportunitiesView() {
 
   // Group by stage for pipeline view
   const stageGroups = {
-    prospecting: filteredOpportunities?.filter(o => o.stage === 'prospecting') || [],
-    qualification: filteredOpportunities?.filter(o => o.stage === 'qualification') || [],
-    needs_analysis: filteredOpportunities?.filter(o => o.stage === 'needs_analysis') || [],
-    proposal: filteredOpportunities?.filter(o => o.stage === 'proposal') || [],
-    negotiation: filteredOpportunities?.filter(o => o.stage === 'negotiation') || [],
+    creating_proposition: filteredOpportunities?.filter(o => o.stage === 'creating_proposition') || [],
+    proposition_accepted: filteredOpportunities?.filter(o => o.stage === 'proposition_accepted') || [],
+    going_our_way: filteredOpportunities?.filter(o => o.stage === 'going_our_way') || [],
+    closing: filteredOpportunities?.filter(o => o.stage === 'closing') || [],
     closed_won: filteredOpportunities?.filter(o => o.stage === 'closed_won') || [],
     closed_lost: filteredOpportunities?.filter(o => o.stage === 'closed_lost') || [],
   };
@@ -1494,13 +1493,12 @@ function OpportunitiesView() {
             className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
             <option value="all">All Stages</option>
-            <option value="prospecting">Prospecting</option>
-            <option value="qualification">Qualification</option>
-            <option value="needs_analysis">Needs Analysis</option>
-            <option value="proposal">Proposal</option>
-            <option value="negotiation">Negotiation</option>
-            <option value="closed_won">Closed Won</option>
-            <option value="closed_lost">Closed Lost</option>
+            <option value="creating_proposition">Creating Proposition (35%)</option>
+            <option value="proposition_accepted">Proposition Accepted (65%)</option>
+            <option value="going_our_way">Going Our Way (80%)</option>
+            <option value="closing">Closing (90%)</option>
+            <option value="closed_won">Closed Won (100%)</option>
+            <option value="closed_lost">Closed Lost (0%)</option>
           </select>
           <div className="flex gap-2">
             {/* Only managers, CEO, and admins can import/export */}
@@ -1771,12 +1769,11 @@ function PipelineColumn({
   onEdit: (opp: Opportunity) => void;
 }) {
   const stageConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-    prospecting: { label: 'Prospecting', color: 'text-slate-700', bgColor: 'bg-slate-100' },
-    qualification: { label: 'Qualification', color: 'text-blue-700', bgColor: 'bg-blue-100' },
-    needs_analysis: { label: 'Needs Analysis', color: 'text-purple-700', bgColor: 'bg-purple-100' },
-    proposal: { label: 'Proposal', color: 'text-orange-700', bgColor: 'bg-orange-100' },
-    negotiation: { label: 'Negotiation', color: 'text-amber-700', bgColor: 'bg-amber-100' },
-    closed_won: { label: 'Closed Won', color: 'text-green-700', bgColor: 'bg-green-100' },
+    creating_proposition: { label: 'Creating Proposition', color: 'text-purple-700', bgColor: 'bg-purple-100' },
+    proposition_accepted: { label: 'Proposition Accepted', color: 'text-blue-700', bgColor: 'bg-blue-100' },
+    going_our_way: { label: 'Going Our Way', color: 'text-green-700', bgColor: 'bg-green-100' },
+    closing: { label: 'Closing', color: 'text-amber-700', bgColor: 'bg-amber-100' },
+    closed_won: { label: 'Closed Won', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
     closed_lost: { label: 'Closed Lost', color: 'text-red-700', bgColor: 'bg-red-100' },
   };
 
@@ -2375,13 +2372,12 @@ function OpportunityModal({
                   }}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 >
-                  <option value="prospecting">Prospecting</option>
-                  <option value="qualification">Qualification</option>
-                  <option value="needs_analysis">Needs Analysis</option>
-                  <option value="proposal">Proposal</option>
-                  <option value="negotiation">Negotiation</option>
-                  <option value="closed_won">Closed Won</option>
-                  <option value="closed_lost">Closed Lost</option>
+                  <option value="creating_proposition">Creating Proposition (35%)</option>
+                  <option value="proposition_accepted">Proposition Accepted (65%)</option>
+                  <option value="going_our_way">Going Our Way (80%)</option>
+                  <option value="closing">Closing (90%)</option>
+                  <option value="closed_won">Closed Won (100%)</option>
+                  <option value="closed_lost">Closed Lost (0%)</option>
                 </select>
               </div>
 

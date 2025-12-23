@@ -42,11 +42,10 @@ interface PipelineStage {
 }
 
 const DEFAULT_STAGES: PipelineStage[] = [
-  { id: 'prospecting', name: 'Prospecting', probability: 10, color: '#8B5CF6' },
-  { id: 'qualification', name: 'Qualification', probability: 25, color: '#3B82F6' },
-  { id: 'needs_analysis', name: 'Needs Analysis', probability: 40, color: '#06B6D4' },
-  { id: 'proposal', name: 'Proposal', probability: 60, color: '#10B981' },
-  { id: 'negotiation', name: 'Negotiation', probability: 80, color: '#F59E0B' },
+  { id: 'creating_proposition', name: 'Creating Proposition', probability: 35, color: '#8B5CF6' },
+  { id: 'proposition_accepted', name: 'Proposition Accepted', probability: 65, color: '#3B82F6' },
+  { id: 'going_our_way', name: 'Going Our Way', probability: 80, color: '#10B981' },
+  { id: 'closing', name: 'Closing', probability: 90, color: '#F59E0B' },
 ];
 
 export default function PipelineKanban() {

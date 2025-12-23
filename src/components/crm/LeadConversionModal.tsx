@@ -33,8 +33,8 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
   const [opportunityData, setOpportunityData] = useState({
     name: `${lead.company_name} - Initial Opportunity`,
     amount: lead.estimated_value || '',
-    stage: 'prospecting',
-    probability: 20,
+    stage: 'creating_proposition',
+    probability: 35,
     expected_close_date: '',
     description: '',
     next_step: 'Schedule initial meeting',
@@ -174,11 +174,10 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
                     }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   >
-                    <option value="prospecting">Prospecting</option>
-                    <option value="qualification">Qualification</option>
-                    <option value="needs_analysis">Needs Analysis</option>
-                    <option value="proposal">Proposal</option>
-                    <option value="negotiation">Negotiation</option>
+                    <option value="creating_proposition">Creating Proposition (35%)</option>
+                    <option value="proposition_accepted">Proposition Accepted (65%)</option>
+                    <option value="going_our_way">Going Our Way (80%)</option>
+                    <option value="closing">Closing (90%)</option>
                   </select>
                 </div>
 
