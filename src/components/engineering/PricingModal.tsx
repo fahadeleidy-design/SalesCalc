@@ -118,10 +118,15 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
             updateData.status = 'draft';
           }
 
-          await supabase
+          const { error: quotationUpdateError } = await supabase
             .from('quotations')
             .update(updateData)
             .eq('id', request.quotation_id);
+
+          if (quotationUpdateError) {
+            console.error('Error updating quotation:', quotationUpdateError);
+            throw quotationUpdateError;
+          }
 
           if (shouldUpdateStatus) {
             // Notify sales rep that pricing is complete
