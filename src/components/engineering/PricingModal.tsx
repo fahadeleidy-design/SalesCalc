@@ -206,6 +206,27 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
             </div>
           </div>
 
+          {request.quotation_item.base_unit_price && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-900">
+                    Standard Price List
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    This is a standard item with requested modifications
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-blue-900">
+                    {formatCurrency(request.quotation_item.base_unit_price)}
+                  </p>
+                  <p className="text-xs text-blue-700">per unit</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {Object.keys(specifications).length > 0 && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
