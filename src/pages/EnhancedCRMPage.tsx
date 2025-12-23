@@ -28,6 +28,8 @@ import LeadConversionModal from '../components/crm/LeadConversionModal';
 import QuickActivityLogModal from '../components/crm/QuickActivityLogModal';
 import PipelineKanban from '../components/crm/PipelineKanban';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
+import LeadFormModal from '../components/crm/LeadFormModal';
+import OpportunityFormModal from '../components/crm/OpportunityFormModal';
 
 import {
   exportLeadsToExcel,
@@ -742,6 +744,28 @@ export default function EnhancedCRMPage() {
           onClose={() => {
             setShowActivityModal(false);
             setActivityContext(null);
+          }}
+        />
+      )}
+
+      {/* Lead Form Modal */}
+      {showLeadForm && (
+        <LeadFormModal
+          lead={selectedLead}
+          onClose={() => {
+            setShowLeadForm(false);
+            setSelectedLead(null);
+          }}
+        />
+      )}
+
+      {/* Opportunity Form Modal */}
+      {showOpportunityForm && (
+        <OpportunityFormModal
+          opportunity={selectedOpportunity}
+          onClose={() => {
+            setShowOpportunityForm(false);
+            setSelectedOpportunity(null);
           }}
         />
       )}
