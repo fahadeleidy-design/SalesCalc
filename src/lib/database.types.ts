@@ -32,6 +32,51 @@ export type NotificationType =
   | 'comment_mention'
   | 'deal_won';
 
+export type LeadStatusType = 'new' | 'contacted' | 'qualified' | 'unqualified' | 'converted';
+export type LeadSourceType = 'website' | 'referral' | 'social' | 'email' | 'phone' | 'event' | 'other';
+export type ConditionType = 'behavioral' | 'demographic' | 'engagement';
+export type OperatorType = 'equals' | 'contains' | 'greater_than' | 'less_than' | 'between' | 'in';
+export type AssignmentRuleType = 'round_robin' | 'territory' | 'skill_based' | 'load_balanced';
+
+export interface LeadScoringRule {
+  id: string;
+  name: string;
+  condition_type: ConditionType;
+  field_name: string | null;
+  operator: OperatorType;
+  value: string | null;
+  points: number;
+  is_active: boolean;
+  priority: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadAssignmentRule {
+  id: string;
+  name: string;
+  rule_type: AssignmentRuleType;
+  conditions: Json;
+  assign_to_team_id: string | null;
+  assign_to_user_id: string | null;
+  fallback_user_id: string | null;
+  is_active: boolean;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadScoreHistory {
+  id: string;
+  lead_id: string;
+  old_score: number | null;
+  new_score: number | null;
+  reason: string | null;
+  rule_applied: Json;
+  scored_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
