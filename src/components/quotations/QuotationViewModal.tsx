@@ -635,7 +635,7 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                                       Custom Item
                                     </span>
                                   )}
-                                  {(item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing' && (
+                                  {item.custom_item_status === 'pending' && (
                                     <span className="inline-flex items-center gap-1 mt-1.5 ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-md font-semibold">
                                       <Clock className="w-3 h-3" />
                                       Awaiting Pricing
@@ -770,22 +770,25 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                 </div>
 
                 <div className="space-y-4">
-                  {quotation.status === 'pending_pricing' && (
-                    <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <Clock className="w-5 h-5 text-blue-600 mt-0.5 animate-pulse flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="font-semibold text-blue-900 mb-1">Awaiting Engineering Pricing</p>
-                        <p className="text-sm text-blue-700 mb-2">
-                          This quotation contains custom items or modifications requiring engineering review.
-                        </p>
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded-md">
-                          {quotation.quotation_items.filter(
-                            item => item.is_custom || (item.modifications && item.modifications.trim().length > 0)
-                          ).length} items awaiting pricing
-                        </span>
+                  {(() => {
+                    const pendingItems = quotation.quotation_items.filter(
+                      item => item.custom_item_status === 'pending'
+                    );
+                    return pendingItems.length > 0 && (
+                      <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <Clock className="w-5 h-5 text-blue-600 mt-0.5 animate-pulse flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="font-semibold text-blue-900 mb-1">Awaiting Engineering Pricing</p>
+                          <p className="text-sm text-blue-700 mb-2">
+                            This quotation contains custom items or modifications requiring engineering review.
+                          </p>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded-md">
+                            {pendingItems.length} items awaiting pricing
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {quotation.pricing_submitted_at && (
                     <div className="flex items-start gap-3 text-sm">
