@@ -22,6 +22,8 @@ interface FilterOptions {
   assignedTo: string;
   dateFrom: string;
   dateTo: string;
+  createdFrom: string;
+  createdTo: string;
 }
 
 interface AdvancedSearchFilterProps {
@@ -47,6 +49,8 @@ export default function AdvancedSearchFilter({
     assignedTo: 'all',
     dateFrom: '',
     dateTo: '',
+    createdFrom: '',
+    createdTo: '',
   });
 
   const updateFilter = (key: keyof FilterOptions, value: any) => {
@@ -67,6 +71,8 @@ export default function AdvancedSearchFilter({
       assignedTo: 'all',
       dateFrom: '',
       dateTo: '',
+      createdFrom: '',
+      createdTo: '',
     };
     setFilters(defaultFilters);
     onFilterChange(defaultFilters);
@@ -81,7 +87,9 @@ export default function AdvancedSearchFilter({
     filters.valueMax ||
     filters.assignedTo !== 'all' ||
     filters.dateFrom ||
-    filters.dateTo;
+    filters.dateTo ||
+    filters.createdFrom ||
+    filters.createdTo;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
@@ -251,7 +259,7 @@ export default function AdvancedSearchFilter({
             </div>
           </div>
 
-          {/* Date Range */}
+          {/* Expected Close Date Range */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -260,14 +268,40 @@ export default function AdvancedSearchFilter({
             <div className="grid grid-cols-2 gap-4">
               <input
                 type="date"
+                placeholder="From"
                 value={filters.dateFrom}
                 onChange={(e) => updateFilter('dateFrom', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
               <input
                 type="date"
+                placeholder="To"
                 value={filters.dateTo}
                 onChange={(e) => updateFilter('dateTo', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Created Date Range */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Date Created
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                type="date"
+                placeholder="From"
+                value={filters.createdFrom}
+                onChange={(e) => updateFilter('createdFrom', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+              <input
+                type="date"
+                placeholder="To"
+                value={filters.createdTo}
+                onChange={(e) => updateFilter('createdTo', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>

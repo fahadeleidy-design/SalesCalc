@@ -17,6 +17,8 @@ import toast from 'react-hot-toast';
 // Enhanced Components
 import EnhancedLeadCard from '../components/crm/EnhancedLeadCard';
 import EnhancedOpportunityCard from '../components/crm/EnhancedOpportunityCard';
+import LeadsListView from '../components/crm/LeadsListView';
+import OpportunitiesListView from '../components/crm/OpportunitiesListView';
 import AdvancedSearchFilter from '../components/crm/AdvancedSearchFilter';
 import QuickActionBar from '../components/crm/QuickActionBar';
 import EnhancedStatsCards from '../components/crm/EnhancedStatsCards';
@@ -42,10 +44,12 @@ import {
 
 interface Lead {
   id: string;
+  lead_type?: string;
   company_name: string;
   contact_name: string;
   contact_email: string | null;
   contact_phone: string | null;
+  contact_person_title: string | null;
   position: string | null;
   industry: string | null;
   country: string;
@@ -72,6 +76,7 @@ interface Opportunity {
   probability: number;
   expected_close_date: string | null;
   assigned_to: string | null;
+  created_at?: string;
   customers?: {
     company_name: string;
   };
@@ -110,6 +115,8 @@ export default function EnhancedCRMPage() {
     assignedTo: 'all',
     dateFrom: '',
     dateTo: '',
+    createdFrom: '',
+    createdTo: '',
   });
 
   // Fetch CRM Stats
@@ -268,12 +275,26 @@ export default function EnhancedCRMPage() {
         return false;
       }
 
-      // Date filter
+      // Expected close date filter
       if (filters.dateFrom && lead.expected_close_date && lead.expected_close_date < filters.dateFrom) {
         return false;
       }
       if (filters.dateTo && lead.expected_close_date && lead.expected_close_date > filters.dateTo) {
         return false;
+      }
+
+      // Created date filter
+      if (filters.createdFrom && lead.created_at) {
+        const createdDate = new Date(lead.created_at).toISOString().split('T')[0];
+        if (createdDate < filters.createdFrom) {
+          return false;
+        }
+      }
+      if (filters.createdTo && lead.created_at) {
+        const createdDate = new Date(lead.created_at).toISOString().split('T')[0];
+        if (createdDate > filters.createdTo) {
+          return false;
+        }
       }
 
       return true;
@@ -312,12 +333,26 @@ export default function EnhancedCRMPage() {
         return false;
       }
 
-      // Date filter
+      // Expected close date filter
       if (filters.dateFrom && opp.expected_close_date && opp.expected_close_date < filters.dateFrom) {
         return false;
       }
       if (filters.dateTo && opp.expected_close_date && opp.expected_close_date > filters.dateTo) {
         return false;
+      }
+
+      // Created date filter
+      if (filters.createdFrom && opp.created_at) {
+        const createdDate = new Date(opp.created_at).toISOString().split('T')[0];
+        if (createdDate < filters.createdFrom) {
+          return false;
+        }
+      }
+      if (filters.createdTo && opp.created_at) {
+        const createdDate = new Date(opp.created_at).toISOString().split('T')[0];
+        if (createdDate > filters.createdTo) {
+          return false;
+        }
       }
 
       return true;
@@ -654,6 +689,24 @@ export default function EnhancedCRMPage() {
                     }
                   />
                 </div>
+              ) : viewMode === 'list' ? (
+                <LeadsListView
+                  leads={filteredLeads}
+                  users={users}
+                  onEdit={(lead) => {
+                    setSelectedLead(lead);
+                    setShowLeadForm(true);
+                  }}
+                  onDelete={(id) => deleteLeadMutation.mutate(id)}
+                  onConvert={(lead) => {
+                    setSelectedLead(lead);
+                    setShowConversionModal(true);
+                  }}
+                  onLogActivity={(lead) => {
+                    setActivityContext({ type: 'lead', id: lead.id });
+                    setShowActivityModal(true);
+                  }}
+                />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredLeads.map((lead) => (
@@ -701,6 +754,22 @@ export default function EnhancedCRMPage() {
                   }
                 />
               </div>
+            ) : viewMode === 'list' ? (
+              <OpportunitiesListView
+                opportunities={filteredOpportunities}
+                users={users}
+                onEdit={(opp) => {
+                  setSelectedOpportunity(opp);
+                  setShowOpportunityForm(true);
+                }}
+                onDelete={(id) => deleteOpportunityMutation.mutate(id)}
+                onMarkWon={(opp) => markWonMutation.mutate(opp)}
+                onMarkLost={(opp) => markLostMutation.mutate(opp)}
+                onLogActivity={(opp) => {
+                  setActivityContext({ type: 'opportunity', id: opp.id });
+                  setShowActivityModal(true);
+                }}
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredOpportunities.map((opp) => (
