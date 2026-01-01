@@ -423,6 +423,7 @@ export default function UsersPage() {
                 >
                   <option value="sales">Sales</option>
                   <option value="engineering">Engineering</option>
+                  <option value="presales">Pre-Sales</option>
                   <option value="manager">Manager</option>
                   <option value="ceo">CEO</option>
                   <option value="finance">Finance</option>

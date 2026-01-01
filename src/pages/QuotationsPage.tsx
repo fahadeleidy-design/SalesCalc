@@ -309,7 +309,7 @@ export default function QuotationsPage() {
       </div>
 
       {/* Quick Actions */}
-      {showQuickActions && profile?.role === 'sales' && (
+      {showQuickActions && (profile?.role === 'sales' || profile?.role === 'presales') && (
         <QuickActions
           onQuickQuote={handleQuickQuote}
           onUseTemplate={handleUseTemplate}

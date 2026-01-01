@@ -72,6 +72,8 @@ function AppContent() {
         return <SalesDashboard />;
       case 'engineering':
         return <EngineeringDashboard />;
+      case 'presales':
+        return <EngineeringDashboard />;
       case 'manager':
         return <ManagerDashboard />;
       case 'finance':
@@ -104,15 +106,15 @@ function AppContent() {
       case '/dashboard':
         return getDashboardForRole();
       case '/quotations':
-        return hasAccess(['sales', 'finance', 'ceo', 'manager']) ? <QuotationsPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'finance', 'ceo', 'manager', 'presales']) ? <QuotationsPage /> : <UnauthorizedPage />;
       case '/custom-items':
-        return hasAccess(['engineering']) ? <CustomItemsPage /> : <UnauthorizedPage />;
+        return hasAccess(['engineering', 'presales']) ? <CustomItemsPage /> : <UnauthorizedPage />;
       case '/approvals':
         return hasAccess(['manager', 'ceo', 'finance']) ? <ApprovalsPage /> : <UnauthorizedPage />;
       case '/customers':
-        return hasAccess(['sales', 'manager', 'admin']) ? <CustomersPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'manager', 'admin', 'presales']) ? <CustomersPage /> : <UnauthorizedPage />;
       case '/products':
-        return hasAccess(['admin', 'finance']) ? <ProductsPage /> : <UnauthorizedPage />;
+        return hasAccess(['admin', 'finance', 'engineering', 'presales']) ? <ProductsPage /> : <UnauthorizedPage />;
       case '/commissions':
         return hasAccess(['sales', 'manager', 'ceo', 'finance', 'admin']) ? <CommissionsPage /> : <UnauthorizedPage />;
       case '/targets':
@@ -132,7 +134,7 @@ function AppContent() {
       case '/users':
         return hasAccess(['admin']) ? <UsersPage /> : <UnauthorizedPage />;
       case '/purchase-orders':
-        return hasAccess(['finance', 'ceo', 'admin']) ? <PurchaseOrdersPage /> : <UnauthorizedPage />;
+        return hasAccess(['finance', 'ceo', 'admin', 'engineering', 'presales']) ? <PurchaseOrdersPage /> : <UnauthorizedPage />;
       case '/collection':
         return hasAccess(['sales', 'manager', 'finance', 'ceo', 'admin']) ? <CollectionPage /> : <UnauthorizedPage />;
       default:
