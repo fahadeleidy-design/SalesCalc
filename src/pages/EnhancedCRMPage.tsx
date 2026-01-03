@@ -64,6 +64,10 @@ interface Lead {
   notes: string | null;
   created_at: string;
   assigned_to: string;
+  crm_leads?: {
+    lead_type?: string;
+    industry?: string;
+  };
 }
 
 interface Opportunity {
@@ -82,6 +86,10 @@ interface Opportunity {
   };
   profiles?: {
     full_name: string;
+  };
+  crm_leads?: {
+    lead_type?: string;
+    industry?: string;
   };
 }
 
@@ -117,6 +125,8 @@ export default function EnhancedCRMPage() {
     dateTo: '',
     createdFrom: '',
     createdTo: '',
+    salesStream: 'all',
+    industry: 'all',
   });
 
   // Fetch CRM Stats
@@ -201,7 +211,8 @@ export default function EnhancedCRMPage() {
         .select(`
           *,
           customers(company_name),
-          profiles:assigned_to(full_name)
+          profiles:assigned_to(full_name),
+          crm_leads(lead_type, industry)
         `)
         .order('created_at', { ascending: false });
 
@@ -275,6 +286,16 @@ export default function EnhancedCRMPage() {
         return false;
       }
 
+      // Sales Stream filter
+      if (filters.salesStream !== 'all' && lead.lead_type !== filters.salesStream) {
+        return false;
+      }
+
+      // Industry filter
+      if (filters.industry !== 'all' && lead.industry !== filters.industry) {
+        return false;
+      }
+
       // Expected close date filter
       if (filters.dateFrom && lead.expected_close_date && lead.expected_close_date < filters.dateFrom) {
         return false;
@@ -331,6 +352,20 @@ export default function EnhancedCRMPage() {
       // Assigned to filter
       if (filters.assignedTo !== 'all' && opp.assigned_to !== filters.assignedTo) {
         return false;
+      }
+
+      // Sales Stream filter (via lead relationship)
+      if (filters.salesStream !== 'all') {
+        if (!opp.crm_leads?.lead_type || opp.crm_leads.lead_type !== filters.salesStream) {
+          return false;
+        }
+      }
+
+      // Industry filter (via lead relationship)
+      if (filters.industry !== 'all') {
+        if (!opp.crm_leads?.industry || opp.crm_leads.industry !== filters.industry) {
+          return false;
+        }
       }
 
       // Expected close date filter

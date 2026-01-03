@@ -9,6 +9,8 @@ import {
   TrendingUp,
   User,
   Building2,
+  Briefcase,
+  Factory,
 } from 'lucide-react';
 
 interface FilterOptions {
@@ -24,6 +26,8 @@ interface FilterOptions {
   dateTo: string;
   createdFrom: string;
   createdTo: string;
+  salesStream: string;
+  industry: string;
 }
 
 interface AdvancedSearchFilterProps {
@@ -51,6 +55,8 @@ export default function AdvancedSearchFilter({
     dateTo: '',
     createdFrom: '',
     createdTo: '',
+    salesStream: 'all',
+    industry: 'all',
   });
 
   const updateFilter = (key: keyof FilterOptions, value: any) => {
@@ -73,6 +79,8 @@ export default function AdvancedSearchFilter({
       dateTo: '',
       createdFrom: '',
       createdTo: '',
+      salesStream: 'all',
+      industry: 'all',
     };
     setFilters(defaultFilters);
     onFilterChange(defaultFilters);
@@ -89,7 +97,9 @@ export default function AdvancedSearchFilter({
     filters.dateFrom ||
     filters.dateTo ||
     filters.createdFrom ||
-    filters.createdTo;
+    filters.createdTo ||
+    filters.salesStream !== 'all' ||
+    filters.industry !== 'all';
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
@@ -185,6 +195,48 @@ export default function AdvancedSearchFilter({
                 </select>
               </div>
             )}
+
+            {/* Sales Stream Filter */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Sales Stream
+              </label>
+              <select
+                value={filters.salesStream}
+                onChange={(e) => updateFilter('salesStream', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              >
+                <option value="all">All Streams</option>
+                <option value="direct_sales">Direct Sales</option>
+                <option value="partners">Partners</option>
+                <option value="distribution">Distribution</option>
+              </select>
+            </div>
+
+            {/* Industry Filter */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-2">
+                <Factory className="h-4 w-4" />
+                Industry
+              </label>
+              <select
+                value={filters.industry}
+                onChange={(e) => updateFilter('industry', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              >
+                <option value="all">All Industries</option>
+                <option value="government_public_sector">Government & Public Sector</option>
+                <option value="banking_finance">Banking & Finance</option>
+                <option value="oil_gas">Oil & Gas</option>
+                <option value="communications">Communications</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="education">Education</option>
+                <option value="hospitality">Hospitality</option>
+                <option value="large_corporations_smes">Large Corporations & SMEs</option>
+                <option value="others">Others</option>
+              </select>
+            </div>
 
             {/* Assigned To Filter */}
             <div>
