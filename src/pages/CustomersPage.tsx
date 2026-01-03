@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Edit2, Trash2, Search, Mail, Phone, MapPin, Building, Upload, Download } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Search, Mail, Phone, MapPin, Building, Upload, Download, Grid3x3, LayoutList, Table } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -7,6 +7,7 @@ import type { Database } from '../lib/database.types';
 import toast from 'react-hot-toast';
 
 type Customer = Database['public']['Tables']['customers']['Row'];
+type ViewMode = 'cards' | 'table' | 'list';
 
 export default function CustomersPage() {
   const { profile } = useAuth();
@@ -17,6 +18,7 @@ export default function CustomersPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [formData, setFormData] = useState({
     company_name: '',
     contact_person: '',
@@ -392,15 +394,52 @@ export default function CustomersPage() {
 
       {customers.length > 0 && (
         <div className="bg-white rounded-lg border border-slate-200 p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search customers..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-            />
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search customers..."
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              />
+            </div>
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === 'cards'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Card View"
+              >
+                <Grid3x3 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Table View"
+              >
+                <Table className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="List View"
+              >
+                <LayoutList className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -420,79 +459,245 @@ export default function CustomersPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCustomers.map((customer) => (
-            <div
-              key={customer.id}
-              className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="bg-orange-50 p-3 rounded-lg">
-                  <Building className="w-6 h-6 text-orange-500" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleEdit(customer)}
-                    className="p-1.5 text-orange-500 hover:bg-orange-50 rounded"
-                    title="Edit"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  {/* Only admins, managers, and CEO can delete customers */}
-                  {['admin', 'manager', 'ceo'].includes(profile?.role || '') && (
-                    <button
-                      onClick={() => handleDelete(customer.id)}
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <h3 className="font-semibold text-slate-900 mb-1">{customer.company_name}</h3>
-              <p className="text-sm text-slate-600 mb-4">{customer.contact_person}</p>
-
-              <div className="space-y-2">
-                {customer.email && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Mail className="w-4 h-4" />
-                    <span className="truncate">{customer.email}</span>
+        <>
+          {viewMode === 'cards' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCustomers.map((customer) => (
+                <div
+                  key={customer.id}
+                  className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="bg-orange-50 p-3 rounded-lg">
+                      <Building className="w-6 h-6 text-orange-500" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEdit(customer)}
+                        className="p-1.5 text-orange-500 hover:bg-orange-50 rounded"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      {['admin', 'manager', 'ceo'].includes(profile?.role || '') && (
+                        <button
+                          onClick={() => handleDelete(customer.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
-                {customer.phone && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Phone className="w-4 h-4" />
-                    <span>{customer.phone}</span>
-                  </div>
-                )}
-                {customer.city && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <MapPin className="w-4 h-4" />
-                    <span>
-                      {customer.city}
-                      {customer.country && `, ${customer.country}`}
-                    </span>
-                  </div>
-                )}
-              </div>
 
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>
-                    Created by: <span className="font-medium text-slate-600">{(customer as any).creator?.full_name || 'Unknown'}</span>
-                  </span>
-                  {customer.created_at && (
-                    <span>
-                      {new Date(customer.created_at).toLocaleDateString()}
-                    </span>
-                  )}
+                  <h3 className="font-semibold text-slate-900 mb-1">{customer.company_name}</h3>
+                  <p className="text-sm text-slate-600 mb-4">{customer.contact_person}</p>
+
+                  <div className="space-y-2">
+                    {customer.email && (
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <Mail className="w-4 h-4" />
+                        <span className="truncate">{customer.email}</span>
+                      </div>
+                    )}
+                    {customer.phone && (
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <Phone className="w-4 h-4" />
+                        <span>{customer.phone}</span>
+                      </div>
+                    )}
+                    {customer.city && (
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>
+                          {customer.city}
+                          {customer.country && `, ${customer.country}`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>
+                        Created by: <span className="font-medium text-slate-600">{(customer as any).creator?.full_name || 'Unknown'}</span>
+                      </span>
+                      {customer.created_at && (
+                        <span>
+                          {new Date(customer.created_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
+
+          {viewMode === 'table' && (
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Company</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Contact Person</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Phone</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Location</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {filteredCustomers.map((customer) => (
+                      <tr key={customer.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-orange-50 p-2 rounded">
+                              <Building className="w-4 h-4 text-orange-500" />
+                            </div>
+                            <span className="font-medium text-slate-900">{customer.company_name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                          {customer.contact_person}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-slate-400" />
+                            {customer.email || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-4 h-4 text-slate-400" />
+                            {customer.phone || '-'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                          {customer.city ? (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-slate-400" />
+                              {customer.city}{customer.country && `, ${customer.country}`}
+                            </div>
+                          ) : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {customer.customer_type ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {customer.customer_type}
+                            </span>
+                          ) : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleEdit(customer)}
+                              className="p-1.5 text-orange-500 hover:bg-orange-50 rounded transition-colors"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            {['admin', 'manager', 'ceo'].includes(profile?.role || '') && (
+                              <button
+                                onClick={() => handleDelete(customer.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          ))}
-        </div>
+          )}
+
+          {viewMode === 'list' && (
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 divide-y divide-slate-200">
+              {filteredCustomers.map((customer) => (
+                <div
+                  key={customer.id}
+                  className="p-6 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="bg-orange-50 p-3 rounded-lg">
+                        <Building className="w-6 h-6 text-orange-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-slate-900 mb-1">{customer.company_name}</h3>
+                        <p className="text-sm text-slate-600 mb-3">{customer.contact_person}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {customer.email && (
+                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                              <Mail className="w-4 h-4 text-slate-400" />
+                              <span className="truncate">{customer.email}</span>
+                            </div>
+                          )}
+                          {customer.phone && (
+                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                              <Phone className="w-4 h-4 text-slate-400" />
+                              <span>{customer.phone}</span>
+                            </div>
+                          )}
+                          {customer.city && (
+                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                              <MapPin className="w-4 h-4 text-slate-400" />
+                              <span>
+                                {customer.city}
+                                {customer.country && `, ${customer.country}`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 flex items-center gap-4">
+                          {customer.customer_type && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {customer.customer_type}
+                            </span>
+                          )}
+                          {customer.sector && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              {customer.sector}
+                            </span>
+                          )}
+                          <span className="text-xs text-slate-500">
+                            Created by: <span className="font-medium text-slate-600">{(customer as any).creator?.full_name || 'Unknown'}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEdit(customer)}
+                        className="p-2 text-orange-500 hover:bg-orange-50 rounded transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      {['admin', 'manager', 'ceo'].includes(profile?.role || '') && (
+                        <button
+                          onClick={() => handleDelete(customer.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {showModal && (
