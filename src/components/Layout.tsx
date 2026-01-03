@@ -74,7 +74,7 @@ const navigationItems: NavItem[] = [
     label: 'CRM',
     icon: Target,
     path: '/crm',
-    roles: ['sales', 'manager', 'ceo'],
+    roles: ['sales', 'manager', 'ceo', 'presales'],
   },
   {
     label: 'Products',

@@ -122,9 +122,9 @@ function AppContent() {
       case '/teams':
         return hasAccess(['manager']) ? <TeamsPage /> : <UnauthorizedPage />;
       case '/crm':
-        return hasAccess(['sales', 'manager', 'ceo']) ? <EnhancedCRMPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'manager', 'ceo', 'presales']) ? <EnhancedCRMPage /> : <UnauthorizedPage />;
       case '/crm-classic':
-        return hasAccess(['sales', 'manager', 'ceo']) ? <CRMPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'manager', 'ceo', 'presales']) ? <CRMPage /> : <UnauthorizedPage />;
       case '/settings':
         return hasAccess(['admin']) ? <SettingsPage /> : <UnauthorizedPage />;
       case '/notifications':
