@@ -28,6 +28,7 @@ import CardSkeleton from '../components/crm/CardSkeleton';
 // Existing Components
 import LeadConversionModal from '../components/crm/LeadConversionModal';
 import QuickActivityLogModal from '../components/crm/QuickActivityLogModal';
+import ActivityLogModal from '../components/crm/ActivityLogModal';
 import PipelineKanban from '../components/crm/PipelineKanban';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import LeadFormModal from '../components/crm/LeadFormModal';
@@ -109,7 +110,11 @@ export default function EnhancedCRMPage() {
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showConversionModal, setShowConversionModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
-  const [activityContext, setActivityContext] = useState<{ type: 'lead' | 'opportunity'; id: string } | null>(null);
+  const [activityContext, setActivityContext] = useState<{
+    type: 'lead' | 'opportunity';
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Filter State
   const [filters, setFilters] = useState({
@@ -738,7 +743,11 @@ export default function EnhancedCRMPage() {
                     setShowConversionModal(true);
                   }}
                   onLogActivity={(lead) => {
-                    setActivityContext({ type: 'lead', id: lead.id });
+                    setActivityContext({
+                      type: 'lead',
+                      id: lead.id,
+                      name: `${lead.contact_name} - ${lead.company_name}`
+                    });
                     setShowActivityModal(true);
                   }}
                 />
@@ -758,7 +767,11 @@ export default function EnhancedCRMPage() {
                         setShowConversionModal(true);
                       }}
                       onLogActivity={(lead) => {
-                        setActivityContext({ type: 'lead', id: lead.id });
+                        setActivityContext({
+                          type: 'lead',
+                          id: lead.id,
+                          name: `${lead.contact_name} - ${lead.company_name}`
+                        });
                         setShowActivityModal(true);
                       }}
                     />
@@ -801,7 +814,11 @@ export default function EnhancedCRMPage() {
                 onMarkWon={(opp) => markWonMutation.mutate(opp)}
                 onMarkLost={(opp) => markLostMutation.mutate(opp)}
                 onLogActivity={(opp) => {
-                  setActivityContext({ type: 'opportunity', id: opp.id });
+                  setActivityContext({
+                    type: 'opportunity',
+                    id: opp.id,
+                    name: opp.name
+                  });
                   setShowActivityModal(true);
                 }}
               />
@@ -819,7 +836,11 @@ export default function EnhancedCRMPage() {
                     onMarkWon={(opp) => markWonMutation.mutate(opp)}
                     onMarkLost={(opp) => markLostMutation.mutate(opp)}
                     onLogActivity={(opp) => {
-                      setActivityContext({ type: 'opportunity', id: opp.id });
+                      setActivityContext({
+                        type: 'opportunity',
+                        id: opp.id,
+                        name: opp.name
+                      });
                       setShowActivityModal(true);
                     }}
                   />
@@ -842,9 +863,10 @@ export default function EnhancedCRMPage() {
       )}
 
       {showActivityModal && activityContext && (
-        <QuickActivityLogModal
-          leadId={activityContext.type === 'lead' ? activityContext.id : undefined}
-          opportunityId={activityContext.type === 'opportunity' ? activityContext.id : undefined}
+        <ActivityLogModal
+          entityType={activityContext.type}
+          entityId={activityContext.id}
+          entityName={activityContext.name}
           onClose={() => {
             setShowActivityModal(false);
             setActivityContext(null);
