@@ -136,8 +136,26 @@ export default function EnhancedCRMPage() {
 
   // Fetch CRM Stats
   const { data: stats } = useQuery({
-    queryKey: ['crm-stats', profile?.id],
+    queryKey: ['crm-stats', profile?.id, profile?.role],
     queryFn: async () => {
+      // Build query based on role - only sales reps see their own, others see all
+      const leadsQuery = supabase
+        .from('crm_leads')
+        .select('*', { count: 'exact', head: true });
+
+      if (profile?.role === 'sales') {
+        leadsQuery.eq('assigned_to', profile.id);
+      }
+
+      const qualifiedLeadsQuery = supabase
+        .from('crm_leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('lead_status', 'qualified');
+
+      if (profile?.role === 'sales') {
+        qualifiedLeadsQuery.eq('assigned_to', profile.id);
+      }
+
       const [
         { count: totalLeads },
         { count: qualifiedLeads },
@@ -146,15 +164,8 @@ export default function EnhancedCRMPage() {
         { count: wonOpps },
         { count: activities },
       ] = await Promise.all([
-        supabase
-          .from('crm_leads')
-          .select('*', { count: 'exact', head: true })
-          .eq(profile?.role === 'sales' ? 'assigned_to' : 'created_by', profile?.id),
-        supabase
-          .from('crm_leads')
-          .select('*', { count: 'exact', head: true })
-          .eq('lead_status', 'qualified')
-          .eq(profile?.role === 'sales' ? 'assigned_to' : 'created_by', profile?.id),
+        leadsQuery,
+        qualifiedLeadsQuery,
         supabase
           .from('crm_opportunities')
           .select('*', { count: 'exact', head: true })
