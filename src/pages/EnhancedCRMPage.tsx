@@ -139,9 +139,11 @@ export default function EnhancedCRMPage() {
     queryKey: ['crm-stats', profile?.id, profile?.role],
     queryFn: async () => {
       // Build query based on role - only sales reps see their own, others see all
+      // Exclude converted leads from total count
       const leadsQuery = supabase
         .from('crm_leads')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .neq('lead_status', 'converted');
 
       if (profile?.role === 'sales') {
         leadsQuery.eq('assigned_to', profile.id);
@@ -262,6 +264,11 @@ export default function EnhancedCRMPage() {
     if (!leads) return [];
 
     return leads.filter((lead) => {
+      // Exclude converted leads by default unless specifically filtering for them
+      if (filters.status === 'all' && lead.lead_status === 'converted') {
+        return false;
+      }
+
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
