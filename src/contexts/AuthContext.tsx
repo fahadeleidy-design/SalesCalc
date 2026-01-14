@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserRole } from '../lib/database.types';
+import { ChangePasswordModal } from '../components/auth/ChangePasswordModal';
 
 interface Profile {
   id: string;
@@ -16,6 +17,7 @@ interface Profile {
   language: string;
   theme: string;
   notifications_enabled: boolean;
+  force_password_change?: boolean;
 }
 
 interface AuthContextType {
@@ -43,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -56,6 +59,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
 
+    if (data && data.force_password_change === true) {
+      setShowPasswordChange(true);
+    }
+
     return data;
   };
 
@@ -64,6 +71,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profileData = await fetchProfile(user.id);
       setProfile(profileData);
     }
+  };
+
+  const handlePasswordChanged = async () => {
+    setShowPasswordChange(false);
+    await refreshProfile();
   };
 
   useEffect(() => {
@@ -91,6 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(profileData);
         } else {
           setProfile(null);
+          setShowPasswordChange(false);
         }
 
         setLoading(false);
@@ -144,5 +157,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshProfile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {showPasswordChange && user && (
+        <ChangePasswordModal onPasswordChanged={handlePasswordChanged} />
+      )}
+    </AuthContext.Provider>
+  );
 };
