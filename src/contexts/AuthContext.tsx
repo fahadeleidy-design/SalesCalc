@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
 
-    if (data && data.force_password_change === true) {
+    if (data && (data as any).force_password_change === true) {
       setShowPasswordChange(true);
     }
 

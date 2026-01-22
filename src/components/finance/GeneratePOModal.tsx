@@ -58,7 +58,7 @@ export default function GeneratePOModal({ quotation, onClose, onSuccess }: Gener
 
     setSaving(true);
     try {
-      const { data, error } = await supabase.rpc('create_po_from_quotation', {
+      const { data, error } = await (supabase as any).rpc('create_po_from_quotation', {
         p_quotation_id: quotation.id,
         p_supplier_name: formData.supplier_name,
         p_supplier_email: formData.supplier_email || null,

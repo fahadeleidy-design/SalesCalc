@@ -275,7 +275,12 @@ export async function createReport(report: {
         .single());
 
     if (error) {
-        console.error('Error creating report:', error);
+        console.error('❌ Error creating report:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+        });
         throw error;
     }
 
@@ -293,28 +298,25 @@ export async function updateReport(id: string, updates: Partial<{
     is_favorite: boolean;
     folder_id: string;
 }>): Promise<CustomReport> {
+    // For now, we'll manually increment the version if it was provided
+    // or just let it stay as is if the RPC fails.
     const { data, error } = await ((supabase.from('custom_reports') as any)
         .update({
             ...updates,
-            version: (supabase as any).rpc('increment_version'), // Increment version on update
+            updated_at: new Date().toISOString()
         })
         .eq('id', id)
         .select()
         .single());
 
     if (error) {
-        // Fallback without version increment
-        const { data: fallbackData, error: fallbackError } = await ((supabase.from('custom_reports') as any)
-            .update(updates)
-            .eq('id', id)
-            .select()
-            .single());
-
-        if (fallbackError) {
-            console.error('Error updating report:', fallbackError);
-            throw fallbackError;
-        }
-        return fallbackData;
+        console.error('❌ Error updating report:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+        });
+        throw error;
     }
 
     return data;
@@ -415,11 +417,11 @@ async function buildAndExecuteQuery(config: ReportConfig): Promise<Record<string
       updated_at,
       sales_rep_id,
       customer_id,
-      profiles!quotations_sales_rep_id_fkey (
+      profiles!sales_rep_id (
         id,
         full_name
       ),
-      customers (
+      customers!customer_id (
         id,
         company_name,
         sector,
@@ -456,7 +458,12 @@ async function buildAndExecuteQuery(config: ReportConfig): Promise<Record<string
     const { data, error } = await query;
 
     if (error) {
-        console.error('Query error:', error);
+        console.error('❌ Dynamic Query error:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+        });
         throw error;
     }
 

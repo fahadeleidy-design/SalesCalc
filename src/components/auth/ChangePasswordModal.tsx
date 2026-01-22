@@ -61,8 +61,7 @@ export function ChangePasswordModal({ onPasswordChanged }: ChangePasswordModalPr
       if (!user) throw new Error('No user found');
 
       // Update profile to clear force_password_change flag
-      const { error: profileError } = await supabase
-        .from('profiles')
+      const { error: profileError } = await (supabase.from('profiles') as any)
         .update({ force_password_change: false })
         .eq('user_id', user.id);
 

@@ -22,6 +22,7 @@ import {
     duplicateReport,
     toggleFavorite,
     executeReport,
+    updateReport,
     CustomReport,
     ReportConfig,
     REPORT_TEMPLATES,
@@ -468,9 +469,9 @@ function ReportBuilder({
             const config = buildConfig();
             const result = await executeReport(config);
             setResults(result);
-        } catch (err) {
-            setError('Failed to execute report. Please try again.');
-            console.error(err);
+        } catch (err: any) {
+            setError(`Failed to execute report: ${err.message || 'Please try again.'}`);
+            console.error('📊 Report Execution Failed:', err);
         } finally {
             setExecuting(false);
         }
@@ -487,15 +488,26 @@ function ReportBuilder({
         setError(null);
         try {
             const config = buildConfig();
-            await createReport({
-                name,
-                description,
-                report_config: config,
-            });
+
+            if (initialReport) {
+                // Update existing report
+                await updateReport(initialReport.id, {
+                    name,
+                    description,
+                    report_config: config,
+                });
+            } else {
+                // Create new report
+                await createReport({
+                    name,
+                    description,
+                    report_config: config,
+                });
+            }
             onSave();
-        } catch (err) {
-            setError('Failed to save report. Please try again.');
-            console.error(err);
+        } catch (err: any) {
+            setError(`Failed to save report: ${err.message || 'Please try again.'}`);
+            console.error('💾 Report Save Failed:', err);
         } finally {
             setSaving(false);
         }
