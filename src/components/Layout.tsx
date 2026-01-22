@@ -17,11 +17,9 @@ import {
   DollarSign,
   BarChart3,
   Target,
-  ChevronDown,
   Languages,
   ShoppingCart,
   TrendingUp,
-  Plus,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -101,6 +99,12 @@ const navigationItems: NavItem[] = [
     roles: ['sales', 'manager', 'finance', 'ceo', 'admin'],
   },
   {
+    label: 'Profitability',
+    icon: TrendingUp,
+    path: '/profitability',
+    roles: ['finance', 'ceo', 'admin'],
+  },
+  {
     label: 'Targets',
     icon: Target,
     path: '/targets',
@@ -119,6 +123,12 @@ const navigationItems: NavItem[] = [
     roles: ['admin', 'manager', 'ceo'],
   },
   {
+    label: 'Custom Reports',
+    icon: BarChart3,
+    path: '/custom-reports',
+    roles: ['finance', 'ceo', 'admin'],
+  },
+  {
     label: 'Users',
     icon: Users,
     path: '/users',
@@ -135,10 +145,8 @@ const navigationItems: NavItem[] = [
 export default function Layout({ children }: LayoutProps) {
   const { profile, signOut } = useAuth();
   const { currentPath, navigate, resetNavigation } = useNavigation();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
   const handleSignOut = async () => {
     resetNavigation();
@@ -154,14 +162,6 @@ export default function Layout({ children }: LayoutProps) {
     setSidebarOpen(false);
   };
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     if (sidebarOpen) {
@@ -176,7 +176,7 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 px-4 py-3 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <img src="/logo.svg" alt="Special Offices" className="h-8" />
         </div>
@@ -201,9 +201,8 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       <aside
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-200 ease-in-out ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0`}
+        className={`fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-200 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } lg:translate-x-0`}
       >
         <div className="p-6 border-b border-slate-200">
           <div className="flex items-center gap-3">
@@ -219,11 +218,10 @@ export default function Layout({ children }: LayoutProps) {
               <button
                 key={item.path}
                 onClick={() => handleNavClick(item.path)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
-                  isActive
-                    ? 'bg-orange-50 text-orange-600 font-medium'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${isActive
+                  ? 'bg-orange-50 text-orange-600 font-medium'
+                  : 'text-slate-700 hover:bg-slate-50'
+                  }`}
               >
                 <Icon className="w-5 h-5" />
                 <span>{item.label}</span>

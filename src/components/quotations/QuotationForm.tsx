@@ -40,6 +40,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -407,516 +408,522 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
 
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
-          {/* Customer & Basic Info Section */}
-          <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-orange-500" />
-              Customer & Quotation Details
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
-                Customer *
-                <span className="text-red-500">•</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={customerSearch}
-                  onChange={(e) => setCustomerSearch(e.target.value)}
-                  onFocus={() => {
-                    if (!formData.customer_id) {
-                      setCustomerSearch('');
-                    }
-                  }}
-                  onBlur={() => {
-                    setTimeout(() => {
-                      if (!formData.customer_id) {
-                        setCustomerSearch('');
-                      } else {
-                        const selected = customers.find((c) => c.id === formData.customer_id);
-                        if (selected) {
-                          setCustomerSearch(selected.company_name);
+            {/* Customer & Basic Info Section */}
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-orange-500" />
+                Customer & Quotation Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
+                    Customer *
+                    <span className="text-red-500">•</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={customerSearch}
+                      onChange={(e) => {
+                        setCustomerSearch(e.target.value);
+                        if (!showCustomerDropdown) setShowCustomerDropdown(true);
+                      }}
+                      onFocus={() => {
+                        setShowCustomerDropdown(true);
+                        if (!formData.customer_id) {
+                          setCustomerSearch('');
                         }
-                      }
-                    }, 200);
-                  }}
-                  placeholder="Search or type to add new customer..."
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-                {customerSearch && !formData.customer_id && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                    {customers
-                      .filter((customer) =>
-                        customer.company_name
-                          .toLowerCase()
-                          .includes(customerSearch.toLowerCase())
-                      )
-                      .map((customer) => (
+                      }}
+                      onBlur={() => {
+                        // Short delay to allow onMouseDown to fire
+                        setTimeout(() => {
+                          setShowCustomerDropdown(false);
+                          if (!formData.customer_id) {
+                            setCustomerSearch('');
+                          } else {
+                            const selected = customers.find((c) => c.id === formData.customer_id);
+                            if (selected) {
+                              setCustomerSearch(selected.company_name);
+                            }
+                          }
+                        }, 200);
+                      }}
+                      placeholder="Search or type to add new customer..."
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                    {showCustomerDropdown && customerSearch && !formData.customer_id && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {customers
+                          .filter((customer) =>
+                            customer.company_name
+                              .toLowerCase()
+                              .includes(customerSearch.toLowerCase())
+                          )
+                          .map((customer) => (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setFormData({ ...formData, customer_id: customer.id });
+                                setCustomerSearch(customer.company_name);
+                                setShowCustomerDropdown(false);
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-orange-50 transition-colors"
+                            >
+                              <div className="font-medium text-slate-900">
+                                {customer.company_name}
+                              </div>
+                              <div className="text-sm text-slate-600">{customer.email}</div>
+                            </button>
+                          ))}
                         <button
-                          key={customer.id}
                           type="button"
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            setFormData({ ...formData, customer_id: customer.id });
-                            setCustomerSearch(customer.company_name);
+                            setShowCustomerModal(true);
+                            setShowCustomerDropdown(false);
+                            setCustomerSearch('');
                           }}
-                          className="w-full text-left px-4 py-2 hover:bg-orange-50 transition-colors"
+                          className="w-full text-left px-4 py-3 bg-orange-50 hover:bg-orange-100 transition-colors border-t border-orange-200"
                         >
-                          <div className="font-medium text-slate-900">
-                            {customer.company_name}
+                          <div className="flex items-center gap-2 text-orange-600 font-medium">
+                            <Plus className="w-4 h-4" />
+                            Add New Customer
                           </div>
-                          <div className="text-sm text-slate-600">{customer.email}</div>
                         </button>
-                      ))}
-                    <button
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setShowCustomerModal(true);
-                        setCustomerSearch('');
-                      }}
-                      className="w-full text-left px-4 py-3 bg-orange-50 hover:bg-orange-100 transition-colors border-t border-orange-200"
-                    >
-                      <div className="flex items-center gap-2 text-orange-600 font-medium">
-                        <Plus className="w-4 h-4" />
-                        Add New Customer
                       </div>
-                    </button>
-                  </div>
-                )}
-                {formData.customer_id && (
-                  <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="text-slate-600">
-                      Selected: <span className="font-medium text-slate-900">{customers.find((c) => c.id === formData.customer_id)?.company_name}</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, customer_id: '' });
-                        setCustomerSearch('');
-                      }}
-                      className="text-orange-600 hover:text-orange-700 font-medium"
-                    >
-                      Change
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
-                Title *
-                <span className="text-red-500">•</span>
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g., Office Furniture Package"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Valid Until
-              </label>
-              <input
-                type="date"
-                value={formData.valid_until}
-                onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                Tax Rate (%)
-                {(profile?.role === 'sales' || profile?.role === 'manager') && (
-                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-medium">
-                    Fixed
-                  </span>
-                )}
-              </label>
-              <input
-                type="number"
-                value={formData.tax_percentage}
-                onChange={(e) =>
-                  setFormData({ ...formData, tax_percentage: validateTaxRate(e.target.value) })
-                }
-                min="0"
-                max="100"
-                step="0.1"
-                readOnly={profile?.role === 'sales' || profile?.role === 'manager'}
-                disabled={profile?.role === 'sales' || profile?.role === 'manager'}
-                className={`w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
-                  profile?.role === 'sales' || profile?.role === 'manager'
-                    ? 'bg-slate-100 cursor-not-allowed text-slate-600'
-                    : ''
-                }`}
-              />
-              {(profile?.role === 'sales' || profile?.role === 'manager') && (
-                <p className="text-xs text-slate-500 mt-1">
-                  Tax rate is managed by admin. Contact admin to change.
-                </p>
-              )}
-            </div>
-            </div>
-          </div>
-
-          {/* Line Items Section */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                <Package className="w-5 h-5 text-orange-500" />
-                Line Items
-                {items.length > 0 && (
-                  <span className="ml-2 bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full text-sm font-bold">
-                    {items.length}
-                  </span>
-                )}
-              </h3>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowProductSelector(true)}
-                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Product
-                </button>
-                <button
-                  onClick={addCustomItem}
-                  className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md"
-                >
-                  <Plus className="w-4 h-4" />
-                  Custom Item
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="space-y-3">
-                {items.length === 0 ? (
-                  <div className="py-16 text-center">
-                    <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 text-lg font-medium mb-2">No items added yet</p>
-                    <p className="text-slate-400 text-sm">Click "Add Product" to get started</p>
-                  </div>
-                ) : (
-                  items.map((item, index) => (
-                    <div key={item.tempId || item.id} className="border-2 border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-orange-300 hover:bg-white transition-all">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold text-sm">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <div className="mb-4">
-                          {item.is_custom ? (
-                            <div>
-                              <div className="text-sm font-medium text-slate-900">
-                                {item.custom_description}
-                              </div>
-                              {item.custom_item_status === 'pending' && (
-                                <div className="flex items-center gap-1 mt-1">
-                                  <AlertCircle className="w-3 h-3 text-amber-600" />
-                                  <span className="text-xs text-amber-600">
-                                    Awaiting Engineering Pricing
-                                  </span>
-                                </div>
-                              )}
-                              {item.customItemRequest && Object.keys(item.customItemRequest.specifications).length > 0 && (
-                                <div className="text-xs text-slate-500 mt-1">
-                                  Specs: {Object.entries(item.customItemRequest.specifications).map(([k, v]) => `${k}: ${v}`).join(', ')}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="font-semibold text-slate-900 text-base">
-                                {item.product?.name}
-                              </div>
-                              <div className="text-xs text-slate-500 mt-0.5">SKU: {item.product?.sku}</div>
-                              {item.product?.description && (
-                                <div className="text-sm text-slate-600 mt-2 leading-relaxed">
-                                  {item.product.description}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          </div>
-
-                          <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-6 md:col-span-3">
-                              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                Quantity
-                              </label>
-                              <div className="relative">
-                              <input
-                                type="number"
-                                value={item.quantity}
-                                onChange={(e) =>
-                                  updateItem(index, 'quantity', e.target.value)
-                                }
-                                min="1"
-                                step="1"
-                                className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                onBlur={(e) => {
-                                  if (!e.target.value || parseFloat(e.target.value) <= 0) {
-                                    updateItem(index, 'quantity', 1);
-                                  }
-                                }}
-                                title="Quantity must be a whole number (integer)"
-                              />
-                              <div className="text-xs text-slate-500 mt-1">Integer only</div>
-                              </div>
-                            </div>
-
-                            <div className="col-span-6 md:col-span-4">
-                              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                Unit Price
-                              </label>
-                              <div className="space-y-1">
-                                {!item.is_custom && item.base_unit_price && (
-                                  <div className="text-xs text-slate-600">
-                                    Base: <span className="font-semibold">{formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}</span>
-                                  </div>
-                                )}
-                                {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
-                                  <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
-                                    <TrendingUp className="w-3 h-3" />
-                                    Can only increase
-                                  </div>
-                                )}
-                                {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
-                                  <div className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
-                                    Set by Engineering
-                                  </div>
-                                )}
-                              <input
-                                type="number"
-                                value={item.unit_price}
-                                onChange={(e) =>
-                                  updateItem(index, 'unit_price', e.target.value)
-                                }
-                                min={item.base_unit_price || item.product?.unit_price || 0}
-                                step="0.5"
-                                className={`w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
-                                  (
-                                    ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
-                                    (item.is_custom && item.custom_item_status === 'pending')
-                                  )
-                                    ? 'bg-slate-100 cursor-not-allowed text-slate-600'
-                                    : ''
-                                }`}
-                                disabled={
-                                  ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
-                                  (item.is_custom && item.custom_item_status === 'pending')
-                                }
-                                title={
-                                  !item.is_custom && item.base_unit_price
-                                    ? `Base price: ${formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}. You can increase the price but cannot decrease below this.`
-                                    : item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager')
-                                    ? 'This price was set by Engineering and cannot be changed. Contact Engineering for price adjustments.'
-                                    : item.is_custom && item.custom_item_status === 'pending'
-                                    ? 'Waiting for Engineering to set the price'
-                                    : ''
-                                }
-                              />
-                              </div>
-                            </div>
-
-                            <div className="col-span-6 md:col-span-3">
-                              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                Line Total
-                              </label>
-                              <div className="bg-slate-100 border-2 border-slate-300 rounded-lg px-4 py-2.5 text-base font-bold text-slate-900">
-                                {formatCurrency(item.line_total)}
-                              </div>
-                            </div>
-
-                            <div className="col-span-6 md:col-span-2 flex items-end">
-                              <button
-                                onClick={() => removeItem(index)}
-                                className="w-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 px-4 py-2.5 rounded-lg transition-all border-2 border-red-200 hover:border-red-300 font-medium flex items-center justify-center gap-2"
-                                title="Remove item"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-
-                          {!item.is_custom && (
-                            <div className="mt-4 pt-4 border-t-2 border-slate-200">
-                              <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                Modifications / Special Requirements
-                                {item.modifications && item.modifications.trim().length > 0 && (
-                                  <span className="ml-2 inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
-                                    <AlertCircle className="w-3 h-3" />
-                                    Will be sent to Engineering
-                                  </span>
-                                )}
-                              </label>
-                              <textarea
-                                value={item.modifications || ''}
-                                onChange={(e) => {
-                                  const newValue = e.target.value;
-                                  const updatedItems = [...items];
-                                  updatedItems[index] = {
-                                    ...updatedItems[index],
-                                    modifications: newValue,
-                                    needs_engineering_review: newValue.trim().length > 0,
-                                  };
-                                  setItems(updatedItems);
-                                }}
-                                rows={3}
-                                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
-                                placeholder="Enter any modifications or special requirements for this item..."
-                              />
-                            </div>
-                          )}
-                        </div>
+                    )}
+                    {formData.customer_id && (
+                      <div className="mt-2 flex items-center justify-between text-sm">
+                        <span className="text-slate-600">
+                          Selected: <span className="font-medium text-slate-900">{customers.find((c) => c.id === formData.customer_id)?.company_name}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, customer_id: '' });
+                            setCustomerSearch('');
+                          }}
+                          className="text-orange-600 hover:text-orange-700 font-medium"
+                        >
+                          Change
+                        </button>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Totals Summary Section */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-orange-500" />
-              Quotation Summary
-            </h3>
-            <div className="max-w-md ml-auto space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-slate-300">
-                <span className="text-slate-700 font-medium">Subtotal:</span>
-                <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.subtotal)}</span>
-              </div>
-              <div className="flex justify-between items-start py-2 border-b border-slate-300">
-                <span className="text-slate-700 font-medium mt-2">Discount:</span>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      value={formData.discount_percentage}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value) || 0;
-                        const maxDiscount = profile?.role === 'sales' ? 5 : 100;
-                        if (value <= maxDiscount) {
-                          setFormData({ ...formData, discount_percentage: value });
-                        }
-                      }}
-                      min="0"
-                      max={profile?.role === 'sales' ? 5 : 100}
-                      step="0.1"
-                      className="w-20 px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    />
-                    <span className="text-slate-700 font-medium">%</span>
-                    <span className="font-bold text-lg text-red-600">
-                      -{formatCurrency(totals.discountAmount)}
-                    </span>
+                    )}
                   </div>
-                  {profile?.role === 'sales' && (
-                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
-                      Max 5% (Manager: 10%, CEO: &gt;10%)
-                    </span>
-                  )}
-                  {formData.discount_percentage > 5 && formData.discount_percentage <= 10 && (
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Requires Manager approval
-                    </span>
-                  )}
-                  {formData.discount_percentage > 10 && (
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      Requires Manager → CEO approval
-                    </span>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
+                    Title *
+                    <span className="text-red-500">•</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g., Office Furniture Package"
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Valid Until
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.valid_until}
+                    onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    Tax Rate (%)
+                    {(profile?.role === 'sales' || profile?.role === 'manager') && (
+                      <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-medium">
+                        Fixed
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.tax_percentage}
+                    onChange={(e) =>
+                      setFormData({ ...formData, tax_percentage: validateTaxRate(e.target.value) })
+                    }
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    readOnly={profile?.role === 'sales' || profile?.role === 'manager'}
+                    disabled={profile?.role === 'sales' || profile?.role === 'manager'}
+                    className={`w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${profile?.role === 'sales' || profile?.role === 'manager'
+                        ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+                        : ''
+                      }`}
+                  />
+                  {(profile?.role === 'sales' || profile?.role === 'manager') && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Tax rate is managed by admin. Contact admin to change.
+                    </p>
                   )}
                 </div>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-slate-300">
-                <span className="text-slate-700 font-medium">Tax ({formData.tax_percentage}%):</span>
-                <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.taxAmount)}</span>
-              </div>
-              <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300 rounded-lg mt-3 p-4 flex justify-between items-center">
-                <span className="font-bold text-slate-900 text-xl">Grand Total:</span>
-                <span className="font-black text-3xl text-orange-600">
-                  {formatCurrency(totals.total)}
-                </span>
-              </div>
             </div>
-          </div>
 
-          {/* Additional Notes Section */}
-          <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-orange-500" />
-              Additional Information
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Notes (Customer Visible)</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={4}
-                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
-                placeholder="Add notes that will be visible to the customer..."
-              />
+            {/* Line Items Section */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                  <Package className="w-5 h-5 text-orange-500" />
+                  Line Items
+                  {items.length > 0 && (
+                    <span className="ml-2 bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full text-sm font-bold">
+                      {items.length}
+                    </span>
+                  )}
+                </h3>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowProductSelector(true)}
+                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Product
+                  </button>
+                  <button
+                    onClick={addCustomItem}
+                    className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Custom Item
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="space-y-3">
+                  {items.length === 0 ? (
+                    <div className="py-16 text-center">
+                      <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500 text-lg font-medium mb-2">No items added yet</p>
+                      <p className="text-slate-400 text-sm">Click "Add Product" to get started</p>
+                    </div>
+                  ) : (
+                    items.map((item, index) => (
+                      <div key={item.tempId || item.id} className="border-2 border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-orange-300 hover:bg-white transition-all">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <div className="mb-4">
+                              {item.is_custom ? (
+                                <div>
+                                  <div className="text-sm font-medium text-slate-900">
+                                    {item.custom_description}
+                                  </div>
+                                  {item.custom_item_status === 'pending' && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <AlertCircle className="w-3 h-3 text-amber-600" />
+                                      <span className="text-xs text-amber-600">
+                                        Awaiting Engineering Pricing
+                                      </span>
+                                    </div>
+                                  )}
+                                  {item.customItemRequest && Object.keys(item.customItemRequest.specifications).length > 0 && (
+                                    <div className="text-xs text-slate-500 mt-1">
+                                      Specs: {Object.entries(item.customItemRequest.specifications).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div>
+                                  <div className="font-semibold text-slate-900 text-base">
+                                    {item.product?.name}
+                                  </div>
+                                  <div className="text-xs text-slate-500 mt-0.5">SKU: {item.product?.sku}</div>
+                                  {item.product?.description && (
+                                    <div className="text-sm text-slate-600 mt-2 leading-relaxed">
+                                      {item.product.description}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-4">
+                              <div className="col-span-6 md:col-span-3">
+                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                  Quantity
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) =>
+                                      updateItem(index, 'quantity', e.target.value)
+                                    }
+                                    min="1"
+                                    step="1"
+                                    className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                    onBlur={(e) => {
+                                      if (!e.target.value || parseFloat(e.target.value) <= 0) {
+                                        updateItem(index, 'quantity', 1);
+                                      }
+                                    }}
+                                    title="Quantity must be a whole number (integer)"
+                                  />
+                                  <div className="text-xs text-slate-500 mt-1">Integer only</div>
+                                </div>
+                              </div>
+
+                              <div className="col-span-6 md:col-span-4">
+                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                  Unit Price
+                                </label>
+                                <div className="space-y-1">
+                                  {!item.is_custom && item.base_unit_price && (
+                                    <div className="text-xs text-slate-600">
+                                      Base: <span className="font-semibold">{formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}</span>
+                                    </div>
+                                  )}
+                                  {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
+                                    <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
+                                      <TrendingUp className="w-3 h-3" />
+                                      Can only increase
+                                    </div>
+                                  )}
+                                  {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
+                                    <div className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                                      Set by Engineering
+                                    </div>
+                                  )}
+                                  <input
+                                    type="number"
+                                    value={item.unit_price}
+                                    onChange={(e) =>
+                                      updateItem(index, 'unit_price', e.target.value)
+                                    }
+                                    min={item.base_unit_price || item.product?.unit_price || 0}
+                                    step="0.5"
+                                    className={`w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${(
+                                        ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
+                                        (item.is_custom && item.custom_item_status === 'pending')
+                                      )
+                                        ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+                                        : ''
+                                      }`}
+                                    disabled={
+                                      ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
+                                      (item.is_custom && item.custom_item_status === 'pending')
+                                    }
+                                    title={
+                                      !item.is_custom && item.base_unit_price
+                                        ? `Base price: ${formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}. You can increase the price but cannot decrease below this.`
+                                        : item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager')
+                                          ? 'This price was set by Engineering and cannot be changed. Contact Engineering for price adjustments.'
+                                          : item.is_custom && item.custom_item_status === 'pending'
+                                            ? 'Waiting for Engineering to set the price'
+                                            : ''
+                                    }
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="col-span-6 md:col-span-3">
+                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                  Line Total
+                                </label>
+                                <div className="bg-slate-100 border-2 border-slate-300 rounded-lg px-4 py-2.5 text-base font-bold text-slate-900">
+                                  {formatCurrency(item.line_total)}
+                                </div>
+                              </div>
+
+                              <div className="col-span-6 md:col-span-2 flex items-end">
+                                <button
+                                  onClick={() => removeItem(index)}
+                                  className="w-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 px-4 py-2.5 rounded-lg transition-all border-2 border-red-200 hover:border-red-300 font-medium flex items-center justify-center gap-2"
+                                  title="Remove item"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+
+                            {!item.is_custom && (
+                              <div className="mt-4 pt-4 border-t-2 border-slate-200">
+                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                  Modifications / Special Requirements
+                                  {item.modifications && item.modifications.trim().length > 0 && (
+                                    <span className="ml-2 inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
+                                      <AlertCircle className="w-3 h-3" />
+                                      Will be sent to Engineering
+                                    </span>
+                                  )}
+                                </label>
+                                <textarea
+                                  value={item.modifications || ''}
+                                  onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    const updatedItems = [...items];
+                                    updatedItems[index] = {
+                                      ...updatedItems[index],
+                                      modifications: newValue,
+                                      needs_engineering_review: newValue.trim().length > 0,
+                                    };
+                                    setItems(updatedItems);
+                                  }}
+                                  rows={3}
+                                  className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
+                                  placeholder="Enter any modifications or special requirements for this item..."
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                Terms & Conditions
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                  Editable
-                </span>
-              </label>
-              <textarea
-                value={formData.terms_and_conditions}
-                onChange={(e) =>
-                  setFormData({ ...formData, terms_and_conditions: e.target.value })
-                }
-                rows={4}
-                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
-                placeholder="Default terms loaded. You can modify as needed."
-              />
-              <p className="text-xs text-slate-600 mt-2">
-                Default terms are pre-filled. Customize for this specific quotation if needed.
-              </p>
+
+            {/* Totals Summary Section */}
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-orange-500" />
+                Quotation Summary
+              </h3>
+              <div className="max-w-md ml-auto space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-slate-300">
+                  <span className="text-slate-700 font-medium">Subtotal:</span>
+                  <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.subtotal)}</span>
+                </div>
+                <div className="flex justify-between items-start py-2 border-b border-slate-300">
+                  <span className="text-slate-700 font-medium mt-2">Discount:</span>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        value={formData.discount_percentage}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          const maxDiscount = profile?.role === 'sales' ? 5 : 100;
+                          if (value <= maxDiscount) {
+                            setFormData({ ...formData, discount_percentage: value });
+                          }
+                        }}
+                        min="0"
+                        max={profile?.role === 'sales' ? 5 : 100}
+                        step="0.1"
+                        className="w-20 px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      />
+                      <span className="text-slate-700 font-medium">%</span>
+                      <span className="font-bold text-lg text-red-600">
+                        -{formatCurrency(totals.discountAmount)}
+                      </span>
+                    </div>
+                    {profile?.role === 'sales' && (
+                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                        Max 5% (Manager: 10%, CEO: &gt;10%)
+                      </span>
+                    )}
+                    {formData.discount_percentage > 5 && formData.discount_percentage <= 10 && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Requires Manager approval
+                      </span>
+                    )}
+                    {formData.discount_percentage > 10 && (
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Requires Manager → CEO approval
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-300">
+                  <span className="text-slate-700 font-medium">Tax ({formData.tax_percentage}%):</span>
+                  <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.taxAmount)}</span>
+                </div>
+                <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300 rounded-lg mt-3 p-4 flex justify-between items-center">
+                  <span className="font-bold text-slate-900 text-xl">Grand Total:</span>
+                  <span className="font-black text-3xl text-orange-600">
+                    {formatCurrency(totals.total)}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                Internal Notes
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-medium">
-                  Private
-                </span>
-              </label>
-              <textarea
-                value={formData.internal_notes}
-                onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
-                rows={4}
-                className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
-                placeholder="Add internal notes (not visible to customer)..."
-              />
+
+            {/* Additional Notes Section */}
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-orange-500" />
+                Additional Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Notes (Customer Visible)</label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
+                    placeholder="Add notes that will be visible to the customer..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    Terms & Conditions
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                      Editable
+                    </span>
+                  </label>
+                  <textarea
+                    value={formData.terms_and_conditions}
+                    onChange={(e) =>
+                      setFormData({ ...formData, terms_and_conditions: e.target.value })
+                    }
+                    rows={4}
+                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
+                    placeholder="Default terms loaded. You can modify as needed."
+                  />
+                  <p className="text-xs text-slate-600 mt-2">
+                    Default terms are pre-filled. Customize for this specific quotation if needed.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    Internal Notes
+                    <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-medium">
+                      Private
+                    </span>
+                  </label>
+                  <textarea
+                    value={formData.internal_notes}
+                    onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
+                    placeholder="Add internal notes (not visible to customer)..."
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          </div>
-        </div>
         </div>
 
         <div className="sticky bottom-0 bg-gradient-to-r from-slate-50 to-slate-100 border-t-2 border-slate-300 px-6 py-5 flex items-center justify-between shadow-lg">          <div className="text-sm text-slate-600">
-            {items.length > 0 && (
-              <span className="font-medium">
-                {items.length} item{items.length !== 1 ? 's' : ''} • Total: <span className="text-orange-600 font-bold text-lg">{formatCurrency(totals.total)}</span>
-              </span>
-            )}
-          </div>
+          {items.length > 0 && (
+            <span className="font-medium">
+              {items.length} item{items.length !== 1 ? 's' : ''} • Total: <span className="text-orange-600 font-bold text-lg">{formatCurrency(totals.total)}</span>
+            </span>
+          )}
+        </div>
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tantml:invoke>
-<parameter name="supabase } from '../../lib/supabase';
-import { Users, Plus, X, Shield, Edit2, Trash2, MessageSquare } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
+import { Users, Plus, X, Shield, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -23,8 +23,8 @@ interface DealTeamsProps {
   opportunityName: string;
 }
 
-export default function DealTeams({ opportunityId, opportunityName }: DealTeamsProps) {
-  const { profile } = useAuth();
+export default function DealTeams({ opportunityId }: Omit<DealTeamsProps, 'opportunityName'>) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
 

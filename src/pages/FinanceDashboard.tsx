@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   DollarSign,
   TrendingUp,
@@ -13,7 +13,6 @@ import {
   BarChart3,
   Clock,
   Phone,
-  Mail,
   Bell,
   Receipt,
   CreditCard,
@@ -22,12 +21,14 @@ import {
   Zap,
   Package,
   Building2,
-  Plus
+  Plus,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { useNavigation } from '../contexts/NavigationContext';
 import toast from 'react-hot-toast';
 import DownPaymentConfigModal from '../components/finance/DownPaymentConfigModal';
 import SupplierManagementModal from '../components/finance/SupplierManagementModal';
@@ -74,6 +75,7 @@ interface CommissionReview {
 
 export default function FinanceDashboard() {
   const { profile } = useAuth();
+  const { navigate } = useNavigation();
   const [metrics, setMetrics] = useState<FinanceMetrics | null>(null);
   const [quotations, setQuotations] = useState<QuotationSummary[]>([]);
   const [commissions, setCommissions] = useState<CommissionReview[]>([]);
@@ -83,14 +85,9 @@ export default function FinanceDashboard() {
     end: format(endOfMonth(new Date()), 'yyyy-MM-dd'),
   });
   const [activeTab, setActiveTab] = useState<'overview' | 'quotations' | 'commissions' | 'reports' | 'collections' | 'purchase_orders'>('overview');
-  const [collectionData, setCollectionData] = useState<any>(null);
   const [actionQueue, setActionQueue] = useState<any[]>([]);
   const [dailyReport, setDailyReport] = useState<any>(null);
   const [forecast, setForecast] = useState<any[]>([]);
-  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
-  const [showCollectModal, setShowCollectModal] = useState(false);
-  const [showPromiseModal, setShowPromiseModal] = useState(false);
-  const [showActivityModal, setShowActivityModal] = useState(false);
   const [showDownPaymentModal, setShowDownPaymentModal] = useState(false);
   const [selectedQuotationForPayment, setSelectedQuotationForPayment] = useState<any>(null);
   const [pendingWonDeals, setPendingWonDeals] = useState<any[]>([]);
@@ -115,28 +112,27 @@ export default function FinanceDashboard() {
       setLoading(true);
 
       // Load metrics
-      const { data: metricsData, error: metricsError } = await supabase
-        .rpc('get_finance_dashboard_metrics', {
-          p_start_date: dateRange.start,
-          p_end_date: dateRange.end,
-        });
+      const { data: metricsData, error: metricsError } = await (supabase.rpc as any)('get_finance_dashboard_metrics', {
+        p_start_date: dateRange.start,
+        p_end_date: dateRange.end,
+      });
 
       if (metricsError) throw metricsError;
-      setMetrics(metricsData);
+      setMetrics(metricsData as any);
 
       // Load quotations
-      const { data: quotationsData, error: quotationsError } = await supabase
+      const { data: quotationsData, error: quotationsError } = await (supabase
         .from('finance_quotation_summary')
         .select('*')
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (quotationsError) throw quotationsError;
       setQuotations(quotationsData || []);
 
       // Load commissions pending review
-      const { data: commissionsData, error: commissionsError } = await supabase
+      const { data: commissionsData, error: commissionsError } = await (supabase
         .from('commission_calculations')
         .select(`
           *,
@@ -145,9 +141,10 @@ export default function FinanceDashboard() {
         `)
         .gte('period_start', dateRange.start)
         .lte('period_end', dateRange.end)
-        .order('calculated_at', { ascending: false });
+        .order('calculated_at', { ascending: false }) as any);
 
       if (commissionsError) throw commissionsError;
+      setCommissions(commissionsData || []);
 
       const formattedCommissions = commissionsData?.map((c: any) => ({
         id: c.id,
@@ -228,7 +225,7 @@ export default function FinanceDashboard() {
       const reference = prompt('Payment reference:');
       const notes = prompt('Notes (optional):');
 
-      const { data, error } = await supabase.rpc('collection_quick_collect', {
+      const { data, error } = await (supabase.rpc as any)('collection_quick_collect', {
         p_payment_schedule_id: scheduleId,
         p_amount: amount,
         p_payment_date: paymentDate,
@@ -264,7 +261,7 @@ export default function FinanceDashboard() {
       const contactPerson = prompt('Contact person:');
       const notes = prompt('Notes:');
 
-      const { data, error } = await supabase.rpc('collection_record_promise', {
+      const { data, error } = await (supabase.rpc as any)('collection_record_promise', {
         p_payment_schedule_id: scheduleId,
         p_promised_amount: amount,
         p_promised_date: promisedDate,
@@ -298,7 +295,7 @@ export default function FinanceDashboard() {
 
       const notes = prompt('Detailed notes:');
 
-      const { data, error } = await supabase.rpc('log_collection_activity', {
+      const { data, error } = await (supabase.rpc as any)('log_collection_activity', {
         p_payment_schedule_id: scheduleId,
         p_activity_type: activityType,
         p_outcome: outcome,
@@ -322,14 +319,14 @@ export default function FinanceDashboard() {
 
   const handleGenerateReminders = async () => {
     try {
-      const { data, error } = await supabase.rpc('generate_smart_reminders');
+      const { data, error } = await (supabase.rpc('generate_smart_reminders') as any);
 
       if (error) throw error;
 
       if (data && data.length > 0) {
         toast.success(`${data.length} reminders generated. Check your email.`);
       } else {
-        toast.info('No reminders needed at this time.');
+        toast.success('No reminders needed at this time.');
       }
     } catch (error: any) {
       console.error('Error generating reminders:', error);
@@ -351,7 +348,7 @@ export default function FinanceDashboard() {
       toast.loading('Configuring payment schedule...', { id: 'config-payment' });
 
       // First, record down payment using finance_record_down_payment
-      const { data: dpData, error: dpError } = await supabase.rpc('finance_record_down_payment', {
+      const { data: dpData, error: dpError } = await (supabase.rpc as any)('finance_record_down_payment', {
         p_quotation_id: selectedQuotationForPayment.id,
         p_down_payment_amount: downPayment.amount,
         p_payment_date: downPayment.date,
@@ -369,7 +366,7 @@ export default function FinanceDashboard() {
 
       // Then add each milestone using finance_add_payment_milestone
       for (const milestone of milestones) {
-        const { data: msData, error: msError } = await supabase.rpc('finance_add_payment_milestone', {
+        const { data: msData, error: msError } = await (supabase.rpc as any)('finance_add_payment_milestone', {
           p_quotation_id: selectedQuotationForPayment.id,
           p_milestone_name: milestone.name,
           p_milestone_description: milestone.description,
@@ -427,10 +424,10 @@ export default function FinanceDashboard() {
       if (quotationsError) throw quotationsError;
 
       // Filter quotations that don't have PO yet
-      const quotationsWithoutPO = [];
-      for (const quot of quotationsData || []) {
-        const { data: existingPO } = await supabase
-          .from('purchase_orders')
+      const quotationsWithoutPO: any[] = [];
+      for (const quot of (quotationsData as any) || []) {
+        const { data: existingPO } = await (supabase
+          .from('purchase_orders') as any)
           .select('id')
           .eq('quotation_id', quot.id)
           .maybeSingle();
@@ -462,8 +459,8 @@ export default function FinanceDashboard() {
         return;
       }
 
-      const { error } = await supabase
-        .from('commission_approvals')
+      const { error } = await (supabase
+        .from('commission_approvals') as any)
         .upsert({
           calculation_id: calculationId,
           reviewer_id: profile.id,
@@ -476,30 +473,6 @@ export default function FinanceDashboard() {
       loadFinanceData();
     } catch (error: any) {
       toast.error('Failed to approve commission');
-    }
-  };
-
-  const handleReviewQuotation = async (quotationId: string, status: string, notes: string) => {
-    try {
-      if (!profile?.id) {
-        toast.error('Profile not found');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('finance_reviews')
-        .upsert({
-          quotation_id: quotationId,
-          reviewer_id: profile.id,
-          review_status: status,
-          notes,
-        });
-
-      if (error) throw error;
-      toast.success('Review saved');
-      loadFinanceData();
-    } catch (error: any) {
-      toast.error('Failed to save review');
     }
   };
 
@@ -585,55 +558,50 @@ export default function FinanceDashboard() {
           <nav className="flex gap-2 px-6">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'overview'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'overview'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
             >
               <BarChart3 className="w-4 h-4" />
               Overview
             </button>
             <button
               onClick={() => setActiveTab('quotations')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'quotations'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'quotations'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
             >
               <FileText className="w-4 h-4" />
               Quotations ({quotations.length})
             </button>
             <button
               onClick={() => setActiveTab('commissions')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'commissions'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'commissions'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
             >
               <Users className="w-4 h-4" />
               Commissions ({commissions.filter(c => c.status === 'pending').length})
             </button>
             <button
               onClick={() => setActiveTab('reports')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'reports'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'reports'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
             >
               <Target className="w-4 h-4" />
               Reports
             </button>
             <button
               onClick={() => setActiveTab('collections')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'collections'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'collections'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
             >
               <Receipt className="w-4 h-4" />
               Collections
@@ -645,11 +613,10 @@ export default function FinanceDashboard() {
             </button>
             <button
               onClick={() => setActiveTab('purchase_orders')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'purchase_orders'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'purchase_orders'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
             >
               <Package className="w-4 h-4" />
               Purchase Orders
@@ -780,11 +747,10 @@ export default function FinanceDashboard() {
                           {q.profit_margin_percentage.toFixed(1)}%
                         </td>
                         <td className="py-3 px-4 text-sm">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            q.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${q.status === 'approved' ? 'bg-green-100 text-green-800' :
                             q.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-slate-100 text-slate-800'
-                          }`}>
+                              'bg-slate-100 text-slate-800'
+                            }`}>
                             {q.status}
                           </span>
                         </td>
@@ -824,11 +790,10 @@ export default function FinanceDashboard() {
                           {formatCurrency(c.commission_amount)}
                         </td>
                         <td className="py-3 px-4 text-sm">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            c.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${c.status === 'approved' ? 'bg-green-100 text-green-800' :
                             c.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
                             {c.status}
                           </span>
                         </td>
@@ -853,25 +818,88 @@ export default function FinanceDashboard() {
 
           {activeTab === 'reports' && (
             <div className="space-y-6">
-              <div className="text-center py-12">
-                <BarChart3 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Financial Reports</h3>
-                <p className="text-slate-600 mb-6">
-                  Advanced financial reporting and analytics coming soon
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all group">
+                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
+                    <BarChart3 className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Sales Analytics</h3>
+                  <p className="text-slate-600 text-sm mb-6">
+                    Analyze sales trends, representative performance, and regional revenue distribution with interactive charts.
+                  </p>
+                  <button
+                    onClick={() => navigate('/custom-reports?template=sales_overview')}
+                    className="flex items-center gap-2 text-blue-600 font-semibold hover:gap-3 transition-all text-sm"
+                  >
+                    View Report <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-green-300 transition-all group">
+                  <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-100 transition-colors">
+                    <PieChart className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Profitability & Margins</h3>
+                  <p className="text-slate-600 text-sm mb-6">
+                    Monitor product margins, cost structures, and overall business profitability across different segments.
+                  </p>
+                  <button
+                    onClick={() => navigate('/custom-reports?template=profitability')}
+                    className="flex items-center gap-2 text-green-600 font-semibold hover:gap-3 transition-all text-sm"
+                  >
+                    View Report <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300 transition-all group">
+                  <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-orange-100 transition-colors">
+                    <Clock className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Collection Aging</h3>
+                  <p className="text-slate-600 text-sm mb-6">
+                    Track payment schedules, outstanding invoices, and collection trends to optimize cash flow management.
+                  </p>
+                  <button
+                    onClick={() => navigate('/custom-reports?template=collections')}
+                    className="flex items-center gap-2 text-orange-600 font-semibold hover:gap-3 transition-all text-sm"
+                  >
+                    View Report <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300 transition-all group">
+                  <div className="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
+                    <TrendingUp className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Project Tracking</h3>
+                  <p className="text-slate-600 text-sm mb-6">
+                    Real-time comparison of expected vs actual profit. Track variances in collections and supplier costs.
+                  </p>
+                  <button
+                    onClick={() => navigate('/profitability')}
+                    className="flex items-center gap-2 text-emerald-600 font-semibold hover:gap-3 transition-all text-sm"
+                  >
+                    View Tracking <ExternalLink className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center">
+                <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Custom Report Builder</h3>
+                <p className="text-slate-600 max-w-lg mx-auto mb-8">
+                  Need a specific view? Use our advanced report builder to create, save, and export dynamic reports tailored to your needs.
                 </p>
-                <div className="flex items-center justify-center gap-4">
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <AlertCircle className="w-6 h-6 text-slate-400 mb-2" />
-                    <div className="text-sm font-medium text-slate-600">P&L Reports</div>
-                  </div>
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <AlertCircle className="w-6 h-6 text-slate-400 mb-2" />
-                    <div className="text-sm font-medium text-slate-600">Cash Flow</div>
-                  </div>
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <AlertCircle className="w-6 h-6 text-slate-400 mb-2" />
-                    <div className="text-sm font-medium text-slate-600">Budget Analysis</div>
-                  </div>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <button
+                    onClick={() => navigate('/custom-reports')}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg shadow-blue-200 transition-all"
+                  >
+                    <Plus className="w-5 h-5" /> Create New Report
+                  </button>
+                  <button className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-8 py-3 rounded-lg font-semibold transition-all">
+                    Browse Saved Templates
+                  </button>
                 </div>
               </div>
             </div>
@@ -1029,9 +1057,8 @@ export default function FinanceDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-slate-900">{quotation.quotation_number}</span>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              quotation.status === 'pending_won' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'
-                            }`}>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${quotation.status === 'pending_won' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'
+                              }`}>
                               {quotation.status}
                             </span>
                           </div>
@@ -1106,12 +1133,11 @@ export default function FinanceDashboard() {
                           <tr key={item.schedule_id} className="border-b border-slate-100 hover:bg-slate-50">
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${
-                                  item.urgency_level === 'critical' ? 'bg-red-500' :
+                                <div className={`w-2 h-2 rounded-full ${item.urgency_level === 'critical' ? 'bg-red-500' :
                                   item.urgency_level === 'high' ? 'bg-orange-500' :
-                                  item.urgency_level === 'medium' ? 'bg-yellow-500' :
-                                  'bg-green-500'
-                                }`} />
+                                    item.urgency_level === 'medium' ? 'bg-yellow-500' :
+                                      'bg-green-500'
+                                  }`} />
                                 <span className="text-sm font-bold text-slate-900">{Math.round(item.priority_score)}</span>
                               </div>
                             </td>
@@ -1125,20 +1151,18 @@ export default function FinanceDashboard() {
                               {formatCurrency(item.outstanding_amount)}
                             </td>
                             <td className="py-3 px-4 text-sm text-right">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                item.days_overdue > 30 ? 'bg-red-100 text-red-800' :
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${item.days_overdue > 30 ? 'bg-red-100 text-red-800' :
                                 item.days_overdue > 14 ? 'bg-orange-100 text-orange-800' :
-                                item.days_overdue > 7 ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-green-100 text-green-800'
-                              }`}>
+                                  item.days_overdue > 7 ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-green-100 text-green-800'
+                                }`}>
                                 {item.days_overdue} days
                               </span>
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                item.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${item.status === 'overdue' ? 'bg-red-100 text-red-800' :
                                 'bg-yellow-100 text-yellow-800'
-                              }`}>
+                                }`}>
                                 {item.status}
                               </span>
                             </td>
@@ -1321,14 +1345,13 @@ export default function FinanceDashboard() {
                               </span>
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                po.status === 'draft' ? 'bg-slate-100 text-slate-800' :
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${po.status === 'draft' ? 'bg-slate-100 text-slate-800' :
                                 po.status === 'sent' ? 'bg-blue-100 text-blue-800' :
-                                po.status === 'acknowledged' ? 'bg-green-100 text-green-800' :
-                                po.status === 'in_production' ? 'bg-purple-100 text-purple-800' :
-                                po.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                                'bg-slate-100 text-slate-800'
-                              }`}>
+                                  po.status === 'acknowledged' ? 'bg-green-100 text-green-800' :
+                                    po.status === 'in_production' ? 'bg-purple-100 text-purple-800' :
+                                      po.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                        'bg-slate-100 text-slate-800'
+                                }`}>
                                 {po.status}
                               </span>
                             </td>

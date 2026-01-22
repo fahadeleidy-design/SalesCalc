@@ -183,6 +183,38 @@ export interface Database {
           updated_at?: string;
         };
       };
+      crm_opportunity_teams: {
+        Row: {
+          id: string;
+          opportunity_id: string;
+          user_id: string;
+          role: string;
+          access_level: string;
+          can_edit: boolean;
+          created_at: string;
+          removed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          opportunity_id: string;
+          user_id: string;
+          role: string;
+          access_level?: string;
+          can_edit?: boolean;
+          created_at?: string;
+          removed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          opportunity_id?: string;
+          user_id?: string;
+          role?: string;
+          access_level?: string;
+          can_edit?: boolean;
+          created_at?: string;
+          removed_at?: string | null;
+        };
+      };
       products: {
         Row: {
           id: string;
@@ -257,23 +289,11 @@ export interface Database {
           deal_won_at: string | null;
           pricing_submitted_at: string | null;
           pricing_completed_at: string | null;
+          submitted_to_customer_at: string | null;
           version_number: number;
           parent_version_id: string | null;
           created_at: string;
           updated_at: string;
-          quotation_items?: {
-            id: string;
-            product_id: string | null;
-            is_custom: boolean;
-            custom_description: string | null;
-            quantity: number;
-            unit_price: number;
-            discount_percentage: number;
-            discount_amount: number;
-            line_total: number;
-            custom_item_status: CustomItemStatus | null;
-            notes: string | null;
-          }[];
         };
         Insert: {
           id?: string;

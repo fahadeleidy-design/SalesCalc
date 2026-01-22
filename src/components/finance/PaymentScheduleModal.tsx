@@ -27,49 +27,108 @@ export default function PaymentScheduleModal({
   quotationNumber,
   customerName,
 }: PaymentScheduleModalProps) {
-  const [downPaymentAmount, setDownPaymentAmount] = useState(Math.round(quotationTotal * 0.3));
+  // Ensure quotationTotal is a number
+  const total = Number(quotationTotal) || 0;
+
+  const [downPaymentAmount, setDownPaymentAmount] = useState(Math.round(total * 0.3));
   const [downPaymentDate, setDownPaymentDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
-  const [milestones, setMilestones] = useState<PaymentSchedule[]>([
-    {
-      milestone_name: 'Equipment Delivery',
-      description: 'Payment upon equipment delivery',
-      amount: Math.round(quotationTotal * 0.25),
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    },
-    {
-      milestone_name: 'Installation Complete',
-      description: 'Payment upon installation completion',
-      amount: Math.round(quotationTotal * 0.25),
-      due_date: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    },
-    {
-      milestone_name: 'Final Handover',
-      description: 'Final payment upon project handover',
-      amount: Math.round(quotationTotal * 0.2),
-      due_date: new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    },
-  ]);
+
+  // Initialize milestones
+  const [milestones, setMilestones] = useState<PaymentSchedule[]>(() => {
+    // Default: 30% Down, 25% Equip, 25% Install, 20% Handover
+    // If we assume down payment is 30% (~0.3), then remaining is 70%.
+    // 25 + 25 + 20 = 70.
+
+    // Better calculation to ensure 100% match on init:
+    const initialDown = Math.round(total * 0.3);
+    const remaining = total - initialDown;
+    const m1 = Math.round(total * 0.25);
+    const m2 = Math.round(total * 0.25);
+    const m3 = remaining - m1 - m2;
+
+    return [
+      {
+        milestone_name: 'Equipment Delivery',
+        description: 'Payment upon equipment delivery',
+        amount: m1,
+        due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      },
+      {
+        milestone_name: 'Installation Complete',
+        description: 'Payment upon installation completion',
+        amount: m2,
+        due_date: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      },
+      {
+        milestone_name: 'Final Handover',
+        description: 'Final payment upon project handover',
+        amount: m3,
+        due_date: new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      },
+    ];
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const totalScheduled = downPaymentAmount + milestones.reduce((sum, m) => sum + m.amount, 0);
-  const remaining = quotationTotal - totalScheduled;
+  // Calculate totals for validation
+  const milestonesTotal = milestones.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
+  const totalScheduled = Number(downPaymentAmount) + milestonesTotal;
+  const remaining = total - totalScheduled;
+
+  // New Function to Recalculate Milestones based on remaining amount
+  const distributeRemainingToMilestones = (newDownPayment: number, currentMilestones: PaymentSchedule[]) => {
+    if (currentMilestones.length === 0) return currentMilestones;
+
+    const remainingToDistribute = total - newDownPayment;
+    const count = currentMilestones.length;
+
+    // Calculate raw amount per milestone
+    // We floor to 2 decimal places to avoid overshooting, then add remainder to last
+    const rawPerMilestone = Math.floor((remainingToDistribute / count) * 100) / 100;
+
+    // Calculate total distributed so far
+    const totalDistributed = rawPerMilestone * (count - 1);
+    const lastMilestoneAmount = Number((remainingToDistribute - totalDistributed).toFixed(2));
+
+    return currentMilestones.map((m, idx) => {
+      if (idx === count - 1) {
+        return { ...m, amount: Math.max(0, lastMilestoneAmount) };
+      }
+      return { ...m, amount: Math.max(0, rawPerMilestone) };
+    });
+  };
+
+  const handleDownPaymentChange = (value: string) => {
+    const newAmount = parseFloat(value) || 0;
+    setDownPaymentAmount(newAmount);
+    // Automatically re-distribute to milestones whenever down payment changes
+    setMilestones(prev => distributeRemainingToMilestones(newAmount, prev));
+  };
 
   const addMilestone = () => {
-    setMilestones([
+    const newMilestones = [
       ...milestones,
       {
         milestone_name: '',
         description: '',
-        amount: Math.max(0, remaining),
+        amount: 0,
         due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       },
-    ]);
+    ];
+    // Re-distribute with new count
+    setMilestones(distributeRemainingToMilestones(downPaymentAmount, newMilestones));
   };
 
   const removeMilestone = (index: number) => {
-    setMilestones(milestones.filter((_, i) => i !== index));
+    const newMilestones = milestones.filter((_, i) => i !== index);
+    // Re-distribute with new count, ONLY if there's at least one remaining
+    if (newMilestones.length > 0) {
+      setMilestones(distributeRemainingToMilestones(downPaymentAmount, newMilestones));
+    } else {
+      setMilestones([]);
+    }
   };
 
   const updateMilestone = (index: number, field: keyof PaymentSchedule, value: string | number) => {
@@ -80,8 +139,8 @@ export default function PaymentScheduleModal({
 
   const handleSubmit = async () => {
     // Validation
-    if (downPaymentAmount <= 0) {
-      alert('Down payment amount must be greater than 0');
+    if (downPaymentAmount < 0) {
+      alert('Down payment cannot be negative');
       return;
     }
 
@@ -90,20 +149,10 @@ export default function PaymentScheduleModal({
       return;
     }
 
-    for (const milestone of milestones) {
-      if (!milestone.milestone_name.trim()) {
-        alert('Please enter milestone name for all milestones');
-        return;
-      }
-      if (milestone.amount <= 0) {
-        alert('All milestone amounts must be greater than 0');
-        return;
-      }
-    }
-
-    if (Math.abs(remaining) > 0.01) {
+    // Strict Total Validation (allow small floating point diff)
+    if (Math.abs(remaining) > 0.1) {
       const confirmProceed = window.confirm(
-        `WARNING: Total scheduled (${formatCurrency(totalScheduled)}) does not equal quotation total (${formatCurrency(quotationTotal)}).\n\n` +
+        `WARNING: Total scheduled (${formatCurrency(totalScheduled)}) does not equal quotation total (${formatCurrency(total)}).\n\n` +
         `Difference: ${formatCurrency(remaining)}\n\n` +
         `Do you want to proceed anyway?`
       );
@@ -142,7 +191,7 @@ export default function PaymentScheduleModal({
               Quotation: {quotationNumber} - {customerName}
             </p>
             <p className="text-sm font-medium text-slate-700 mt-1">
-              Total: {formatCurrency(quotationTotal)}
+              Total: {formatCurrency(total)}
             </p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -169,7 +218,7 @@ export default function PaymentScheduleModal({
                   <input
                     type="number"
                     value={downPaymentAmount}
-                    onChange={(e) => setDownPaymentAmount(parseFloat(e.target.value) || 0)}
+                    onChange={(e) => handleDownPaymentChange(e.target.value)}
                     className="w-full pl-14 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     min="0"
                     step="0.01"
@@ -177,7 +226,7 @@ export default function PaymentScheduleModal({
                   />
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  {((downPaymentAmount / quotationTotal) * 100).toFixed(1)}% of total
+                  {((downPaymentAmount / total) * 100).toFixed(1)}% of total
                 </p>
               </div>
 
@@ -299,7 +348,7 @@ export default function PaymentScheduleModal({
                         />
                       </div>
                       <p className="text-xs text-slate-500 mt-1">
-                        {((milestone.amount / quotationTotal) * 100).toFixed(1)}% of total
+                        {((milestone.amount / total) * 100).toFixed(1)}% of total
                       </p>
                     </div>
 
@@ -327,7 +376,7 @@ export default function PaymentScheduleModal({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-600">Quotation Total:</span>
-                <span className="font-medium text-slate-900">{formatCurrency(quotationTotal)}</span>
+                <span className="font-medium text-slate-900">{formatCurrency(total)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Down Payment:</span>
@@ -336,7 +385,7 @@ export default function PaymentScheduleModal({
               <div className="flex justify-between">
                 <span className="text-slate-600">Milestone Payments:</span>
                 <span className="font-medium text-orange-700">
-                  {formatCurrency(milestones.reduce((sum, m) => sum + m.amount, 0))}
+                  {formatCurrency(milestonesTotal)}
                 </span>
               </div>
               <div className="border-t border-slate-300 pt-2 mt-2">
@@ -345,7 +394,7 @@ export default function PaymentScheduleModal({
                   <span className="font-bold text-slate-900">{formatCurrency(totalScheduled)}</span>
                 </div>
               </div>
-              {Math.abs(remaining) > 0.01 && (
+              {Math.abs(remaining) > 0.1 && (
                 <div className="flex justify-between">
                   <span className={`font-semibold ${remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
                     {remaining > 0 ? 'Remaining Unscheduled:' : 'Over-scheduled:'}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FileText, Eye, CreditCard as Edit2, Send, CircleCheck as CheckCircle, Circle as XCircle, Clock, Search, Trash2, Copy, Mail, TrendingUp, TrendingDown, Briefcase } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -39,11 +39,7 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
     outcome: 'won' | 'lost';
   } | null>(null);
 
-  useEffect(() => {
-    loadQuotations();
-  }, [profile, refreshTrigger]);
-
-  const loadQuotations = async () => {
+  const loadQuotations = useCallback(async () => {
     if (!profile) {
       console.log('⚠️ QuotationsList: No profile available');
       return;
@@ -66,7 +62,7 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
           customer:customers(*),
           sales_rep:profiles!sales_rep_id(*)
         `)
-        .order('created_at', { ascending: false});
+        .order('created_at', { ascending: false });
 
       // Filter based on role
       if (profile.role === 'sales') {
@@ -88,16 +84,17 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
       console.log('📊 Quotation data:', data);
 
       if (data && data.length > 0) {
+        const firstItem = (data as any)[0];
         console.log('📝 First quotation sample:', {
-          id: data[0].id,
-          number: data[0].quotation_number,
-          customer: data[0].customer?.company_name,
-          sales_rep_id: data[0].sales_rep_id,
-          status: data[0].status
+          id: firstItem.id,
+          number: firstItem.quotation_number,
+          customer: firstItem.customer?.company_name,
+          sales_rep_id: firstItem.sales_rep_id,
+          status: firstItem.status
         });
       }
 
-      setQuotations(data || []);
+      setQuotations((data as any) || []);
     } catch (error: any) {
       console.error('❌ Exception in loadQuotations:', error);
       toast.error('Failed to load quotations');
@@ -105,7 +102,11 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile]);
+
+  useEffect(() => {
+    loadQuotations();
+  }, [loadQuotations, refreshTrigger]);
 
   const handleDelete = async (quotationId: string) => {
     if (!confirm('Are you sure you want to delete this quotation? This action cannot be undone.')) {
@@ -133,27 +134,14 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
 
   const handleSubmit = async (quotationId: string) => {
     console.log('🚀 handleSubmit called with quotationId:', quotationId);
-    console.log('👤 Current profile:', profile);
-    
+
     if (!profile) {
       console.error('❌ No profile found');
-      alert('Error: No profile found!');
+      toast.error('Error: No profile found!');
       return;
     }
 
-    // Temporarily skip confirmation for testing
-    alert('Submit button clicked! Quotation ID: ' + quotationId);
-    
-    // const confirmed = confirm(
-    //   'Submit this quotation for approval? This will route it to the appropriate approver based on discount rules.'
-    // );
-
-    // if (!confirmed) {
-    //   console.log('⏸️ User cancelled submission');
-    //   return;
-    // }
-
-    console.log('⏳ Starting submission process...');
+    console.log('⏳ Starting submission process for profile:', profile.id);
     setSubmitting(quotationId);
     try {
       console.log('📤 Calling submitQuotationForApproval...');
@@ -165,15 +153,15 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
           ? 'Quotation submitted for CEO approval'
           : 'Quotation submitted for Manager approval';
         console.log('✅ Success:', statusMessage);
-        alert(statusMessage);
+        toast.success(statusMessage);
         loadQuotations();
       } else {
         console.error('❌ Submission failed:', result.error);
-        alert('Failed to submit quotation: ' + result.error);
+        toast.error('Failed to submit: ' + result.error);
       }
     } catch (error: any) {
       console.error('💥 Error submitting quotation:', error);
-      alert('Failed to submit quotation: ' + error.message);
+      toast.error('Error: ' + error.message);
     } finally {
       console.log('🏁 Submission process complete');
       setSubmitting(null);
@@ -193,11 +181,11 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
     if (!confirmed) return;
 
     try {
-      const { data, error } = await supabase.rpc('submit_quotation_to_customer', {
+      const { data, error } = await ((supabase as any).rpc('submit_quotation_to_customer', {
         p_quotation_id: quotationId,
         p_submitted_by: profile.id,
         p_response_due_date: null
-      });
+      }));
 
       if (error) throw error;
 
@@ -250,16 +238,16 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
 
       let jobOrderId: string;
 
-      if (existingJobOrder) {
+      if (existingJobOrder && (existingJobOrder as any).id) {
         // Job order already exists, use it
-        jobOrderId = existingJobOrder.id;
+        jobOrderId = (existingJobOrder as any).id;
         toast.success('Job Order already exists. Generating PDF...');
       } else {
         // Create new job order
-        const { data, error } = await supabase.rpc('create_job_order_from_quotation', {
+        const { data, error } = await ((supabase as any).rpc('create_job_order_from_quotation', {
           p_quotation_id: quotationId,
           p_priority: 'normal'
-        });
+        }));
 
         if (error) throw error;
         jobOrderId = data;
@@ -281,9 +269,10 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
       if (fetchError) throw fetchError;
 
       // Add quotation_number to the job order object
+      const safeJobOrder = jobOrder as any;
       const jobOrderWithQuotation = {
-        ...jobOrder,
-        quotation_number: jobOrder.quotation?.quotation_number || 'N/A'
+        ...safeJobOrder,
+        quotation_number: safeJobOrder.quotation?.quotation_number || 'N/A'
       };
 
       // Export to PDF
@@ -518,263 +507,263 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
             </thead>
             <tbody>
               {filteredQuotations.map((quotation) => {
-              const isOwnQuotation = quotation.sales_rep_id === profile?.id;
+                const isOwnQuotation = quotation.sales_rep_id === profile?.id;
 
-              return (
-                <tr key={quotation.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-3 px-4">
-                    <span className="text-sm font-medium text-slate-900">
-                      {quotation.quotation_number}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-sm">
-                      <div className="font-medium text-slate-900">
-                        {quotation.customer?.company_name}
+                return (
+                  <tr key={quotation.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="py-3 px-4">
+                      <span className="text-sm font-medium text-slate-900">
+                        {quotation.quotation_number}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm">
+                        <div className="font-medium text-slate-900">
+                          {quotation.customer?.company_name}
+                        </div>
+                        <div className="text-slate-500">{quotation.customer?.contact_person}</div>
                       </div>
-                      <div className="text-slate-500">{quotation.customer?.contact_person}</div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-slate-900">{quotation.title}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-sm">
-                      <div className="font-medium text-slate-900">
-                        {quotation.sales_rep?.full_name || 'Unknown'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="text-sm text-slate-900">{quotation.title}</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm">
+                        <div className="font-medium text-slate-900">
+                          {quotation.sales_rep?.full_name || 'Unknown'}
+                        </div>
+                        {isOwnQuotation && profile?.role === 'sales' && (
+                          <span className="text-xs text-orange-600">(You)</span>
+                        )}
                       </div>
-                      {isOwnQuotation && profile?.role === 'sales' && (
-                        <span className="text-xs text-orange-600">(You)</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm font-semibold text-slate-900">
-                      {formatCurrency(quotation.total)}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">{getStatusBadge(quotation.status, quotation.submitted_to_customer_at)}</td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-slate-600">
-                      {new Date(quotation.created_at).toLocaleDateString()}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onView(quotation.id)}
-                        className="p-1.5 text-slate-600 hover:bg-slate-100 rounded"
-                        title="View"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {profile?.role === 'sales' && isOwnQuotation && (
-                        <>
-                          {quotation.status === 'pending_pricing' ? (
-                            <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                              <Clock className="w-3 h-3" />
-                              Waiting for Engineering Pricing
-                            </div>
-                          ) : (
-                            (quotation.status === 'draft' || quotation.status === 'changes_requested') && (
-                              <>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="text-sm font-semibold text-slate-900">
+                        {formatCurrency(quotation.total)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">{getStatusBadge(quotation.status, quotation.submitted_to_customer_at)}</td>
+                    <td className="py-3 px-4">
+                      <span className="text-sm text-slate-600">
+                        {new Date(quotation.created_at).toLocaleDateString()}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => onView(quotation.id)}
+                          className="p-1.5 text-slate-600 hover:bg-slate-100 rounded"
+                          title="View"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {profile?.role === 'sales' && isOwnQuotation && (
+                          <>
+                            {quotation.status === 'pending_pricing' ? (
+                              <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                <Clock className="w-3 h-3" />
+                                Waiting for Engineering Pricing
+                              </div>
+                            ) : (
+                              (quotation.status === 'draft' || quotation.status === 'changes_requested') && (
+                                <>
+                                  <button
+                                    onClick={() => onEdit(quotation.id)}
+                                    className="p-1.5 text-orange-500 hover:bg-orange-50 rounded"
+                                    title="Edit"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  {onDuplicate && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onDuplicate(quotation.id);
+                                      }}
+                                      className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
+                                      title="Duplicate"
+                                    >
+                                      <Copy className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleSubmit(quotation.id);
+                                    }}
+                                    disabled={submitting === quotation.id}
+                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
+                                    title="Submit for Approval"
+                                  >
+                                    <Send className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )
+                            )}
+
+                            {/* Submit to Customer - Show only when fully approved and not yet submitted */}
+                            {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
+                              !quotation.submitted_to_customer_at && (
                                 <button
-                                  onClick={() => onEdit(quotation.id)}
-                                  className="p-1.5 text-orange-500 hover:bg-orange-50 rounded"
-                                  title="Edit"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleSubmitToCustomer(quotation.id);
+                                  }}
+                                  className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
+                                  title="Submit to Customer"
                                 >
-                                  <Edit2 className="w-4 h-4" />
+                                  <Mail className="w-3 h-3" />
+                                  <span className="hidden sm:inline">Send to Customer</span>
                                 </button>
-                                {onDuplicate && (
+                              )}
+
+                            {/* Deal Outcome Buttons - Show ONLY after submitted to customer and not yet decided */}
+                            {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
+                              quotation.submitted_to_customer_at &&
+                              !['deal_won', 'deal_lost', 'pending_won'].includes(quotation.status) && (
+                                <div className="flex items-center gap-1">
                                   <button
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      onDuplicate(quotation.id);
+                                      handleMarkWon(quotation.id, quotation.quotation_number);
                                     }}
-                                    className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
-                                    title="Duplicate"
+                                    className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
+                                    title="Mark as Won"
                                   >
-                                    <Copy className="w-4 h-4" />
+                                    <TrendingUp className="w-3 h-3" />
+                                    <span className="hidden sm:inline">Won</span>
                                   </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleSubmit(quotation.id);
-                                  }}
-                                  disabled={submitting === quotation.id}
-                                  className="p-1.5 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
-                                  title="Submit for Approval"
-                                >
-                                  <Send className="w-4 h-4" />
-                                </button>
-                              </>
-                            )
-                          )}
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleMarkLost(quotation.id, quotation.quotation_number);
+                                    }}
+                                    className="flex items-center gap-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
+                                    title="Mark as Lost"
+                                  >
+                                    <TrendingDown className="w-3 h-3" />
+                                    <span className="hidden sm:inline">Lost</span>
+                                  </button>
+                                </div>
+                              )}
 
-                          {/* Submit to Customer - Show only when fully approved and not yet submitted */}
-                          {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
-                           !quotation.submitted_to_customer_at && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleSubmitToCustomer(quotation.id);
-                              }}
-                              className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition-colors"
-                              title="Submit to Customer"
-                            >
-                              <Mail className="w-3 h-3" />
-                              <span className="hidden sm:inline">Send to Customer</span>
-                            </button>
-                          )}
-
-                          {/* Deal Outcome Buttons - Show ONLY after submitted to customer and not yet decided */}
-                          {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
-                           quotation.submitted_to_customer_at &&
-                           !['deal_won', 'deal_lost', 'pending_won'].includes(quotation.status) && (
-                            <div className="flex items-center gap-1">
+                            {/* Generate Job Order Button for Won Deals - List View */}
+                            {quotation.status === 'deal_won' && (
                               <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  handleMarkWon(quotation.id, quotation.quotation_number);
+                                  handleGenerateJobOrder(quotation.id);
                                 }}
-                                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
-                                title="Mark as Won"
+                                disabled={generatingJobOrder === quotation.id}
+                                className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Generate Job Order"
                               >
-                                <TrendingUp className="w-3 h-3" />
-                                <span className="hidden sm:inline">Won</span>
+                                <Briefcase className="w-3 h-3" />
+                                <span className="hidden sm:inline">{generatingJobOrder === quotation.id ? 'Generating...' : 'Job Order'}</span>
                               </button>
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleMarkLost(quotation.id, quotation.quotation_number);
-                                }}
-                                className="flex items-center gap-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
-                                title="Mark as Lost"
-                              >
-                                <TrendingDown className="w-3 h-3" />
-                                <span className="hidden sm:inline">Lost</span>
-                              </button>
-                            </div>
-                          )}
+                            )}
+                          </>
+                        )}
 
-                          {/* Generate Job Order Button for Won Deals - List View */}
-                          {quotation.status === 'deal_won' && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleGenerateJobOrder(quotation.id);
-                              }}
-                              disabled={generatingJobOrder === quotation.id}
-                              className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="Generate Job Order"
-                            >
-                              <Briefcase className="w-3 h-3" />
-                              <span className="hidden sm:inline">{generatingJobOrder === quotation.id ? 'Generating...' : 'Job Order'}</span>
-                            </button>
-                          )}
-                        </>
-                      )}
-
-                      {/* Manager can generate job orders for all won deals */}
-                      {profile?.role === 'manager' && quotation.status === 'deal_won' && (
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleGenerateJobOrder(quotation.id);
-                          }}
-                          disabled={generatingJobOrder === quotation.id}
-                          className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Generate Job Order"
-                        >
-                          <Briefcase className="w-3 h-3" />
-                          <span className="hidden sm:inline">{generatingJobOrder === quotation.id ? 'Generating...' : 'Job Order'}</span>
-                        </button>
-                      )}
-
-                      {/* Finance can approve/reject won deals */}
-                      {profile?.role === 'finance' && quotation.status === 'pending_won' && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={async (e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              try {
-                                const { data, error } = await supabase.rpc('approve_won_deal', {
-                                  p_quotation_id: quotation.id,
-                                  p_approved_by: profile.id
-                                });
-                                if (error) throw error;
-                                const result = data as { success: boolean; error?: string };
-                                if (!result.success) throw new Error(result.error);
-                                toast.success('Won deal approved!');
-                                loadQuotations();
-                              } catch (error: any) {
-                                toast.error(error.message || 'Failed to approve');
-                              }
-                            }}
-                            className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
-                            title="Approve Won Deal"
-                          >
-                            <CheckCircle className="w-3 h-3" />
-                            <span className="hidden sm:inline">Approve</span>
-                          </button>
+                        {/* Manager can generate job orders for all won deals */}
+                        {profile?.role === 'manager' && quotation.status === 'deal_won' && (
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              const reason = prompt('Rejection reason:');
-                              if (!reason) return;
-                              supabase.rpc('reject_won_deal', {
-                                p_quotation_id: quotation.id,
-                                p_rejected_by: profile.id,
-                                p_reason: reason
-                              }).then(({ data, error }) => {
-                                if (error) throw error;
-                                const result = data as { success: boolean; error?: string };
-                                if (!result.success) throw new Error(result.error);
-                                toast.success('Won deal rejected');
-                                loadQuotations();
-                              }).catch((error: any) => {
-                                toast.error(error.message || 'Failed to reject');
-                              });
+                              handleGenerateJobOrder(quotation.id);
                             }}
-                            className="flex items-center gap-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
-                            title="Reject Won Deal"
+                            disabled={generatingJobOrder === quotation.id}
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Generate Job Order"
                           >
-                            <XCircle className="w-3 h-3" />
-                            <span className="hidden sm:inline">Reject</span>
+                            <Briefcase className="w-3 h-3" />
+                            <span className="hidden sm:inline">{generatingJobOrder === quotation.id ? 'Generating...' : 'Job Order'}</span>
                           </button>
-                        </div>
-                      )}
+                        )}
 
-                      {profile?.role === 'admin' && (
-                        <button
-                          onClick={() => handleDelete(quotation.id)}
-                          disabled={deleting === quotation.id}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                        {/* Finance can approve/reject won deals */}
+                        {profile?.role === 'finance' && (quotation.status as string) === 'pending_won' && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                try {
+                                  const { data, error } = await ((supabase as any).rpc('approve_won_deal', {
+                                    p_quotation_id: quotation.id,
+                                    p_approved_by: profile.id
+                                  }));
+                                  if (error) throw error;
+                                  const result = data as { success: boolean; error?: string };
+                                  if (!result.success) throw new Error(result.error);
+                                  toast.success('Won deal approved!');
+                                  loadQuotations();
+                                } catch (error: any) {
+                                  toast.error(error.message || 'Failed to approve');
+                                }
+                              }}
+                              className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded font-medium transition-colors"
+                              title="Approve Won Deal"
+                            >
+                              <CheckCircle className="w-3 h-3" />
+                              <span className="hidden sm:inline">Approve</span>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const reason = prompt('Rejection reason:');
+                                if (!reason) return;
+                                ((supabase as any).rpc('reject_won_deal', {
+                                  p_quotation_id: quotation.id,
+                                  p_rejected_by: profile.id,
+                                  p_reason: reason
+                                })).then(({ data, error }: any) => {
+                                  if (error) throw error;
+                                  const result = data as { success: boolean; error?: string };
+                                  if (!result.success) throw new Error(result.error);
+                                  toast.success('Won deal rejected');
+                                  loadQuotations();
+                                }).catch((error: any) => {
+                                  toast.error(error.message || 'Failed to reject');
+                                });
+                              }}
+                              className="flex items-center gap-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded font-medium transition-colors"
+                              title="Reject Won Deal"
+                            >
+                              <XCircle className="w-3 h-3" />
+                              <span className="hidden sm:inline">Reject</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {profile?.role === 'admin' && (
+                          <button
+                            onClick={() => handleDelete(quotation.id)}
+                            disabled={deleting === quotation.id}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Grid View */}
       {viewMode === 'grid' && (
@@ -813,201 +802,85 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                     <p className="text-xs text-slate-600">{quotation.customer?.contact_person}</p>
                   </div>
 
-                  {/* Sales Rep */}
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Sales Rep</p>
-                    <p className="text-sm text-slate-900">
-                      {quotation.sales_rep?.full_name || 'Unknown'}
-                      {isOwnQuotation && profile?.role === 'sales' && (
-                        <span className="text-xs text-orange-600 ml-1">(You)</span>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Status & Date */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  {/* Status */}
+                  <div className="flex justify-between items-center">
                     <div>
+                      <p className="text-xs text-slate-500 mb-1">Status</p>
                       {getStatusBadge(quotation.status, quotation.submitted_to_customer_at)}
                     </div>
-                    <p className="text-xs text-slate-500">
-                      {new Date(quotation.created_at).toLocaleDateString()}
-                    </p>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Sales Rep</p>
+                      <div className="text-sm font-medium text-slate-900">
+                        {quotation.sales_rep?.full_name || 'Unknown'}
+                        {isOwnQuotation && profile?.role === 'sales' && (
+                          <span className="text-xs text-orange-600 ml-1">(You)</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Date */}
+                  <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                    <span>{new Date(quotation.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
 
-                {/* Card Footer - Actions */}
-                <div className="px-4 pb-4">
-                  <div className="flex items-center gap-2 flex-wrap">
+                {/* Card Footer Actions */}
+                <div className="bg-slate-50 px-4 py-3 border-t border-slate-100 flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => onView(quotation.id)}
+                    className="p-1.5 text-slate-600 hover:bg-slate-200 rounded text-xs font-medium"
+                  >
+                    View Details
+                  </button>
+
+                  {profile?.role === 'sales' && isOwnQuotation && (
+                    <>
+                      {quotation.status === 'deal_won' ? (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleGenerateJobOrder(quotation.id);
+                          }}
+                          disabled={generatingJobOrder === quotation.id}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-orange-600 text-white rounded text-xs font-medium hover:bg-orange-700 disabled:opacity-50"
+                        >
+                          <Briefcase className="w-3 h-3" />
+                          Job Order
+                        </button>
+                      ) : (
+                        (quotation.status === 'draft' || quotation.status === 'changes_requested') && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              onEdit(quotation.id);
+                            }}
+                            className="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded text-xs font-medium hover:bg-slate-50"
+                          >
+                            Edit
+                          </button>
+                        )
+                      )}
+                    </>
+                  )}
+
+                  {/* Manager Job Order Button Grid View */}
+                  {profile?.role === 'manager' && quotation.status === 'deal_won' && (
                     <button
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
-                        onView(quotation.id);
+                        handleGenerateJobOrder(quotation.id);
                       }}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-medium"
+                      disabled={generatingJobOrder === quotation.id}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-orange-600 text-white rounded text-xs font-medium hover:bg-orange-700 disabled:opacity-50"
                     >
-                      <Eye className="w-3 h-3" />
-                      View
+                      <Briefcase className="w-3 h-3" />
+                      Job Order
                     </button>
-
-                    {profile?.role === 'sales' && isOwnQuotation && (
-                      <>
-                        {quotation.status === 'pending_pricing' ? (
-                          <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
-                            <Clock className="w-3 h-3" />
-                            Waiting Pricing
-                          </div>
-                        ) : (
-                          (quotation.status === 'draft' || quotation.status === 'changes_requested') && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onEdit(quotation.id);
-                                }}
-                                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors font-medium"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                                Edit
-                              </button>
-                              {onDuplicate && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDuplicate(quotation.id);
-                                  }}
-                                  className="flex items-center gap-1 px-3 py-1.5 text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors font-medium"
-                                >
-                                  <Copy className="w-3 h-3" />
-                                  Copy
-                                </button>
-                              )}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSubmit(quotation.id);
-                                }}
-                                disabled={submitting === quotation.id}
-                                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors font-medium disabled:opacity-50"
-                              >
-                                <Send className="w-3 h-3" />
-                                Submit
-                              </button>
-                            </>
-                          )
-                        )}
-
-                        {/* Submit to Customer */}
-                        {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
-                         !quotation.submitted_to_customer_at && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSubmitToCustomer(quotation.id);
-                            }}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-                          >
-                            <Mail className="w-3 h-3" />
-                            Send to Customer
-                          </button>
-                        )}
-
-                        {/* Deal Outcome Buttons - Show ONLY after submitted to customer */}
-                        {(quotation.status === 'approved' || quotation.status === 'finance_approved') &&
-                         quotation.submitted_to_customer_at &&
-                         !['deal_won', 'deal_lost', 'pending_won'].includes(quotation.status) && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleMarkWon(quotation.id, quotation.quotation_number);
-                              }}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
-                            >
-                              <TrendingUp className="w-3 h-3" />
-                              Won
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleMarkLost(quotation.id, quotation.quotation_number);
-                              }}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
-                            >
-                              <TrendingDown className="w-3 h-3" />
-                              Lost
-                            </button>
-                          </>
-                        )}
-
-                        {/* Generate Job Order Button for Won Deals */}
-                        {quotation.status === 'deal_won' && (profile?.role === 'sales' || profile?.role === 'manager') && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleGenerateJobOrder(quotation.id);
-                            }}
-                            disabled={generatingJobOrder === quotation.id}
-                            className="flex items-center gap-1 px-3 py-1.5 text-xs bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Briefcase className="w-3 h-3" />
-                            {generatingJobOrder === quotation.id ? 'Generating...' : 'Generate Job Order'}
-                          </button>
-                        )}
-
-                        {/* Finance Approve/Reject Won Deals - Grid View */}
-                        {quotation.status === 'pending_won' && profile?.role === 'finance' && (
-                          <>
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  const { data, error } = await supabase.rpc('approve_won_deal', {
-                                    p_quotation_id: quotation.id,
-                                    p_approved_by: profile.id
-                                  });
-                                  if (error) throw error;
-                                  const result = data as { success: boolean; error?: string };
-                                  if (!result.success) throw new Error(result.error);
-                                  toast.success('Won deal approved!');
-                                  loadQuotations();
-                                } catch (error: any) {
-                                  toast.error(error.message || 'Failed to approve');
-                                }
-                              }}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
-                            >
-                              <CheckCircle className="w-3 h-3" />
-                              Approve Won Deal
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const reason = prompt('Rejection reason:');
-                                if (!reason) return;
-                                supabase.rpc('reject_won_deal', {
-                                  p_quotation_id: quotation.id,
-                                  p_rejected_by: profile.id,
-                                  p_reason: reason
-                                }).then(({ data, error }) => {
-                                  if (error) throw error;
-                                  const result = data as { success: boolean; error?: string };
-                                  if (!result.success) throw new Error(result.error);
-                                  toast.success('Won deal rejected');
-                                  loadQuotations();
-                                }).catch((error: any) => {
-                                  toast.error(error.message || 'Failed to reject');
-                                });
-                              }}
-                              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
-                            >
-                              <XCircle className="w-3 h-3" />
-                              Reject
-                            </button>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             );
@@ -1018,10 +891,10 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
       {/* Deal Outcome Modal */}
       {dealOutcomeModal && (
         <DealOutcomeModal
+          onClose={() => setDealOutcomeModal(null)}
           quotationId={dealOutcomeModal.quotationId}
           quotationNumber={dealOutcomeModal.quotationNumber}
           outcome={dealOutcomeModal.outcome}
-          onClose={() => setDealOutcomeModal(null)}
           onSuccess={handleDealOutcomeSuccess}
         />
       )}

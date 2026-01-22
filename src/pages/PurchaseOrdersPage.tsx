@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { FileText, Plus, Search, Filter, Download, Eye, Calendar, Package, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { exportProfessionalPOPDF } from '../lib/poPdfExport';
+import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
 import { format } from 'date-fns';
@@ -59,7 +61,7 @@ export default function PurchaseOrdersPage() {
     setLoading(true);
     try {
       // Load existing POs
-      const { data: posData, error: posError } = await supabase
+      const { data: posData, error: posError } = await (supabase
         .from('purchase_orders')
         .select(`
           *,
@@ -70,14 +72,14 @@ export default function PurchaseOrdersPage() {
             )
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any);
 
       if (posError) throw posError;
       setPurchaseOrders(posData || []);
 
       // Load won quotations without POs
-      const { data: quotationsData, error: quotationsError } = await supabase
-        .from('quotations')
+      const { data: quotationsData, error: quotationsError } = await (supabase
+        .from('quotations') as any)
         .select(`
           *,
           customer:customers!inner (
@@ -91,9 +93,9 @@ export default function PurchaseOrdersPage() {
       if (quotationsError) throw quotationsError;
 
       // Filter out quotations that already have POs
-      const existingPOQuotationIds = new Set(posData?.map(po => po.quotation_id) || []);
+      const existingPOQuotationIds = new Set((posData as any)?.map((po: any) => po.quotation_id) || []);
       const availableQuotations = (quotationsData || []).filter(
-        q => !existingPOQuotationIds.has(q.id)
+        (q: any) => !existingPOQuotationIds.has(q.id)
       );
       setWonQuotations(availableQuotations);
 
@@ -115,20 +117,6 @@ export default function PurchaseOrdersPage() {
     loadData();
   };
 
-  const updatePOStatus = async (poId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase.rpc('update_po_status', {
-        p_po_id: poId,
-        p_new_status: newStatus,
-      });
-
-      if (error) throw error;
-      loadData();
-    } catch (error: any) {
-      console.error('Error updating PO status:', error);
-      alert('Failed to update status: ' + error.message);
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { color: string; label: string }> = {
@@ -271,21 +259,19 @@ export default function PurchaseOrdersPage() {
           <nav className="flex -mb-px">
             <button
               onClick={() => setActiveTab('pos')}
-              className={`px-6 py-3 text-sm font-medium ${
-                activeTab === 'pos'
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
+              className={`px-6 py-3 text-sm font-medium ${activeTab === 'pos'
+                ? 'border-b-2 border-blue-500 text-blue-600'
+                : 'text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                }`}
             >
               Purchase Orders ({purchaseOrders.length})
             </button>
             <button
               onClick={() => setActiveTab('available')}
-              className={`px-6 py-3 text-sm font-medium ${
-                activeTab === 'available'
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
+              className={`px-6 py-3 text-sm font-medium ${activeTab === 'available'
+                ? 'border-b-2 border-blue-500 text-blue-600'
+                : 'text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                }`}
             >
               Available to Generate ({wonQuotations.length})
             </button>
@@ -392,6 +378,7 @@ export default function PurchaseOrdersPage() {
                                 <Eye className="w-4 h-4" />
                               </button>
                               <button
+                                onClick={() => exportProfessionalPOPDF(po.id)}
                                 className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                 title="Download PDF"
                               >
