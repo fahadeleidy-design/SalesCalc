@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useSalesTeam } from '../../hooks/useSalesTeam';
-import { X, Target, DollarSign } from 'lucide-react';
+import { X, Target, DollarSign, Loader2, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Opportunity {
@@ -39,6 +39,10 @@ export default function OpportunityFormModal({ opportunity, onClose }: Opportuni
     description: opportunity?.description || '',
     assigned_to: opportunity?.assigned_to || profile?.id || '',
   });
+
+  const [showRecap, setShowRecap] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [recapData, setRecapData] = useState<any>(null);
 
   // Fetch customers
   const { data: customers } = useQuery({
@@ -103,6 +107,21 @@ export default function OpportunityFormModal({ opportunity, onClose }: Opportuni
     saveMutation.mutate();
   };
 
+  const handleFetchRecap = async () => {
+    if (!opportunity?.id) return;
+    setIsSummarizing(true);
+    try {
+      const { generateDealRecap } = await import('../../lib/aiDealService');
+      const summary = await generateDealRecap(opportunity.id);
+      setRecapData(summary);
+      setShowRecap(true);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate recap');
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
   const stageOptions = [
     { value: 'creating_proposition', label: 'Creating Proposition', probability: 35 },
     { value: 'proposition_accepted', label: 'Proposition Accepted', probability: 65 },
@@ -114,13 +133,67 @@ export default function OpportunityFormModal({ opportunity, onClose }: Opportuni
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
-          <h2 className="text-xl font-bold text-slate-900">
-            {opportunity ? 'Edit Opportunity' : 'Add New Opportunity'}
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-slate-900">
+              {opportunity ? 'Edit Opportunity' : 'Add New Opportunity'}
+            </h2>
+            {opportunity && (
+              <button
+                type="button"
+                onClick={handleFetchRecap}
+                disabled={isSummarizing}
+                className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-bold rounded-full hover:from-purple-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow active:scale-95 disabled:opacity-50"
+              >
+                {isSummarizing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                {isSummarizing ? 'Thinking...' : '✨ AI Recap'}
+              </button>
+            )}
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="h-6 w-6" />
           </button>
         </div>
+
+        {/* AI Recap Card - Glassmorphism style */}
+        {showRecap && recapData && (
+          <div className="mx-6 mt-4 p-5 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 border border-indigo-100 rounded-xl animate-fade-in relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2">
+              <button onClick={() => setShowRecap(false)} className="text-indigo-400 hover:text-indigo-600"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Sparkles className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-indigo-900 mb-2">{recapData.status}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Recent Developments</h4>
+                    <ul className="text-xs text-indigo-700 space-y-1">
+                      {recapData.keyDevelopments.map((d: string, i: number) => <li key={i}>• {d}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Next Steps</h4>
+                    <ul className="text-xs text-indigo-700 space-y-1">
+                      {recapData.nextSteps.map((s: string, i: number) => <li key={i}>→ {s}</li>)}
+                    </ul>
+                  </div>
+                </div>
+                {recapData.risks?.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-indigo-100/50">
+                    <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1">Detected Risks</p>
+                    <p className="text-xs text-red-600">{recapData.risks.join(', ')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">

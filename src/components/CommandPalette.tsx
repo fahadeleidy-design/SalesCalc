@@ -379,7 +379,7 @@ export default function CommandPalette() {
                     {categoryLabels[category as keyof typeof categoryLabels]}
                   </div>
                   <div className="space-y-1">
-                    {cmds.map((cmd, index) => {
+                    {cmds.map((cmd) => {
                       const globalIndex = filteredCommands.indexOf(cmd);
                       const Icon = cmd.icon;
                       return (
