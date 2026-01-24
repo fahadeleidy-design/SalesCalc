@@ -293,11 +293,10 @@ export default function CRMPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors whitespace-nowrap ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors whitespace-nowrap ${activeTab === tab.id
                     ? 'border-orange-600 text-orange-600'
                     : 'border-transparent text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <Icon className="h-5 w-5" />
                 {tab.label}
@@ -632,15 +631,14 @@ function LeadsView() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        lead.lead_status === 'qualified'
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${lead.lead_status === 'qualified'
                           ? 'bg-green-100 text-green-800'
                           : lead.lead_status === 'new'
-                          ? 'bg-blue-100 text-blue-800'
-                          : lead.lead_status === 'contacted'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-slate-100 text-slate-800'
-                      }`}>
+                            ? 'bg-blue-100 text-blue-800'
+                            : lead.lead_status === 'contacted'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-slate-100 text-slate-800'
+                        }`}>
                         {lead.lead_status}
                       </span>
                     </td>
@@ -900,26 +898,26 @@ function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }
           </div>
         </div>
 
-      <div className="space-y-2 mb-4">
-        {lead.contact_email && (
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Mail className="h-4 w-4" />
-            <span className="truncate">{lead.contact_email}</span>
-          </div>
-        )}
-        {lead.contact_phone && (
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Phone className="h-4 w-4" />
-            <span>{lead.contact_phone}</span>
-          </div>
-        )}
-        {lead.industry && (
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Briefcase className="h-4 w-4" />
-            <span>{lead.industry}</span>
-          </div>
-        )}
-      </div>
+        <div className="space-y-2 mb-4">
+          {lead.contact_email && (
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Mail className="h-4 w-4" />
+              <span className="truncate">{lead.contact_email}</span>
+            </div>
+          )}
+          {lead.contact_phone && (
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Phone className="h-4 w-4" />
+              <span>{lead.contact_phone}</span>
+            </div>
+          )}
+          {lead.industry && (
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Briefcase className="h-4 w-4" />
+              <span>{lead.industry}</span>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-200">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[lead.lead_status]}`}>
@@ -929,9 +927,8 @@ function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }
             {[...Array(5)].map((_, i) => (
               <div
                 key={i}
-                className={`h-2 w-2 rounded-full ${
-                  i < Math.floor(lead.lead_score / 20) ? 'bg-amber-500' : 'bg-slate-200'
-                }`}
+                className={`h-2 w-2 rounded-full ${i < Math.floor(lead.lead_score / 20) ? 'bg-amber-500' : 'bg-slate-200'
+                  }`}
               />
             ))}
           </div>
@@ -1606,15 +1603,14 @@ function OpportunitiesView() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        opp.stage === 'Closed Won'
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${opp.stage === 'Closed Won'
                           ? 'bg-green-100 text-green-800'
                           : opp.stage === 'Closed Lost'
-                          ? 'bg-red-100 text-red-800'
-                          : opp.stage === 'Negotiation'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
+                            ? 'bg-red-100 text-red-800'
+                            : opp.stage === 'Negotiation'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-blue-100 text-blue-800'
+                        }`}>
                         {opp.stage}
                       </span>
                     </td>
@@ -1866,12 +1862,12 @@ function OpportunityCard({
           </div>
         </div>
 
-      <p className="text-xs text-slate-600 mb-2">{companyName}</p>
+        <p className="text-xs text-slate-600 mb-2">{companyName}</p>
 
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-semibold text-slate-900">{formatCurrency(opportunity.amount)}</span>
-        <span className="text-slate-600">{opportunity.probability}%</span>
-      </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold text-slate-900">{formatCurrency(opportunity.amount)}</span>
+          <span className="text-slate-600">{opportunity.probability}%</span>
+        </div>
 
         {opportunity.expected_close_date && (
           <div className="flex items-center gap-1 mt-2 text-xs text-slate-500">
@@ -1922,6 +1918,25 @@ function OpportunityModal({
     notes: opportunity?.notes || '',
     assigned_to: opportunity?.assigned_to || profile?.id || '',
   });
+
+  const [showRecap, setShowRecap] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [recapData, setRecapData] = useState<any>(null);
+
+  const handleFetchRecap = async () => {
+    if (!opportunity?.id) return;
+    setIsSummarizing(true);
+    try {
+      const { generateDealRecap } = await import('../lib/aiDealService');
+      const summary = await generateDealRecap(opportunity.id);
+      setRecapData(summary);
+      setShowRecap(true);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate recap');
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
 
   const [newCustomerData, setNewCustomerData] = useState({
     company_name: '',
@@ -2604,11 +2619,10 @@ function ActivitiesView() {
               <button
                 key={type.value}
                 onClick={() => setFilterType(type.value)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${
-                  filterType === type.value
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${filterType === type.value
                     ? 'bg-orange-100 text-orange-700 border border-orange-200'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
+                  }`}
               >
                 <Icon className="h-4 w-4" />
                 {type.label}
