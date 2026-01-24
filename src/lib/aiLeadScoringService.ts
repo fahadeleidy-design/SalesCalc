@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { supabase } from './supabase';
 
 const openai = new OpenAI({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+    apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
     dangerouslyAllowBrowser: true, // Note: For production, use a backend proxy
 });
 
@@ -237,6 +237,7 @@ Respond with JSON:
 export async function saveAILeadScore(score: AILeadScore): Promise<void> {
     const { error } = await supabase
         .from('crm_lead_ai_scores')
+        // @ts-ignore - Table may be missing from generated types
         .upsert({
             lead_id: score.lead_id,
             overall_score: score.overall_score,

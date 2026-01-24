@@ -18,8 +18,9 @@ import ProductsPage from './pages/ProductsPage';
 import CommissionsPage from './pages/CommissionsPage';
 import TargetsPage from './pages/TargetsPage';
 import TeamsPage from './pages/TeamsPage';
-import CRMPage from './pages/CRMPage';
-import EnhancedCRMPage from './pages/EnhancedCRMPage';
+// Lazy load large CRM components
+const CRMPage = React.lazy(() => import('./pages/CRMPage'));
+const EnhancedCRMPage = React.lazy(() => import('./pages/EnhancedCRMPage'));
 import SettingsPage from './pages/SettingsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsPage from './pages/ReportsPage';
@@ -150,7 +151,13 @@ function AppContent() {
     }
   };
 
-  return <Layout>{getPageContent()}</Layout>;
+  return (
+    <Layout>
+      <React.Suspense fallback={<SkeletonDashboard />}>
+        {getPageContent()}
+      </React.Suspense>
+    </Layout>
+  );
 }
 
 function App() {
