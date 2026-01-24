@@ -9,7 +9,6 @@ import {
   Trash2,
   Play,
   Pause,
-  Copy,
   Search,
   X,
   ChevronRight,
@@ -20,9 +19,10 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
+  TrendingUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
+import { VisualWorkflow } from '../ui/VisualWorkflow';
 interface WorkflowRule {
   id: string;
   name: string;
@@ -70,8 +70,8 @@ export default function WorkflowAutomation() {
 
   const createRule = useMutation({
     mutationFn: async (ruleData: typeof formData) => {
-      const { data, error } = await supabase
-        .from('crm_workflow_rules')
+      const { data, error } = await (supabase
+        .from('crm_workflow_rules') as any)
         .insert([{
           ...ruleData,
           created_by: profile?.id,
@@ -94,8 +94,8 @@ export default function WorkflowAutomation() {
 
   const updateRule = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<typeof formData> }) => {
-      const { error } = await supabase
-        .from('crm_workflow_rules')
+      const { error } = await (supabase
+        .from('crm_workflow_rules') as any)
         .update(data)
         .eq('id', id);
 
@@ -131,8 +131,8 @@ export default function WorkflowAutomation() {
 
   const toggleRuleStatus = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      const { error } = await supabase
-        .from('crm_workflow_rules')
+      const { error } = await (supabase
+        .from('crm_workflow_rules') as any)
         .update({ is_active: !isActive })
         .eq('id', id);
 
@@ -240,6 +240,8 @@ export default function WorkflowAutomation() {
     { value: 'record_created', label: 'Record Created', icon: Plus },
     { value: 'stage_change', label: 'Stage Change', icon: ChevronRight },
     { value: 'date_reached', label: 'Date Reached', icon: Clock },
+    { value: 'sla_warning', label: 'SLA Warning', icon: AlertTriangle },
+    { value: 'score_threshold', label: 'Score Threshold', icon: TrendingUp },
   ];
 
   const actionTypes = [
@@ -266,6 +268,18 @@ export default function WorkflowAutomation() {
     rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     rule.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const generateMermaidChart = () => {
+    let chart = 'graph TD\n';
+    formData.conditions.forEach((c, i) => {
+      chart += `  Trigger --> C${i}["${c.field} ${c.operator} ${c.value}"]\n`;
+    });
+    formData.actions.forEach((a, i) => {
+      const label = actionTypes.find(t => t.value === a.type)?.label || a.type;
+      chart += `  C${formData.conditions.length - 1 || 0} --> A${i}["${label}"]\n`;
+    });
+    return chart;
+  };
 
   return (
     <div className="space-y-6">
@@ -317,11 +331,10 @@ export default function WorkflowAutomation() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="font-semibold text-slate-900">{rule.name}</h3>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                      rule.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-slate-100 text-slate-600'
-                    }`}>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${rule.is_active
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-slate-100 text-slate-600'
+                      }`}>
                       {rule.is_active ? (
                         <>
                           <CheckCircle className="h-3 w-3" />
@@ -351,11 +364,10 @@ export default function WorkflowAutomation() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => toggleRuleStatus.mutate({ id: rule.id, isActive: rule.is_active })}
-                    className={`p-2 rounded-lg ${
-                      rule.is_active
-                        ? 'text-green-600 hover:bg-green-50'
-                        : 'text-slate-400 hover:bg-slate-50'
-                    }`}
+                    className={`p-2 rounded-lg ${rule.is_active
+                      ? 'text-green-600 hover:bg-green-50'
+                      : 'text-slate-400 hover:bg-slate-50'
+                      }`}
                     title={rule.is_active ? 'Pause' : 'Activate'}
                   >
                     {rule.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -409,6 +421,14 @@ export default function WorkflowAutomation() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Visual Logic Preview */}
+              {(formData.conditions.length > 0 || formData.actions.length > 0) && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Logic Preview</label>
+                  <VisualWorkflow chart={generateMermaidChart()} />
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-slate-700 mb-1">

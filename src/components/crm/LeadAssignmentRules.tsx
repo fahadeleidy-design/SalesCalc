@@ -3,7 +3,8 @@ import { useLeadScoring } from '../../hooks/useLeadScoring';
 import { useSalesTeam } from '../../hooks/useSalesTeam';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { Plus, Users, User, AlertCircle, Edit2, Trash2, Eye, EyeOff, PlayCircle } from 'lucide-react';
+import { Plus, Users, User, AlertCircle, Edit2, Trash2, Eye, EyeOff, PlayCircle, Award } from 'lucide-react';
+import { VisualWorkflow } from '../ui/VisualWorkflow';
 import type { LeadAssignmentRule, AssignmentRuleType } from '../../lib/database.types';
 
 interface RuleFormData {
@@ -26,7 +27,7 @@ export const LeadAssignmentRules: React.FC = () => {
     deleteAssignmentRule,
   } = useLeadScoring();
 
-  const { teams } = useSalesTeam();
+  const { data: teamMembers = [] } = useSalesTeam();
 
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [editingRule, setEditingRule] = useState<any | null>(null);
@@ -138,6 +139,8 @@ export const LeadAssignmentRules: React.FC = () => {
         return <User className="w-5 h-5 text-purple-600" />;
       case 'load_balanced':
         return <PlayCircle className="w-5 h-5 text-orange-600" />;
+      case 'best_fit' as any:
+        return <Award className="w-5 h-5 text-yellow-600" />;
       default:
         return <Users className="w-5 h-5 text-gray-600" />;
     }
@@ -153,6 +156,8 @@ export const LeadAssignmentRules: React.FC = () => {
         return 'bg-purple-100 text-purple-800';
       case 'load_balanced':
         return 'bg-orange-100 text-orange-800';
+      case 'best_fit' as any:
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -243,6 +248,17 @@ export const LeadAssignmentRules: React.FC = () => {
           <h3 className="text-lg font-semibold mb-4">
             {editingRule ? 'Edit Assignment Rule' : 'Create New Assignment Rule'}
           </h3>
+
+          {/* Logic Preview */}
+          {(conditions.length > 0) && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rule Logic Visualization</label>
+              <VisualWorkflow
+                chart={`graph TD\n  Start((Lead Created)) --> C{Conditions}\n  ${conditions.map((c, i) => `C --> Cond${i}["${c.field} ${c.operator} ${c.value}"]`).join('\n  ')}\n  Cond${conditions.length - 1 || 0} --> Assign["Assign to ${formData.rule_type}"]`}
+              />
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -272,6 +288,7 @@ export const LeadAssignmentRules: React.FC = () => {
                   <option value="territory">Territory Based</option>
                   <option value="skill_based">Skill Based</option>
                   <option value="load_balanced">Load Balanced</option>
+                  <option value="best_fit">Predictive Best-Fit</option>
                 </select>
               </div>
 
@@ -289,9 +306,9 @@ export const LeadAssignmentRules: React.FC = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Team</option>
-                  {teams.map((team) => (
+                  {(teamMembers as any).map((team: any) => (
                     <option key={team.id} value={team.id}>
-                      {team.name}
+                      {team.name || team.full_name}
                     </option>
                   ))}
                 </select>

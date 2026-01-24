@@ -129,32 +129,35 @@ export async function getDiscountMatrixRule(
 
 export async function determineNextApprovalStatus(
   quotation: Quotation
-): Promise<{ status: QuotationStatus; requiresCEO: boolean; requiresFinance: boolean }> {
-  // New discount rules:
-  // Sales: 0-5% (submit to manager)
-  // Manager: Can approve up to 10%
-  // CEO: Approves >10% (only via manager)
-
+): Promise<{ status: QuotationStatus; requiresCEO: boolean; requiresFinance: boolean; requiresParallel: boolean }> {
   const discountPercentage = quotation.discount_percentage || 0;
   const totalValue = quotation.total || 0;
 
-  // Get high value threshold from system settings
-  const { data: setting } = await (supabase
+  // Get configuration from system settings
+  const { data: settings } = await (supabase
     .from('system_settings')
-    .select('value')
-    .eq('key', 'high_value_threshold')
-    .maybeSingle() as any);
+    .select('*')
+    .in('key', ['high_value_threshold', 'parallel_approval_threshold']) as any);
 
-  const highValueThreshold = setting ? parseFloat(String(setting.value)) : 100000;
+  const highValueThreshold = parseFloat(settings?.find((s: any) => s.key === 'high_value_threshold')?.value || '100000');
+  const parallelThreshold = parseFloat(settings?.find((s: any) => s.key === 'parallel_approval_threshold')?.value || '500000');
 
   // Rules:
   // 1. Discount > 10% requires CEO approval
-  // 2. Total Value > Threshold requires Finance approval
+  // 2. Total Value > High Value requires Finance approval
+  // 3. Total Value > Parallel Threshold triggers simultaneous notification
   const requiresCEO = discountPercentage > 10;
   const requiresFinance = totalValue > highValueThreshold;
+  const requiresParallel = totalValue > parallelThreshold;
 
-  // Always start with Manager approval
-  return { status: 'pending_manager', requiresCEO, requiresFinance };
+  // Status mapping
+  let status: QuotationStatus = 'pending_manager';
+
+  if (requiresParallel && requiresCEO) {
+    status = 'pending_ceo'; // Both notified, but CEO is primary
+  }
+
+  return { status, requiresCEO, requiresFinance, requiresParallel };
 }
 
 export async function submitQuotationForApproval(
@@ -187,18 +190,24 @@ export async function submitQuotationForApproval(
     };
   }
 
-  const { status: nextStatus, requiresCEO, requiresFinance } = await determineNextApprovalStatus(quotation);
+  const { status: nextStatus, requiresCEO, requiresFinance, requiresParallel } = await determineNextApprovalStatus(quotation);
 
   // Don't await AI prediction, let it run in the background
   callAIPredictionService(quotationId, quotation).catch(err =>
     console.error('Non-blocking AI prediction error:', err)
   );
 
+  // Set SLA targets (e.g., 24h for manager, 48h for CEO/Finance)
+  const targetDate = new Date();
+  targetDate.setHours(targetDate.getHours() + (requiresCEO ? 48 : 24));
+
   const { error: updateError } = await ((supabase as any)
     .from('quotations')
     .update({
       status: nextStatus,
       submitted_at: new Date().toISOString(),
+      requires_parallel_approval: requiresParallel,
+      target_approval_date: targetDate.toISOString(),
     })
     .eq('id', quotationId));
 
