@@ -7,10 +7,6 @@ import {
   List,
   Kanban,
   BarChart3,
-  Settings,
-  Download,
-  Upload,
-  FileSpreadsheet,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -27,7 +23,6 @@ import CardSkeleton from '../components/crm/CardSkeleton';
 
 // Existing Components
 import LeadConversionModal from '../components/crm/LeadConversionModal';
-import QuickActivityLogModal from '../components/crm/QuickActivityLogModal';
 import ActivityLogModal from '../components/crm/ActivityLogModal';
 import PipelineKanban from '../components/crm/PipelineKanban';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
@@ -186,7 +181,7 @@ export default function EnhancedCRMPage() {
           .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
       ]);
 
-      const pipelineValue = pipelineData?.reduce((sum, opp) => sum + Number(opp.amount), 0) || 0;
+      const pipelineValue = (pipelineData as any[] || []).reduce((sum, opp) => sum + Number((opp as any).amount), 0) || 0;
 
       return {
         totalLeads: totalLeads || 0,
@@ -452,8 +447,8 @@ export default function EnhancedCRMPage() {
   // Mark Opportunity Won
   const markWonMutation = useMutation({
     mutationFn: async (opp: Opportunity) => {
-      const { error } = await supabase
-        .from('crm_opportunities')
+      const { error } = await (supabase
+        .from('crm_opportunities') as any)
         .update({
           stage: 'closed_won',
           probability: 100,
@@ -476,8 +471,8 @@ export default function EnhancedCRMPage() {
   // Mark Opportunity Lost
   const markLostMutation = useMutation({
     mutationFn: async (opp: Opportunity) => {
-      const { error } = await supabase
-        .from('crm_opportunities')
+      const { error } = await (supabase
+        .from('crm_opportunities') as any)
         .update({
           stage: 'closed_lost',
           probability: 0,
@@ -508,7 +503,7 @@ export default function EnhancedCRMPage() {
         try {
           const result = await importLeadsFromFile(file, profile?.id || '');
           queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
-          toast.success(`Imported ${result.successful} leads successfully`);
+          toast.success(`Imported ${result.success} leads successfully`);
         } catch (error: any) {
           toast.error(error.message || 'Failed to import leads');
         }
@@ -536,7 +531,7 @@ export default function EnhancedCRMPage() {
         try {
           const result = await importOpportunitiesFromFile(file, profile?.id || '');
           queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
-          toast.success(`Imported ${result.successful} opportunities successfully`);
+          toast.success(`Imported ${result.success} opportunities successfully`);
         } catch (error: any) {
           toast.error(error.message || 'Failed to import opportunities');
         }
@@ -586,11 +581,10 @@ export default function EnhancedCRMPage() {
               setActiveTab('leads');
               setFilters({ ...filters, search: '', status: 'all' });
             }}
-            className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-              activeTab === 'leads'
-                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
+            className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${activeTab === 'leads'
+              ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100'
+              }`}
           >
             Leads
           </button>
@@ -599,11 +593,10 @@ export default function EnhancedCRMPage() {
               setActiveTab('opportunities');
               setFilters({ ...filters, search: '', status: 'all' });
             }}
-            className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-              activeTab === 'opportunities'
-                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
+            className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${activeTab === 'opportunities'
+              ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+              : 'text-slate-600 hover:bg-slate-100'
+              }`}
           >
             Opportunities
           </button>
@@ -613,44 +606,40 @@ export default function EnhancedCRMPage() {
             <div className="flex items-center bg-slate-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'grid'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 title="Grid View"
               >
                 <LayoutGrid className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'list'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 title="List View"
               >
                 <List className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setViewMode('kanban')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'kanban'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'kanban'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 title="Kanban View"
               >
                 <Kanban className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setViewMode('analytics')}
-                className={`p-2 rounded-md transition-colors ${
-                  viewMode === 'analytics'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'analytics'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 title="Analytics View"
               >
                 <BarChart3 className="h-4 w-4" />
@@ -741,9 +730,9 @@ export default function EnhancedCRMPage() {
                       filters.search || filters.status !== 'all'
                         ? undefined
                         : {
-                            label: 'Create Lead',
-                            onClick: () => setShowLeadForm(true),
-                          }
+                          label: 'Create Lead',
+                          onClick: () => setShowLeadForm(true),
+                        }
                     }
                   />
                 </div>
@@ -774,17 +763,17 @@ export default function EnhancedCRMPage() {
                   {filteredLeads.map((lead) => (
                     <EnhancedLeadCard
                       key={lead.id}
-                      lead={lead}
-                      onEdit={(lead) => {
+                      lead={lead as any}
+                      onEdit={(lead: any) => {
                         setSelectedLead(lead);
                         setShowLeadForm(true);
                       }}
                       onDelete={(id) => deleteLeadMutation.mutate(id)}
-                      onConvert={(lead) => {
+                      onConvert={(lead: any) => {
                         setSelectedLead(lead);
                         setShowConversionModal(true);
                       }}
-                      onLogActivity={(lead) => {
+                      onLogActivity={(lead: any) => {
                         setActivityContext({
                           type: 'lead',
                           id: lead.id,
@@ -814,9 +803,9 @@ export default function EnhancedCRMPage() {
                     filters.search || filters.status !== 'all'
                       ? undefined
                       : {
-                          label: 'Create Opportunity',
-                          onClick: () => setShowOpportunityForm(true),
-                        }
+                        label: 'Create Opportunity',
+                        onClick: () => setShowOpportunityForm(true),
+                      }
                   }
                 />
               </div>
@@ -845,15 +834,15 @@ export default function EnhancedCRMPage() {
                 {filteredOpportunities.map((opp) => (
                   <EnhancedOpportunityCard
                     key={opp.id}
-                    opportunity={opp}
-                    onEdit={(opp) => {
+                    opportunity={opp as any}
+                    onEdit={(opp: any) => {
                       setSelectedOpportunity(opp);
                       setShowOpportunityForm(true);
                     }}
                     onDelete={(id) => deleteOpportunityMutation.mutate(id)}
-                    onMarkWon={(opp) => markWonMutation.mutate(opp)}
-                    onMarkLost={(opp) => markLostMutation.mutate(opp)}
-                    onLogActivity={(opp) => {
+                    onMarkWon={(opp: any) => markWonMutation.mutate(opp)}
+                    onMarkLost={(opp: any) => markLostMutation.mutate(opp)}
+                    onLogActivity={(opp: any) => {
                       setActivityContext({
                         type: 'opportunity',
                         id: opp.id,
@@ -906,7 +895,7 @@ export default function EnhancedCRMPage() {
       {/* Opportunity Form Modal */}
       {showOpportunityForm && (
         <OpportunityFormModal
-          opportunity={selectedOpportunity}
+          opportunity={selectedOpportunity as any}
           onClose={() => {
             setShowOpportunityForm(false);
             setSelectedOpportunity(null);

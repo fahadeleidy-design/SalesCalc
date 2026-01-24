@@ -9,7 +9,6 @@ import {
   Phone,
   Mail,
   CheckCircle,
-  Clock,
   Users,
   BarChart3,
 } from 'lucide-react';
@@ -41,7 +40,7 @@ export default function CRMAnalyticsDashboard() {
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['crm-analytics', profile?.id],
     queryFn: async () => {
-      const isCEO = profile?.role === 'ceo';
+      const _isCEO = profile?.role === 'ceo';
       const isManager = profile?.role === 'manager';
       const isSales = profile?.role === 'sales';
 
@@ -63,10 +62,10 @@ export default function CRMAnalyticsDashboard() {
           .select('sales_rep_id')
           .in(
             'team_id',
-            (await supabase.from('sales_teams').select('id').eq('manager_id', profile.id)).data?.map((t) => t.id) || []
+            ((await supabase.from('sales_teams').select('id').eq('manager_id', profile.id)).data as any[])?.map((t: any) => t.id) || []
           );
 
-        const repIds = teamMembers?.map((tm) => tm.sales_rep_id) || [];
+        const repIds = (teamMembers as any[])?.map((tm: any) => tm.sales_rep_id) || [];
         leadsQuery = leadsQuery.in('assigned_to', repIds);
         oppsQuery = oppsQuery.in('assigned_to', repIds);
         callsQuery = callsQuery.in('created_by', repIds);
@@ -82,33 +81,33 @@ export default function CRMAnalyticsDashboard() {
         tasksQuery,
       ]);
 
-      const leads = leadsResult.data || [];
-      const opportunities = oppsResult.data || [];
-      const tasks = tasksResult.data || [];
+      const leads = (leadsResult.data || []) as any[];
+      const opportunities = (oppsResult.data || []) as any[];
+      const tasks = (tasksResult.data || []) as any[];
 
       const totalLeads = leadsResult.count || 0;
-      const qualifiedLeads = leads.filter((l) => l.lead_status === 'qualified').length;
-      const convertedLeads = leads.filter((l) => l.lead_status === 'converted').length;
+      const qualifiedLeads = leads.filter((l: any) => l.lead_status === 'qualified').length;
+      const convertedLeads = leads.filter((l: any) => l.lead_status === 'converted').length;
       const leadConversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
 
-      const activeOpps = opportunities.filter((o) => !['closed_won', 'closed_lost'].includes(o.stage));
-      const wonOpps = opportunities.filter((o) => o.stage === 'closed_won');
-      const lostOpps = opportunities.filter((o) => o.stage === 'closed_lost');
+      const activeOpps = opportunities.filter((o: any) => !['closed_won', 'closed_lost'].includes(o.stage));
+      const wonOpps = opportunities.filter((o: any) => o.stage === 'closed_won');
+      const lostOpps = opportunities.filter((o: any) => o.stage === 'closed_lost');
       const closedOpps = wonOpps.length + lostOpps.length;
       const winRate = closedOpps > 0 ? (wonOpps.length / closedOpps) * 100 : 0;
 
-      const pipelineValue = activeOpps.reduce((sum, o) => sum + Number(o.amount), 0);
+      const pipelineValue = activeOpps.reduce((sum: number, o: any) => sum + Number(o.amount), 0);
       const weightedPipelineValue = activeOpps.reduce(
-        (sum, o) => sum + Number(o.amount) * (o.probability / 100),
+        (sum: number, o: any) => sum + Number(o.amount) * (o.probability / 100),
         0
       );
       const averageDealSize = wonOpps.length > 0
-        ? wonOpps.reduce((sum, o) => sum + Number(o.amount), 0) / wonOpps.length
+        ? wonOpps.reduce((sum: number, o: any) => sum + Number(o.amount), 0) / wonOpps.length
         : 0;
 
-      const completedTasks = tasks.filter((t) => t.status === 'completed').length;
+      const completedTasks = tasks.filter((t: any) => t.status === 'completed').length;
       const overdueTasks = tasks.filter(
-        (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed'
+        (t: any) => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed'
       ).length;
 
       return {

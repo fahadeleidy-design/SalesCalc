@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import {
     Mail,
     RefreshCw,
@@ -9,7 +8,6 @@ import {
     Cloud,
     Check,
     AlertTriangle,
-    Settings,
     Plus,
     Trash2,
     Loader2
@@ -31,7 +29,6 @@ const mockAccounts: EmailAccount[] = [
 ];
 
 export default function EmailIntegrationHub() {
-    const { profile } = useAuth();
     const queryClient = useQueryClient();
     const [isSyncing, setIsSyncing] = useState(false);
     const [showAddAccount, setShowAddAccount] = useState(false);
@@ -65,7 +62,7 @@ export default function EmailIntegrationHub() {
                     activity_type: 'email',
                     subject: mockEmails[0].subject,
                     description: `Auto-synced from inbox: "${mockEmails[0].body}"`,
-                    lead_id: lead.id,
+                    lead_id: (lead as any).id,
                     completed: true,
                     due_date: new Date().toISOString().split('T')[0],
                 } as any);
@@ -162,12 +159,12 @@ export default function EmailIntegrationHub() {
                         >
                             <div className="flex items-center gap-3">
                                 <div className={`p-2 rounded-lg ${account.provider === 'gmail' ? 'bg-red-100' :
-                                        account.provider === 'outlook' ? 'bg-blue-100' :
-                                            'bg-slate-100'
+                                    account.provider === 'outlook' ? 'bg-blue-100' :
+                                        'bg-slate-100'
                                     }`}>
                                     <Mail className={`h-5 w-5 ${account.provider === 'gmail' ? 'text-red-600' :
-                                            account.provider === 'outlook' ? 'text-blue-600' :
-                                                'text-slate-600'
+                                        account.provider === 'outlook' ? 'text-blue-600' :
+                                            'text-slate-600'
                                         }`} />
                                 </div>
                                 <div>

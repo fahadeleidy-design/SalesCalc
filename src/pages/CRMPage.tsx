@@ -11,18 +11,15 @@ import {
   Mail,
   Calendar,
   Plus,
-  Filter,
   BarChart3,
   CheckCircle,
   Clock,
-  AlertCircle,
   Edit2,
   Trash2,
   X,
   Search,
   Building2,
   MapPin,
-  Globe,
   Briefcase,
   ArrowRightCircle,
   MessageSquare,
@@ -52,6 +49,10 @@ import WorkflowAutomation from '../components/crm/WorkflowAutomation';
 import DocumentManager from '../components/crm/DocumentManager';
 import SalesCoachingPanel from '../components/crm/SalesCoachingPanel';
 import EmailIntegrationHub from '../components/crm/EmailIntegrationHub';
+import PartnerManagement from '../components/crm/PartnerManagement';
+import CompetitorIntelligence from '../components/crm/CompetitorIntelligence';
+import CustomerSuccessHub from '../components/crm/CustomerSuccessHub';
+import ReferralTracker from '../components/crm/ReferralTracker';
 import { useSalesTeam } from '../hooks/useSalesTeam';
 import {
   exportLeadsToExcel,
@@ -121,10 +122,10 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals'>('overview');
 
   // Fetch CRM stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: _statsLoading } = useQuery({
     queryKey: ['crm-stats', profile?.id],
     queryFn: async () => {
       const userId = profile?.id;
@@ -140,13 +141,13 @@ export default function CRMPage() {
             .from('team_members')
             .select('sales_rep_id')
             .in('team_id', (
-              await supabase
+              (await supabase
                 .from('sales_teams')
                 .select('id')
-                .eq('manager_id', userId)
-            ).data?.map(t => t.id) || []);
+                .eq('manager_id', userId || ''))
+                .data as any[] || []).map((t: any) => t.id));
 
-          leadsQuery = leadsQuery.in('assigned_to', teamMembers?.map(tm => tm.sales_rep_id) || []);
+          leadsQuery = leadsQuery.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
         } else {
           leadsQuery = leadsQuery.eq('assigned_to', userId);
         }
@@ -166,13 +167,13 @@ export default function CRMPage() {
             .from('team_members')
             .select('sales_rep_id')
             .in('team_id', (
-              await supabase
+              (await supabase
                 .from('sales_teams')
                 .select('id')
-                .eq('manager_id', userId)
-            ).data?.map(t => t.id) || []);
+                .eq('manager_id', userId || ''))
+                .data as any[] || []).map((t: any) => t.id));
 
-          qualifiedQuery = qualifiedQuery.in('assigned_to', teamMembers?.map(tm => tm.sales_rep_id) || []);
+          qualifiedQuery = qualifiedQuery.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
         } else {
           qualifiedQuery = qualifiedQuery.eq('assigned_to', userId);
         }
@@ -189,13 +190,13 @@ export default function CRMPage() {
             .from('team_members')
             .select('sales_rep_id')
             .in('team_id', (
-              await supabase
+              (await supabase
                 .from('sales_teams')
                 .select('id')
-                .eq('manager_id', userId)
-            ).data?.map(t => t.id) || []);
+                .eq('manager_id', userId || ''))
+                .data as any[] || []).map((t: any) => t.id));
 
-          oppsQuery = oppsQuery.in('assigned_to', teamMembers?.map(tm => tm.sales_rep_id) || []);
+          oppsQuery = oppsQuery.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
         } else {
           oppsQuery = oppsQuery.eq('assigned_to', userId);
         }
@@ -204,10 +205,10 @@ export default function CRMPage() {
       const { data: opportunities } = await oppsQuery;
 
       const totalOpportunities = opportunities?.length || 0;
-      const pipelineValue = opportunities
-        ?.filter(opp => opp.stage !== 'closed_lost')
-        ?.reduce((sum, opp) => sum + Number(opp.amount), 0) || 0;
-      const wonOpportunities = opportunities?.filter(opp => opp.stage === 'closed_won')?.length || 0;
+      const pipelineValue = ((opportunities || []) as any[])
+        .filter((opp: any) => opp.stage !== 'closed_lost')
+        .reduce((sum: number, opp: any) => sum + Number(opp.amount), 0) || 0;
+      const wonOpportunities = ((opportunities || []) as any[]).filter((opp: any) => opp.stage === 'closed_won').length || 0;
 
       // Activities this week
       const oneWeekAgo = new Date();
@@ -224,13 +225,13 @@ export default function CRMPage() {
             .from('team_members')
             .select('sales_rep_id')
             .in('team_id', (
-              await supabase
+              (await supabase
                 .from('sales_teams')
                 .select('id')
-                .eq('manager_id', userId)
-            ).data?.map(t => t.id) || []);
+                .eq('manager_id', userId || ''))
+                .data as any[] || []).map((t: any) => t.id));
 
-          activitiesQuery = activitiesQuery.in('assigned_to', teamMembers?.map(tm => tm.sales_rep_id) || []);
+          activitiesQuery = activitiesQuery.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
         } else {
           activitiesQuery = activitiesQuery.eq('assigned_to', userId);
         }
@@ -290,6 +291,10 @@ export default function CRMPage() {
             { id: 'documents', label: 'Documents', icon: FileText },
             { id: 'coaching', label: 'Coaching', icon: Target },
             { id: 'integrations', label: 'Integrations', icon: Mail },
+            { id: 'partners', label: 'Partners', icon: Building2 },
+            { id: 'competitors', label: 'Competitors', icon: Target },
+            { id: 'success', label: 'Customer Success', icon: Users },
+            { id: 'referrals', label: 'Referrals', icon: Users },
             { id: 'tasks', label: 'Tasks', icon: ClipboardCheck },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -375,6 +380,10 @@ export default function CRMPage() {
       {activeTab === 'documents' && <DocumentManager />}
       {activeTab === 'coaching' && <SalesCoachingPanel />}
       {activeTab === 'integrations' && <EmailIntegrationHub />}
+      {activeTab === 'partners' && <PartnerManagement />}
+      {activeTab === 'competitors' && <CompetitorIntelligence />}
+      {activeTab === 'success' && <CustomerSuccessHub />}
+      {activeTab === 'referrals' && <ReferralTracker />}
       {activeTab === 'tasks' && <TasksManager showAll={true} />}
     </div>
   );
@@ -1041,7 +1050,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
         };
         const { error } = await supabase
           .from('crm_leads')
-          .update(updateData)
+          .update(updateData as any)
           .eq('id', lead.id);
         if (error) throw error;
       } else {
@@ -1053,7 +1062,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
             ? { assigned_to: formData.assigned_to }
             : {}),
         };
-        const { error } = await supabase.from('crm_leads').insert(insertData);
+        const { error } = await supabase.from('crm_leads').insert(insertData as any);
         if (error) throw error;
       }
     },
@@ -1358,13 +1367,13 @@ function OpportunitiesView() {
           .from('team_members')
           .select('sales_rep_id')
           .in('team_id', (
-            await supabase
+            (await supabase
               .from('sales_teams')
               .select('id')
-              .eq('manager_id', profile.id)
-          ).data?.map(t => t.id) || []);
+              .eq('manager_id', profile.id))
+              .data as any[] || []).map((t: any) => t.id));
 
-        query = query.in('assigned_to', teamMembers?.map(tm => tm.sales_rep_id) || []);
+        query = query.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
       }
 
       const { data, error } = await query;
@@ -1965,7 +1974,7 @@ function OpportunityModal({
 
       const { data, error } = await supabase
         .from('customers')
-        .insert(customerData)
+        .insert(customerData as any)
         .select()
         .single();
 
@@ -1974,7 +1983,7 @@ function OpportunityModal({
     },
     onSuccess: (newCustomer) => {
       queryClient.invalidateQueries({ queryKey: ['customers-list'] });
-      setFormData({ ...formData, customer_id: newCustomer.id, lead_id: '' });
+      setFormData({ ...formData, customer_id: (newCustomer as any).id, lead_id: '' });
       setShowNewCustomerForm(false);
       setNewCustomerData({
         company_name: '',
@@ -2012,33 +2021,34 @@ function OpportunityModal({
         if (leadError) throw new Error('Failed to fetch lead data');
 
         // Create customer from lead data
+        const leadDataAny = leadData as any;
         const customerData = {
-          company_name: leadData.company_name,
-          contact_person: leadData.contact_name,
-          email: leadData.contact_email,
-          phone: leadData.contact_phone || null,
-          country: leadData.country || 'Saudi Arabia',
-          city: leadData.city || null,
-          address: leadData.address || null,
-          industry: leadData.industry || null,
+          company_name: leadDataAny.company_name,
+          contact_person: leadDataAny.contact_name,
+          email: leadDataAny.contact_email,
+          phone: leadDataAny.contact_phone || null,
+          country: leadDataAny.country || 'Saudi Arabia',
+          city: leadDataAny.city || null,
+          address: leadDataAny.address || null,
+          industry: leadDataAny.industry || null,
           customer_type: 'direct_sales',
           created_by: profile?.id,
         };
 
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
-          .insert(customerData)
+          .insert(customerData as any)
           .select()
           .single();
 
         if (customerError) throw new Error('Failed to create customer from lead');
 
-        finalCustomerId = newCustomer.id;
+        finalCustomerId = (newCustomer as any).id;
 
         // Update lead status to converted
         await supabase
           .from('crm_leads')
-          .update({ lead_status: 'converted' })
+          .update({ lead_status: 'converted' } as any)
           .eq('id', formData.lead_id);
 
         queryClient.invalidateQueries({ queryKey: ['customers-list'] });
@@ -2061,7 +2071,7 @@ function OpportunityModal({
         };
         const { error } = await supabase
           .from('crm_opportunities')
-          .update(updateData)
+          .update(updateData as any)
           .eq('id', opportunity.id);
         if (error) throw error;
       } else {
@@ -2073,7 +2083,7 @@ function OpportunityModal({
             ? { assigned_to: formData.assigned_to }
             : {}),
         };
-        const { error } = await supabase.from('crm_opportunities').insert(insertData);
+        const { error } = await supabase.from('crm_opportunities').insert(insertData as any);
         if (error) throw error;
       }
     },
