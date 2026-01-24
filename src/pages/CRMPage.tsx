@@ -32,6 +32,8 @@ import {
   LineChart,
   ClipboardCheck,
   Zap,
+  Loader2,
+  Sparkles,
 } from 'lucide-react';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import TasksManager from '../components/crm/TasksManager';
