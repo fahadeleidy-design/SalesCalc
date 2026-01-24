@@ -49,6 +49,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
     internal_notes: '',
     discount_percentage: 0,
     tax_percentage: 15,
+    payment_terms: 'net_30',
   });
 
   const [items, setItems] = useState<QuotationItem[]>([]);
@@ -110,6 +111,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         internal_notes: quotationData.internal_notes || '',
         discount_percentage: quotationData.discount_percentage,
         tax_percentage: quotationData.tax_percentage,
+        payment_terms: quotationData.payment_terms || 'net_30',
       });
 
       // Ensure boolean fields are properly typed and preserve product data
@@ -251,6 +253,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         tax_amount: totals.taxAmount,
         subtotal: totals.subtotal,
         total: totals.total,
+        payment_terms: formData.payment_terms,
         status: hasPendingPricing ? ('pending_pricing' as const) : ('draft' as const),
       };
 
@@ -536,6 +539,24 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                     onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Payment Terms
+                  </label>
+                  <select
+                    value={formData.payment_terms}
+                    onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  >
+                    <option value="advance">100% Advance</option>
+                    <option value="50_advance_50_delivery">50% Advance, 50% on Delivery</option>
+                    <option value="net_15">Net 15 Days</option>
+                    <option value="net_30">Net 30 Days</option>
+                    <option value="net_60">Net 60 Days</option>
+                    <option value="milestone">Milestone Based</option>
+                  </select>
                 </div>
 
                 <div>
@@ -972,22 +993,40 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   <button
                     key={product.id}
                     onClick={() => addProduct(product)}
-                    className="w-full text-left p-4 border border-slate-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
+                    className="w-full text-left p-4 border border-slate-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all flex items-start gap-4"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="font-medium text-slate-900">{product.name}</div>
-                        <div className="text-sm text-slate-500">SKU: {product.sku}</div>
-                        {product.description && (
-                          <div className="text-sm text-slate-600 mt-1">{product.description}</div>
-                        )}
-                      </div>
-                      <div className="text-right ml-4">
-                        <div className="font-semibold text-slate-900">
-                          {formatCurrency(product.unit_price)}
+                    <div className="w-16 h-16 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden border border-slate-200 flex items-center justify-center">
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Package className="w-8 h-8 text-slate-300" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="font-semibold text-slate-900 truncate">{product.name}</div>
+                          <div className="text-xs text-slate-500 font-mono">SKU: {product.sku}</div>
+                          {product.category && (
+                            <span className="inline-block mt-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">
+                              {product.category}
+                            </span>
+                          )}
                         </div>
-                        <div className="text-sm text-slate-500">per {product.unit}</div>
+                        <div className="text-right">
+                          <div className="font-bold text-slate-900">
+                            {formatCurrency(product.unit_price)}
+                          </div>
+                          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">
+                            per {product.unit}
+                          </div>
+                        </div>
                       </div>
+                      {product.description && (
+                        <div className="text-sm text-slate-600 mt-2 line-clamp-2 leading-snug">
+                          {product.description}
+                        </div>
+                      )}
                     </div>
                   </button>
                 ))}

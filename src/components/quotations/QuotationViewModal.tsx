@@ -19,6 +19,7 @@ type Quotation = Database['public']['Tables']['quotations']['Row'] & {
   quotation_items: (Database['public']['Tables']['quotation_items']['Row'] & {
     product?: Database['public']['Tables']['products']['Row'];
   })[];
+  payment_terms?: string;
 };
 
 type AuditLog = {
@@ -74,12 +75,12 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
         supabase
           .from('customers')
           .select('*')
-          .eq('id', quotationData.customer_id)
+          .eq('id', (quotationData as any).customer_id)
           .single(),
         supabase
           .from('profiles')
           .select('*')
-          .eq('id', quotationData.sales_rep_id)
+          .eq('id', (quotationData as any).sales_rep_id)
           .single(),
         supabase
           .from('quotation_items')
@@ -103,14 +104,13 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
         console.error('Items query error:', itemsResult.error);
       }
 
-      const fullQuotationData = {
-        ...quotationData,
-        customer: customerResult.data,
-        sales_rep: salesRepResult.data,
-        quotation_items: itemsResult.data || []
-      };
-
-      setQuotation(fullQuotationData as any);
+      setQuotation({
+        ...(quotationData as any),
+        customer: (customerResult.data as any) || {},
+        sales_rep: (salesRepResult.data as any) || {},
+        quotation_items: (itemsResult.data as any[]) || [],
+        payment_terms: (quotationData as any).payment_terms || undefined
+      });
 
       const { data: logs } = await supabase
         .from('audit_logs')
@@ -146,11 +146,13 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
         tax_percentage: quotation.tax_percentage,
         tax_amount: quotation.tax_amount,
         total: quotation.total,
-        notes: quotation.notes,
-        terms_and_conditions: quotation.terms_and_conditions,
+        notes: quotation.notes || undefined,
+        terms_and_conditions: quotation.terms_and_conditions || undefined,
         created_at: quotation.created_at,
-        valid_until: quotation.valid_until,
+        valid_until: quotation.valid_until || undefined,
         status: quotation.status,
+        title: quotation.title || undefined,
+        payment_terms: quotation.payment_terms || undefined,
       });
 
       // Show success message if popup opened successfully
@@ -170,7 +172,7 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
   const handleGenerateJobOrder = async () => {
     if (!quotation) return;
 
-    if (quotation.status !== 'won') {
+    if (quotation.status !== 'deal_won') {
       toast.error('Job orders can only be generated for won quotations');
       return;
     }
@@ -195,11 +197,11 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
 
       if (existingJobOrder) {
         // Job order already exists, use it
-        jobOrderId = existingJobOrder.id;
+        jobOrderId = (existingJobOrder as any).id;
         toast.success('Job Order already exists. Generating PDF...', { id: 'job-order' });
       } else {
         // Create new job order
-        const { data, error } = await supabase.rpc('create_job_order_from_quotation', {
+        const { data, error } = await (supabase as any).rpc('create_job_order_from_quotation', {
           p_quotation_id: quotation.id,
           p_priority: 'normal',
           p_due_date: null,
@@ -226,15 +228,15 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
 
       // Export to PDF
       const success = await exportJobOrderPDF({
-        job_order_number: jobOrder.job_order_number,
+        job_order_number: (jobOrder as any).job_order_number,
         quotation_number: quotation.quotation_number,
-        customer: jobOrder.customer,
-        items: jobOrder.job_order_items,
-        priority: jobOrder.priority,
-        due_date: jobOrder.due_date,
-        production_notes: jobOrder.production_notes,
-        generated_at: jobOrder.generated_at,
-        status: jobOrder.status,
+        customer: (jobOrder as any).customer,
+        items: (jobOrder as any).job_order_items,
+        priority: (jobOrder as any).priority,
+        due_date: (jobOrder as any).due_date,
+        production_notes: (jobOrder as any).production_notes,
+        generated_at: (jobOrder as any).generated_at,
+        status: (jobOrder as any).status,
       });
 
       if (success) {
@@ -420,28 +422,28 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
 
               {/* Won/Lost Buttons - Show for sales rep when quotation is approved */}
               {profile?.role === 'sales' &&
-               ['approved', 'finance_approved'].includes(quotation.status) &&
-               !['deal_won', 'deal_lost'].includes(quotation.status) && (
-                <>
-                  <button
-                    onClick={() => setDealOutcomeModal({ outcome: 'won' })}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all hover:shadow-lg"
-                  >
-                    <TrendingUp className="w-4 h-4" />
-                    <span>Won</span>
-                  </button>
-                  <button
-                    onClick={() => setDealOutcomeModal({ outcome: 'lost' })}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all hover:shadow-lg"
-                  >
-                    <TrendingDown className="w-4 h-4" />
-                    <span>Lost</span>
-                  </button>
-                </>
-              )}
+                ['approved', 'finance_approved'].includes(quotation.status) &&
+                !['deal_won', 'deal_lost'].includes(quotation.status) && (
+                  <>
+                    <button
+                      onClick={() => setDealOutcomeModal({ outcome: 'won' })}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Won</span>
+                    </button>
+                    <button
+                      onClick={() => setDealOutcomeModal({ outcome: 'lost' })}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+                    >
+                      <TrendingDown className="w-4 h-4" />
+                      <span>Lost</span>
+                    </button>
+                  </>
+                )}
 
               {/* Generate Job Order Button - Show for admin/engineering when quotation is won */}
-              {quotation.status === 'won' && ['admin', 'engineering', 'manager'].includes(profile?.role || '') && (
+              {quotation.status === 'deal_won' && ['admin', 'engineering', 'manager'].includes(profile?.role || '') && (
                 <button
                   onClick={handleGenerateJobOrder}
                   className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-all hover:shadow-lg border-2 border-blue-400"
@@ -557,53 +559,66 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                   </div>
                 </div>
               </div>
+
+              {/* New Payment Terms Card */}
+              {quotation.payment_terms && (
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Clock className="w-5 h-5 text-orange-600" />
+                    <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wide">Payment Terms</h3>
+                  </div>
+                  <p className="text-base font-bold text-orange-900 uppercase">
+                    {quotation.payment_terms.replace(/_/g, ' ')}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Line Items Table */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Package className="w-5 h-5 text-slate-700" />
-              <h3 className="text-lg font-bold text-slate-900">Line Items</h3>
-              <span className="ml-auto text-sm text-slate-500">{quotation.quotation_items.length} items</span>
-            </div>
+        {/* Line Items Table */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="w-5 h-5 text-slate-700" />
+            <h3 className="text-lg font-bold text-slate-900">Line Items</h3>
+            <span className="ml-auto text-sm text-slate-500">{quotation.quotation_items.length} items</span>
+          </div>
 
-            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                      <th className="text-left py-4 px-6 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Item Description
-                      </th>
-                      <th className="text-center py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Qty
-                      </th>
-                      <th className="text-right py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Unit Price
-                      </th>
-                      <th className="text-center py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Discount
-                      </th>
-                      <th className="text-right py-4 px-6 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        Line Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-100">
-                    {quotation.quotation_items.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        className={`hover:bg-slate-50 transition-colors ${
-                          (item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing'
-                            ? 'bg-blue-50/50'
-                            : ''
+          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+                    <th className="text-left py-4 px-6 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Item Description
+                    </th>
+                    <th className="text-center py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Qty
+                    </th>
+                    <th className="text-right py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Unit Price
+                    </th>
+                    <th className="text-center py-4 px-4 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Discount
+                    </th>
+                    <th className="text-right py-4 px-6 text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      Line Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-100">
+                  {quotation.quotation_items.map((item, index) => (
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-slate-50 transition-colors ${(item.is_custom || (item.modifications && item.modifications.trim().length > 0)) && quotation.status === 'pending_pricing'
+                        ? 'bg-blue-50/50'
+                        : ''
                         }`}
-                      >
-                        <td className="py-5 px-6">
-                          <div className="flex items-start gap-4">
-                            {!item.is_custom && item.product?.image_url &&
-                             (item.product.image_url.startsWith('http://') || item.product.image_url.startsWith('https://')) && (
+                    >
+                      <td className="py-5 px-6">
+                        <div className="flex items-start gap-4">
+                          {!item.is_custom && item.product?.image_url &&
+                            (item.product.image_url.startsWith('http://') || item.product.image_url.startsWith('https://')) && (
                               <img
                                 src={item.product.image_url}
                                 alt={item.product.name}
@@ -614,253 +629,241 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                                 }}
                               />
                             )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start gap-2 mb-1">
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs font-bold flex-shrink-0">
-                                  {index + 1}
-                                </span>
-                                <div className="flex-1">
-                                  <p className="font-semibold text-slate-900 text-base leading-snug">
-                                    {item.is_custom ? item.custom_description : item.product?.name}
-                                  </p>
-                                  {!item.is_custom && item.product?.sku && (
-                                    <p className="text-xs text-slate-500 mt-0.5">SKU: {item.product.sku}</p>
-                                  )}
-                                  {!item.is_custom && item.product?.description && (
-                                    <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">{item.product.description}</p>
-                                  )}
-                                  {item.is_custom && (
-                                    <span className="inline-flex items-center gap-1 mt-1.5 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md font-medium border border-amber-200">
-                                      <Tag className="w-3 h-3" />
-                                      Custom Item
-                                    </span>
-                                  )}
-                                  {item.custom_item_status === 'pending' && (
-                                    <span className="inline-flex items-center gap-1 mt-1.5 ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-md font-semibold">
-                                      <Clock className="w-3 h-3" />
-                                      Awaiting Pricing
-                                    </span>
-                                  )}
-                                </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start gap-2 mb-1">
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs font-bold flex-shrink-0">
+                                {index + 1}
+                              </span>
+                              <div className="flex-1">
+                                <p className="font-semibold text-slate-900 text-base leading-snug">
+                                  {item.is_custom ? item.custom_description : item.product?.name}
+                                </p>
+                                {!item.is_custom && item.product?.sku && (
+                                  <p className="text-xs text-slate-500 mt-0.5">SKU: {item.product.sku}</p>
+                                )}
+                                {!item.is_custom && item.product?.description && (
+                                  <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">{item.product.description}</p>
+                                )}
+                                {item.is_custom && (
+                                  <span className="inline-flex items-center gap-1 mt-1.5 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-md font-medium border border-amber-200">
+                                    <Tag className="w-3 h-3" />
+                                    Custom Item
+                                  </span>
+                                )}
+                                {item.custom_item_status === 'pending' && (
+                                  <span className="inline-flex items-center gap-1 mt-1.5 ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-md font-semibold">
+                                    <Clock className="w-3 h-3" />
+                                    Awaiting Pricing
+                                  </span>
+                                )}
                               </div>
-                              {item.modifications && (
-                                <div className="mt-2 text-xs text-slate-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                                  <span className="font-semibold text-amber-900">Modifications:</span>
-                                  <p className="mt-1">{item.modifications}</p>
-                                </div>
-                              )}
-                              {item.notes && (
-                                <p className="text-xs text-slate-600 mt-2 italic">{item.notes}</p>
-                              )}
                             </div>
+                            {item.modifications && (
+                              <div className="mt-2 text-xs text-slate-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                                <span className="font-semibold text-amber-900">Modifications:</span>
+                                <p className="mt-1">{item.modifications}</p>
+                              </div>
+                            )}
+                            {item.notes && (
+                              <p className="text-xs text-slate-600 mt-2 italic">{item.notes}</p>
+                            )}
                           </div>
-                        </td>
-                        <td className="py-5 px-4 text-center">
-                          <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 bg-slate-100 rounded-lg font-semibold text-slate-900">
-                            {item.quantity}
-                          </span>
-                        </td>
-                        <td className="py-5 px-4 text-right font-medium text-slate-900">
-                          {item.unit_price != null && !isNaN(Number(item.unit_price)) ? (
-                            formatCurrency(Number(item.unit_price))
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">
-                              <Clock className="w-3 h-3" />
-                              Pending
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-5 px-4 text-center">
-                          {(Number(item.discount_percentage) || 0) > 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-md text-xs font-semibold border border-red-200">
-                              <Percent className="w-3 h-3" />
-                              {Number(item.discount_percentage) || 0}%
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 text-xs">—</span>
-                          )}
-                        </td>
-                        <td className="py-5 px-6 text-right font-bold text-slate-900 text-lg">
-                          {item.line_total != null && !isNaN(Number(item.line_total)) && Number(item.line_total) > 0 ? (
-                            formatCurrency(Number(item.line_total))
-                          ) : item.unit_price == null || isNaN(Number(item.unit_price)) ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">
-                              <Clock className="w-3 h-3" />
-                              Awaiting Price
-                            </span>
-                          ) : (
-                            formatCurrency(0)
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Financial Summary */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 border border-slate-200">
-            <div className="max-w-md ml-auto space-y-3">
-              <div className="flex justify-between items-center py-2">
-                <span className="text-slate-600 font-medium">Subtotal</span>
-                <span className="font-semibold text-slate-900 text-lg">{formatCurrency(subtotal)}</span>
-              </div>
-
-              {quotation.discount_percentage > 0 && (
-                <div className="flex justify-between items-center py-2 border-t border-slate-200">
-                  <span className="text-slate-600 font-medium flex items-center gap-2">
-                    <Tag className="w-4 h-4" />
-                    Discount ({quotation.discount_percentage}%)
-                  </span>
-                  <span className="font-semibold text-red-600 text-lg">-{formatCurrency(discountAmount)}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center py-2 border-t border-slate-200">
-                <span className="text-slate-600 font-medium">Tax ({quotation.tax_percentage}%)</span>
-                <span className="font-semibold text-slate-900 text-lg">+{formatCurrency(taxAmount)}</span>
-              </div>
-
-              <div className="flex justify-between items-center py-4 border-t-2 border-slate-300">
-                <span className="font-bold text-slate-900 text-xl">Total Amount</span>
-                <span className="font-bold text-orange-600 text-3xl">{formatCurrency(total)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes, Terms & Audit Trail */}
-          <div className="space-y-6">
-            {quotation.notes && (
-              <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3">Customer Notes</h3>
-                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                  {quotation.notes}
-                </div>
-              </div>
-            )}
-
-            {quotation.terms_and_conditions && (
-              <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3">Terms & Conditions</h3>
-                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                  {quotation.terms_and_conditions}
-                </div>
-              </div>
-            )}
-
-            {quotation.internal_notes && (
-              <div className="bg-amber-50 rounded-xl p-6 border border-amber-200">
-                <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  Internal Notes (Not visible to customer)
-                </h3>
-                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                  {quotation.internal_notes}
-                </div>
-              </div>
-            )}
-
-            {(quotation.status === 'pending_pricing' || quotation.pricing_submitted_at || quotation.pricing_completed_at || auditLogs.length > 0) && (
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Activity Timeline</h3>
-                </div>
-
-                <div className="space-y-4">
-                  {(() => {
-                    const pendingItems = quotation.quotation_items.filter(
-                      item => item.custom_item_status === 'pending'
-                    );
-                    return pendingItems.length > 0 && (
-                      <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <Clock className="w-5 h-5 text-blue-600 mt-0.5 animate-pulse flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="font-semibold text-blue-900 mb-1">Awaiting Engineering Pricing</p>
-                          <p className="text-sm text-blue-700 mb-2">
-                            This quotation contains custom items or modifications requiring engineering review.
-                          </p>
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded-md">
-                            {pendingItems.length} items awaiting pricing
-                          </span>
                         </div>
-                      </div>
-                    );
-                  })()}
-
-                  {quotation.pricing_submitted_at && (
-                    <div className="flex items-start gap-3 text-sm">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
-                      <div>
-                        <p className="font-semibold text-slate-900">Pricing Requested</p>
-                        <p className="text-slate-600">{new Date(quotation.pricing_submitted_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {quotation.pricing_completed_at && (
-                    <div className="flex items-start gap-3 text-sm">
-                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
-                      <div>
-                        <p className="font-semibold text-slate-900">Pricing Completed</p>
-                        <p className="text-slate-600">{new Date(quotation.pricing_completed_at).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {auditLogs.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-purple-200">
-                      <p className="text-xs font-bold text-purple-900 uppercase tracking-wide mb-3">Audit Log</p>
-                      <div className="space-y-3">
-                        {auditLogs.map((log) => (
-                          <div key={log.id} className="flex items-start gap-3 text-sm">
-                            <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 flex-shrink-0"></div>
-                            <div className="flex-1">
-                              <p className="text-slate-900 font-medium">{log.event_description}</p>
-                              <p className="text-slate-600 text-xs mt-0.5">
-                                {log.performer?.full_name || 'System'} • {new Date(log.created_at).toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+                      </td>
+                      <td className="py-5 px-4 text-center">
+                        <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1.5 bg-slate-100 rounded-lg font-semibold text-slate-900">
+                          {item.quantity}
+                        </span>
+                      </td>
+                      <td className="py-5 px-4 text-right font-medium text-slate-900">
+                        {item.unit_price != null && !isNaN(Number(item.unit_price)) ? (
+                          formatCurrency(Number(item.unit_price))
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">
+                            <Clock className="w-3 h-3" />
+                            Pending
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-5 px-4 text-center">
+                        {(Number(item.discount_percentage) || 0) > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-md text-xs font-semibold border border-red-200">
+                            <Percent className="w-3 h-3" />
+                            {Number(item.discount_percentage) || 0}%
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">—</span>
+                        )}
+                      </td>
+                      <td className="py-5 px-6 text-right font-bold text-slate-900 text-lg">
+                        {item.line_total != null && !isNaN(Number(item.line_total)) && Number(item.line_total) > 0 ? (
+                          formatCurrency(Number(item.line_total))
+                        ) : item.unit_price == null || isNaN(Number(item.unit_price)) ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">
+                            <Clock className="w-3 h-3" />
+                            Awaiting Price
+                          </span>
+                        ) : (
+                          formatCurrency(0)
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="bg-slate-50 border-t border-slate-200 px-8 py-4 rounded-b-2xl flex items-center justify-between">
-          <p className="text-xs text-slate-500">
-            Last updated: {new Date(quotation.updated_at).toLocaleString()}
-          </p>
-          <button
-            onClick={onClose}
-            className="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition-colors"
-          >
-            Close
-          </button>
+        {/* Financial Summary */}
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 border border-slate-200">
+          <div className="max-w-md ml-auto space-y-3">
+            <div className="flex justify-between items-center py-2">
+              <span className="text-slate-600 font-medium">Subtotal</span>
+              <span className="font-semibold text-slate-900 text-lg">{formatCurrency(subtotal)}</span>
+            </div>
+
+            {quotation.discount_percentage > 0 && (
+              <div className="flex justify-between items-center py-2 border-t border-slate-200">
+                <span className="text-slate-600 font-medium flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Discount ({quotation.discount_percentage}%)
+                </span>
+                <span className="font-semibold text-red-600 text-lg">-{formatCurrency(discountAmount)}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center py-2 border-t border-slate-200">
+              <span className="text-slate-600 font-medium">Tax ({quotation.tax_percentage}%)</span>
+              <span className="font-semibold text-slate-900 text-lg">+{formatCurrency(taxAmount)}</span>
+            </div>
+
+            <div className="flex justify-between items-center py-4 border-t-2 border-slate-300">
+              <span className="font-bold text-slate-900 text-xl">Total Amount</span>
+              <span className="font-bold text-orange-600 text-3xl">{formatCurrency(total)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Notes, Terms & Audit Trail */}
+        <div className="space-y-6">
+          {quotation.notes && (
+            <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+              <h3 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3">Customer Notes</h3>
+              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {quotation.notes}
+              </div>
+            </div>
+          )}
+
+          {quotation.terms_and_conditions && (
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide mb-3">Terms & Conditions</h3>
+              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {quotation.terms_and_conditions}
+              </div>
+            </div>
+          )}
+
+          {quotation.internal_notes && (
+            <div className="bg-amber-50 rounded-xl p-6 border border-amber-200">
+              <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Internal Notes (Not visible to customer)
+              </h3>
+              <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                {quotation.internal_notes}
+              </div>
+            </div>
+          )}
+
+          {(quotation.status === 'pending_pricing' || quotation.pricing_submitted_at || quotation.pricing_completed_at || auditLogs.length > 0) && (
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="w-5 h-5 text-purple-600" />
+                <h3 className="text-sm font-bold text-purple-900 uppercase tracking-wide">Activity Timeline</h3>
+              </div>
+
+              <div className="space-y-4">
+                {(() => {
+                  const pendingItems = quotation.quotation_items.filter(
+                    item => item.custom_item_status === 'pending'
+                  );
+                  return pendingItems.length > 0 && (
+                    <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <Clock className="w-5 h-5 text-blue-600 mt-0.5 animate-pulse flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-blue-900 mb-1">Awaiting Engineering Pricing</p>
+                        <p className="text-sm text-blue-700 mb-2">
+                          This quotation contains custom items or modifications requiring engineering review.
+                        </p>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded-md">
+                          {pendingItems.length} items awaiting pricing
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {quotation.pricing_submitted_at && (
+                  <div className="flex items-start gap-3 text-sm">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-semibold text-slate-900">Pricing Requested</p>
+                      <p className="text-slate-600">{new Date(quotation.pricing_submitted_at).toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
+
+                {quotation.pricing_completed_at && (
+                  <div className="flex items-start gap-3 text-sm">
+                    <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                    <div>
+                      <p className="font-semibold text-slate-900">Pricing Completed</p>
+                      <p className="text-slate-600">{new Date(quotation.pricing_completed_at).toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
+
+                {auditLogs.length > 0 && (
+                  <div className="mt-6 pt-4 border-t border-purple-200">
+                    <p className="text-xs font-bold text-purple-900 uppercase tracking-wide mb-3">Audit Log</p>
+                    <div className="space-y-3">
+                      {auditLogs.map((log) => (
+                        <div key={log.id} className="flex items-start gap-3 text-sm">
+                          <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <p className="text-slate-900 font-medium">{log.event_description}</p>
+                            <p className="text-slate-600 text-xs mt-0.5">
+                              {log.performer?.full_name || 'System'} • {new Date(log.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Deal Outcome Modal */}
-      {dealOutcomeModal && quotation && (
-        <DealOutcomeModal
-          quotationId={quotation.id}
-          quotationNumber={quotation.quotation_number}
-          outcome={dealOutcomeModal.outcome}
-          onClose={() => setDealOutcomeModal(null)}
-          onSuccess={() => {
-            setDealOutcomeModal(null);
-            loadQuotation();
-          }}
-        />
-      )}
-    </div>
+      {
+        dealOutcomeModal && quotation && (
+          <DealOutcomeModal
+            quotationId={quotation.id}
+            quotationNumber={quotation.quotation_number}
+            outcome={dealOutcomeModal.outcome}
+            onClose={() => setDealOutcomeModal(null)}
+            onSuccess={() => {
+              setDealOutcomeModal(null);
+              loadQuotation();
+            }}
+          />
+        )
+      }
+    </div >
   );
 }

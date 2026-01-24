@@ -15,6 +15,8 @@ interface QuotationData {
   created_at: string;
   valid_until?: string;
   status: string;
+  title?: string;
+  payment_terms?: string;
 }
 
 export const exportProfessionalQuotationPDF = async (quotation: QuotationData) => {
@@ -75,11 +77,13 @@ Alternatively:
 
 const getSystemSettings = async () => {
   try {
-    const { data, error } = await supabase
+    const query = supabase
       .from('system_settings')
       .select('*')
-      .limit(1)
-      .single();
+      .limit(1) as any;
+
+    const { data: results, error } = await query;
+    const data = results?.[0];
 
     if (error) throw error;
 
@@ -149,17 +153,24 @@ const generateProfessionalQuotationHTML = (
 
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          padding: 48px;
+          padding: 40px;
           color: #1e293b;
-          line-height: 1.6;
+          line-height: 1.5;
           background: #ffffff;
-          font-size: 14px;
+          font-size: 12px;
         }
 
         .page-wrapper {
-          max-width: 1200px;
+          max-width: 1000px;
           margin: 0 auto;
-          background: white;
+        }
+
+        /* Top Accent Bar */
+        .accent-bar {
+          height: 8px;
+          background: linear-gradient(to right, #ea580c, #f97316);
+          border-radius: 4px;
+          margin-bottom: 30px;
         }
 
         /* Header Section */
@@ -167,602 +178,385 @@ const generateProfessionalQuotationHTML = (
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 48px;
-          padding-bottom: 24px;
-          border-bottom: 3px solid #ea580c;
+          margin-bottom: 40px;
         }
 
-        .company-section {
+        .company-info {
           flex: 1;
         }
 
-        .company-logo {
-          max-width: 180px;
-          max-height: 80px;
-          margin-bottom: 16px;
-          object-fit: contain;
+        .logo {
+          height: 60px;
+          margin-bottom: 15px;
         }
 
         .company-name {
-          color: #ea580c;
-          font-size: 32px;
+          font-size: 24px;
           font-weight: 700;
-          margin-bottom: 8px;
-          letter-spacing: -0.5px;
-        }
-
-        .company-tagline {
-          color: #64748b;
-          font-size: 14px;
-          margin-bottom: 12px;
-        }
-
-        .company-contact {
-          color: #475569;
-          font-size: 13px;
-          line-height: 1.8;
-        }
-
-        .company-contact p {
-          margin-bottom: 4px;
-        }
-
-        /* Quotation Info */
-        .quotation-info {
-          text-align: right;
-          flex-shrink: 0;
-          min-width: 300px;
-        }
-
-        .quotation-title {
           color: #0f172a;
-          font-size: 36px;
-          font-weight: 700;
-          margin-bottom: 16px;
-          letter-spacing: -0.5px;
+          margin-bottom: 5px;
         }
 
-        .quotation-meta {
+        .company-meta {
+          color: #64748b;
+          font-size: 11px;
+          line-height: 1.6;
+        }
+
+        .quote-header {
+          text-align: right;
+        }
+
+        .quote-title {
+          font-size: 32px;
+          font-weight: 800;
+          color: #ea580c;
+          letter-spacing: -1px;
+          margin-bottom: 5px;
+        }
+
+        .quote-arabic-title {
+          font-size: 18px;
+          color: #94a3b8;
+          font-weight: 500;
+          margin-bottom: 15px;
+        }
+
+        .quote-meta-box {
           background: #f8fafc;
-          padding: 16px;
-          border-radius: 8px;
           border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 15px;
+          min-width: 250px;
         }
 
-        .quotation-meta-row {
+        .meta-row {
           display: flex;
           justify-content: space-between;
-          padding: 6px 0;
-          font-size: 13px;
+          margin-bottom: 8px;
         }
 
-        .quotation-meta-row .label {
+        .meta-row:last-child { margin-bottom: 0; }
+
+        .meta-label {
           color: #64748b;
-          font-weight: 500;
+          font-weight: 600;
         }
 
-        .quotation-meta-row .value {
+        .meta-value {
           color: #0f172a;
-          font-weight: 600;
+          font-weight: 700;
         }
 
-        .status-badge {
-          display: inline-block;
-          padding: 6px 12px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .status-draft { background: #f1f5f9; color: #475569; }
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-approved { background: #d1fae5; color: #065f46; }
-        .status-rejected { background: #fee2e2; color: #991b1b; }
-
-        /* Customer Information */
-        .customer-section {
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          padding: 24px;
-          border-radius: 12px;
-          margin-bottom: 32px;
-          border: 1px solid #e2e8f0;
-        }
-
-        .customer-section h3 {
-          color: #0f172a;
-          font-size: 16px;
-          font-weight: 600;
-          margin-bottom: 16px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .customer-details {
+        /* Address Section */
+        .address-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 12px;
+          gap: 40px;
+          margin-bottom: 40px;
         }
 
-        .customer-detail {
-          color: #475569;
-          font-size: 14px;
+        .address-card {
+          padding: 20px;
+          background: #f1f5f9;
+          border-radius: 12px;
+          border-left: 4px solid #ea580c;
         }
 
-        .customer-detail strong {
+        .address-label {
+          font-size: 10px;
+          font-weight: 800;
+          color: #ea580c;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 10px;
+          display: flex;
+          justify-content: space-between;
+        }
+
+        .address-name {
+          font-size: 16px;
+          font-weight: 700;
           color: #0f172a;
-          display: block;
-          margin-bottom: 4px;
-          font-weight: 600;
+          margin-bottom: 5px;
         }
 
-        /* Items Table */
+        .address-details {
+          font-size: 11px;
+          color: #475569;
+          line-height: 1.6;
+        }
+
+        /* Table Section */
         .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 32px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          border-radius: 8px;
-          overflow: hidden;
-        }
-
-        .items-table thead {
-          background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
-          color: white;
+          margin-bottom: 30px;
         }
 
         .items-table th {
-          padding: 16px;
+          background: #0f172a;
+          color: white;
+          padding: 12px 15px;
           text-align: left;
-          font-weight: 600;
-          font-size: 13px;
+          font-size: 10px;
+          font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
 
+        .items-table th.right { text-align: right; }
+        .items-table th.center { text-align: center; }
+
         .items-table td {
-          padding: 16px;
+          padding: 15px;
           border-bottom: 1px solid #e2e8f0;
-          color: #475569;
-          font-size: 14px;
+          vertical-align: top;
         }
 
-        .items-table tbody tr {
-          background: white;
-          transition: background 0.2s;
-        }
-
-        .items-table tbody tr:hover {
-          background: #f8fafc;
-        }
-
-        .items-table tbody tr:last-child td {
-          border-bottom: none;
-        }
-
-        .text-right {
-          text-align: right;
-        }
-
-        .text-center {
-          text-align: center;
-        }
+        .item-row:nth-child(even) { background: #fafafa; }
 
         .item-name {
-          font-weight: 600;
+          font-weight: 700;
           color: #0f172a;
           margin-bottom: 4px;
-          font-size: 14px;
         }
 
-        .item-description {
+        .item-spec {
+          font-size: 10px;
           color: #64748b;
-          font-size: 12px;
-          line-height: 1.5;
-          margin-top: 4px;
-        }
-
-        /* Custom sections styling */
-        .custom-section {
-          margin-top: 8px;
-          padding: 8px 10px;
-          border-radius: 6px;
-          border-left: 3px solid;
-        }
-
-        .section-label {
-          font-weight: 600;
-          font-size: 11px;
-          margin-bottom: 4px;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-        }
-
-        .section-content {
-          font-size: 12px;
-          line-height: 1.5;
+          margin-top: 5px;
+          padding: 5px 8px;
+          background: #f8fafc;
+          border-radius: 4px;
+          border: 1px solid #f1f5f9;
         }
 
         /* Summary Section */
-        .summary-section {
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: 32px;
-        }
-
-        .summary-box {
-          width: 400px;
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          padding: 24px;
-          border-radius: 12px;
-          border: 2px solid #e2e8f0;
-        }
-
-        .summary-row {
+        .summary-container {
           display: flex;
           justify-content: space-between;
-          padding: 12px 0;
-          font-size: 15px;
+          margin-bottom: 40px;
+        }
+
+        .payment-terms {
+          flex: 1;
+          margin-right: 40px;
+          padding: 20px;
+          background: #f8fafc;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .payment-title {
+          font-size: 11px;
+          font-weight: 800;
+          color: #0f172a;
+          text-transform: uppercase;
+          margin-bottom: 10px;
+          display: flex;
+          justify-content: space-between;
+        }
+
+        .payment-text {
+          font-size: 11px;
           color: #475569;
         }
 
-        .summary-row .label {
-          font-weight: 500;
+        .totals-box {
+          width: 320px;
         }
 
-        .summary-row .amount {
-          font-weight: 600;
-          color: #0f172a;
+        .total-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          font-size: 13px;
         }
 
-        .summary-row.discount .amount {
-          color: #dc2626;
-        }
-
-        .summary-row.total {
-          border-top: 3px solid #ea580c;
-          margin-top: 12px;
-          padding-top: 16px;
-          font-size: 20px;
-          font-weight: 700;
-        }
-
-        .summary-row.total .label {
-          color: #0f172a;
-        }
-
-        .summary-row.total .amount {
+        .total-row.grand-total {
+          margin-top: 10px;
+          padding-top: 15px;
+          border-top: 2px solid #0f172a;
+          font-size: 18px;
+          font-weight: 800;
           color: #ea580c;
         }
 
-        /* Notes Section */
-        .notes-section {
-          background: #fef3c7;
-          padding: 24px;
-          border-left: 4px solid #f59e0b;
-          border-radius: 8px;
-          margin-bottom: 32px;
+        /* Signature Section */
+        .signature-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 60px;
+          margin-top: 60px;
+          page-break-inside: avoid;
         }
 
-        .notes-section h3 {
-          color: #92400e;
-          font-size: 16px;
+        .signature-line {
+          border-top: 1px solid #cbd5e1;
+          margin-top: 50px;
+          padding-top: 10px;
+          text-align: center;
+          font-size: 11px;
           font-weight: 600;
-          margin-bottom: 12px;
-        }
-
-        .notes-section p {
-          color: #78350f;
-          font-size: 14px;
-          line-height: 1.7;
-        }
-
-        /* Terms Section */
-        .terms-section {
-          background: #f8fafc;
-          padding: 24px;
-          border-radius: 8px;
-          border: 1px solid #e2e8f0;
-          margin-bottom: 32px;
-        }
-
-        .terms-section h3 {
-          color: #0f172a;
-          font-size: 16px;
-          font-weight: 600;
-          margin-bottom: 12px;
-        }
-
-        .terms-section p {
-          color: #475569;
-          font-size: 13px;
-          line-height: 1.8;
-          white-space: pre-line;
+          color: #64748b;
         }
 
         /* Footer */
         .footer {
-          margin-top: 48px;
-          padding-top: 24px;
-          border-top: 2px solid #e2e8f0;
+          margin-top: 50px;
+          padding-top: 20px;
+          border-top: 1px solid #f1f5f9;
           text-align: center;
+          color: #94a3b8;
+          font-size: 10px;
         }
 
-        .footer-message {
-          color: #ea580c;
-          font-size: 18px;
-          font-weight: 600;
-          margin-bottom: 8px;
-        }
-
-        .footer-details {
-          color: #64748b;
-          font-size: 12px;
-          line-height: 1.6;
-        }
-
-        /* Print Styles */
         @media print {
-          body {
-            padding: 20px;
-          }
-
-          .no-print {
-            display: none !important;
-          }
-
-          .items-table {
-            box-shadow: none;
-          }
-
-          .page-wrapper {
-            max-width: 100%;
-          }
-
-          .header {
-            page-break-after: avoid;
-          }
-
-          .items-table thead {
-            display: table-header-group;
-          }
-
-          .items-table tbody tr {
-            page-break-inside: avoid;
-          }
-        }
-
-        @page {
-          margin: 1.5cm;
-          size: A4;
+          body { padding: 0; }
+          .page-wrapper { width: 100%; }
         }
       </style>
     </head>
     <body>
       <div class="page-wrapper">
-        <!-- Header -->
+        <div class="accent-bar"></div>
+
         <div class="header">
-          <div class="company-section">
-            <img src="${settings.company_logo_url}" alt="${settings.company_name}" class="company-logo" />
-            <h1 class="company-name">${settings.company_name}</h1>
-            <p class="company-tagline">Professional Business Solutions</p>
-            <div class="company-contact">
-              <p><strong>Email:</strong> info@specialoffices.com</p>
-              <p><strong>Phone:</strong> +966 11 123 4567</p>
-              <p><strong>Address:</strong> Riyadh, Saudi Arabia</p>
+          <div class="company-info">
+            <img src="${settings.company_logo_url}" alt="Logo" class="logo">
+            <div class="company-name">${settings.company_name}</div>
+            <div class="company-meta">
+               Riyadh, Kingdom of Saudi Arabia<br>
+              T: +966 11 123 4567 | E: sales@specialoffices.com<br>
+              VAT ID: 310123456700003
             </div>
           </div>
-
-          <div class="quotation-info">
-            <h2 class="quotation-title">QUOTATION</h2>
-            <div class="quotation-meta">
-              <div class="quotation-meta-row">
-                <span class="label">Number:</span>
-                <span class="value">${quotation_number}</span>
+          <div class="quote-header">
+            <div class="quote-title">QUOTATION</div>
+            <div class="quote-arabic-title">عرض سعر</div>
+            <div class="quote-meta-box">
+              <div class="meta-row">
+                <span class="meta-label">Quote # / الرقم</span>
+                <span class="meta-value">${quotation_number}</span>
               </div>
-              <div class="quotation-meta-row">
-                <span class="label">Date:</span>
-                <span class="value">${formatDate(created_at)}</span>
+              <div class="meta-row">
+                <span class="meta-label">Date / التاريخ</span>
+                <span class="meta-value">${formatDate(created_at)}</span>
               </div>
-              <div class="quotation-meta-row">
-                <span class="label">Valid Until:</span>
-                <span class="value">${formatDate(validUntilDate)}</span>
-              </div>
-              <div class="quotation-meta-row">
-                <span class="label">Status:</span>
-                <span class="value">
-                  <span class="status-badge status-${status}">${status.toUpperCase()}</span>
-                </span>
+              <div class="meta-row">
+                <span class="meta-label">Valid Until / صالح لغاية</span>
+                <span class="meta-value">${formatDate(validUntilDate)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Customer Information -->
-        <div class="customer-section">
-          <h3>Bill To:</h3>
-          <div class="customer-details">
-            <div class="customer-detail">
-              <strong>Company:</strong>
-              ${customer?.company_name || 'N/A'}
+        <div class="address-grid">
+          <div class="address-card">
+            <div class="address-label">
+              <span>Bill To</span>
+              <span>فاتورة إلى</span>
             </div>
-            <div class="customer-detail">
-              <strong>Contact Person:</strong>
-              ${customer?.contact_person || customer?.contact_name || 'N/A'}
+            <div class="address-name">${customer?.company_name || 'Valued Customer'}</div>
+            <div class="address-details">
+              Attn: ${customer?.contact_person || 'N/A'}<br>
+              ${customer?.address || ''}<br>
+              ${customer?.phone ? `T: ${customer.phone}` : ''}<br>
+              ${customer?.email ? `E: ${customer.email}` : ''}
             </div>
-            <div class="customer-detail">
-              <strong>Email:</strong>
-              ${customer?.email || 'N/A'}
+          </div>
+          <div class="address-card" style="border-left-color: #0f172a;">
+            <div class="address-label" style="color: #0f172a;">
+              <span>Project Details</span>
+              <span>تفاصيل المشروع</span>
             </div>
-            <div class="customer-detail">
-              <strong>Phone:</strong>
-              ${customer?.phone || 'N/A'}
+            <div class="address-name">${quotation.title || 'General Furniture Supply'}</div>
+            <div class="address-details">
+              Status: ${status.toUpperCase()}<br>
+              Prepared By: Special Offices Sales Team
             </div>
-            ${
-              customer?.address
-                ? `
-            <div class="customer-detail" style="grid-column: 1 / -1;">
-              <strong>Address:</strong>
-              ${customer.address}
-            </div>
-            `
-                : ''
-            }
           </div>
         </div>
 
-        <!-- Items Table -->
         <table class="items-table">
           <thead>
             <tr>
-              <th style="width: 5%;">#</th>
-              <th style="width: 35%;">Item Description</th>
-              <th class="text-center" style="width: 10%;">Quantity</th>
-              <th class="text-right" style="width: 15%;">Unit Price</th>
-              <th class="text-center" style="width: 10%;">Discount</th>
-              <th class="text-right" style="width: 15%;">Subtotal</th>
-              <th class="text-right" style="width: 15%;">Total</th>
+              <th style="width: 55px">#</th>
+              <th>Item & Description / الصنف والبيان</th>
+              <th class="center" style="width: 80px">Qty / الكمية</th>
+              <th class="right" style="width: 120px">Unit Price / السعر</th>
+              <th class="right" style="width: 120px">Total / الإجمالي</th>
             </tr>
           </thead>
           <tbody>
-            ${(items || [])
-              .map(
-                (item: any, index: number) => {
-                  // Determine if this is a custom item or has modifications
-                  const isCustomItem = item.is_custom === true;
-                  const hasModifications = item.modifications && item.modifications.trim().length > 0;
-                  const hasNotes = item.notes && item.notes.trim().length > 0;
-
-                  // Build description content
-                  let descriptionHTML = '';
-
-                  // Item name/title
-                  const itemTitle = isCustomItem
-                    ? (item.custom_description || 'Custom Item')
-                    : (item.product?.name || item.item_description || 'Product');
-
-                  descriptionHTML += `<div class="item-name">${itemTitle}</div>`;
-
-                  // Custom item badge
-                  if (isCustomItem) {
-                    descriptionHTML += `<div style="display: inline-block; background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-top: 4px; border: 1px solid #fcd34d;">⭐ CUSTOM ITEM</div>`;
-                  }
-
-                  // Product description (for standard products)
-                  if (!isCustomItem && item.product?.description) {
-                    descriptionHTML += `<div class="item-description">${item.product.description}</div>`;
-                  }
-
-                  // Modifications (for standard products with modifications)
-                  if (hasModifications) {
-                    descriptionHTML += `
-                      <div style="background: #fef3c7; padding: 8px 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid #f59e0b;">
-                        <div style="color: #92400e; font-weight: 600; font-size: 11px; margin-bottom: 4px;">🔧 MODIFICATIONS REQUESTED:</div>
-                        <div style="color: #78350f; font-size: 12px; line-height: 1.5;">${item.modifications.replace(/\n/g, '<br>')}</div>
-                      </div>
-                    `;
-                  }
-
-                  // Custom item specifications
-                  if (isCustomItem && item.specifications) {
-                    const specs = typeof item.specifications === 'string'
-                      ? item.specifications
-                      : JSON.stringify(item.specifications, null, 2);
-
-                    if (specs && specs !== '{}' && specs.trim().length > 0) {
-                      descriptionHTML += `
-                        <div style="background: #e0f2fe; padding: 8px 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid #0ea5e9;">
-                          <div style="color: #075985; font-weight: 600; font-size: 11px; margin-bottom: 4px;">📋 SPECIFICATIONS:</div>
-                          <div style="color: #0c4a6e; font-size: 12px; line-height: 1.5; white-space: pre-wrap;">${specs}</div>
-                        </div>
-                      `;
-                    }
-                  }
-
-                  // Item notes
-                  if (hasNotes) {
-                    descriptionHTML += `
-                      <div style="background: #f3f4f6; padding: 8px 10px; border-radius: 6px; margin-top: 8px; border-left: 3px solid #9ca3af;">
-                        <div style="color: #4b5563; font-weight: 600; font-size: 11px; margin-bottom: 4px;">📝 NOTES:</div>
-                        <div style="color: #374151; font-size: 12px; line-height: 1.5;">${item.notes.replace(/\n/g, '<br>')}</div>
-                      </div>
-                    `;
-                  }
-
-                  return `
-              <tr>
-                <td class="text-center">${index + 1}</td>
+            ${(items || []).map((item: any, idx: number) => `
+              <tr class="item-row">
+                <td class="center">${idx + 1}</td>
                 <td>
-                  ${descriptionHTML}
+                  <div class="item-name">${item.is_custom ? item.custom_description : (item.product?.name || 'Item')}</div>
+                  <div style="font-size: 10px; color: #64748b;">${item.product?.sku || 'N/A'}</div>
+                  ${item.modifications ? `<div class="item-spec"><strong>Modifications:</strong> ${item.modifications}</div>` : ''}
+                  ${item.notes ? `<div style="font-size: 10px; color: #94a3b8; margin-top: 3px; font-style: italic;">Note: ${item.notes}</div>` : ''}
                 </td>
-                <td class="text-center">${item.quantity}</td>
-                <td class="text-right">${item.unit_price != null && !isNaN(Number(item.unit_price)) ? `SAR ${formatNumber(item.unit_price)}` : '<span style="color: #2563eb; font-size: 11px; font-weight: 600;">Pending</span>'}</td>
-                <td class="text-center">${item.discount_percentage || 0}%</td>
-                <td class="text-right">${item.unit_price != null ? `SAR ${formatNumber(item.quantity * item.unit_price)}` : '<span style="color: #2563eb; font-size: 11px;">Pending</span>'}</td>
-                <td class="text-right"><strong>${item.line_total != null && !isNaN(Number(item.line_total)) ? `SAR ${formatNumber(item.line_total)}` : '<span style="color: #2563eb; font-size: 11px;">Awaiting Price</span>'}</strong></td>
+                <td class="center">${item.quantity}</td>
+                <td class="right">${item.unit_price ? `SAR ${formatNumber(item.unit_price)}` : 'Pending'}</td>
+                <td class="right"><strong>${item.line_total ? `SAR ${formatNumber(item.line_total)}` : 'Awaiting'}</strong></td>
               </tr>
-            `;
-                }
-              )
-              .join('')}
+            `).join('')}
           </tbody>
         </table>
 
-        <!-- Summary -->
-        <div class="summary-section">
-          <div class="summary-box">
-            <div class="summary-row">
-              <span class="label">Subtotal:</span>
-              <span class="amount">SAR ${formatNumber(subtotal || 0)}</span>
+        <div class="summary-container">
+          <div class="payment-terms">
+            <div class="payment-title">
+              <span>Terms & Conditions</span>
+              <span>الشروط والأحكام</span>
             </div>
-            ${
-              discount_percentage && discount_amount
-                ? `
-            <div class="summary-row discount">
-              <span class="label">Discount (${discount_percentage}%):</span>
-              <span class="amount">- SAR ${formatNumber(discount_amount)}</span>
+            <div class="payment-text">
+              ${terms.replace(/\n/g, '<br>')}
+              ${notes ? `<br><br><strong>Note:</strong> ${notes}` : ''}
             </div>
-            `
-                : ''
-            }
-            <div class="summary-row">
-              <span class="label">Tax (${tax_percentage || 15}%):</span>
-              <span class="amount">SAR ${formatNumber(tax_amount || 0)}</span>
+          </div>
+          <div class="totals-box">
+            <div class="total-row">
+              <span class="meta-label">Subtotal / الإجمالي الفرعي</span>
+              <span class="meta-value">SAR ${formatNumber(subtotal)}</span>
             </div>
-            <div class="summary-row total">
-              <span class="label">Total Amount:</span>
-              <span class="amount">SAR ${formatNumber(total || 0)}</span>
+            ${discount_percentage ? `
+              <div class="total-row" style="color: #dc2626;">
+                <span class="meta-label">Discount (${discount_percentage}%) / الخصم</span>
+                <span class="meta-value">- SAR ${formatNumber(discount_amount || 0)}</span>
+              </div>
+            ` : ''}
+            <div class="total-row">
+              <span class="meta-label">VAT (${tax_percentage}%) / الضريبة</span>
+              <span class="meta-value">SAR ${formatNumber(tax_amount || 0)}</span>
+            </div>
+            <div class="total-row grand-total">
+              <span>Total / الإجمالي</span>
+              <span>SAR ${formatNumber(total)}</span>
             </div>
           </div>
         </div>
 
-        ${
-          notes
-            ? `
-        <!-- Notes -->
-        <div class="notes-section">
-          <h3>Special Notes:</h3>
-          <p>${notes}</p>
-        </div>
-        `
-            : ''
-        }
-
-        <!-- Terms and Conditions -->
-        <div class="terms-section">
-          <h3>Terms & Conditions:</h3>
-          <p>${terms}</p>
+        <div class="signature-grid">
+          <div>
+            <div class="signature-line">
+              Authorised Signature / التوقيع المعتمد<br>
+              <strong>Special Offices Furniture Co.</strong>
+            </div>
+          </div>
+          <div>
+            <div class="signature-line" style="border-top-style: dashed;">
+              Customer Acceptance / قبول العميل<br>
+              (Sign & Rubber Stamp)
+            </div>
+          </div>
         </div>
 
-        <!-- Footer -->
         <div class="footer">
-          <p class="footer-message">Thank you for your business!</p>
-          <div class="footer-details">
-            <p>This quotation is computer-generated and valid for 30 days from the date of issue.</p>
-            <p>For any questions, please contact us at info@specialoffices.com</p>
-            <p>© ${new Date().getFullYear()} ${settings.company_name}. All rights reserved.</p>
-          </div>
+          Digitally generated by SalesCalc CRM. Valid for 30 days. All prices in Saudi Riyals (SAR).
         </div>
       </div>
     </body>
