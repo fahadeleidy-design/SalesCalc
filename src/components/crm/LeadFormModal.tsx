@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useSalesTeam } from '../../hooks/useSalesTeam';
-import { X, Building2, Users, MapPin, Target, Briefcase, DollarSign, Calendar } from 'lucide-react';
+import { X, Building2, Users, MapPin, Target, Briefcase, DollarSign, Calendar, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Lead {
@@ -213,11 +213,10 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, lead_type: 'direct_sales' })}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    formData.lead_type === 'direct_sales'
-                      ? 'border-blue-600 bg-blue-50 text-blue-900'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${formData.lead_type === 'direct_sales'
+                    ? 'border-blue-600 bg-blue-50 text-blue-900'
+                    : 'border-slate-200 hover:border-slate-300'
+                    }`}
                 >
                   <Users className="h-5 w-5 mx-auto mb-2" />
                   <div className="text-sm font-semibold">Direct Sales</div>
@@ -226,11 +225,10 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, lead_type: 'partners' })}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    formData.lead_type === 'partners'
-                      ? 'border-blue-600 bg-blue-50 text-blue-900'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${formData.lead_type === 'partners'
+                    ? 'border-blue-600 bg-blue-50 text-blue-900'
+                    : 'border-slate-200 hover:border-slate-300'
+                    }`}
                 >
                   <Briefcase className="h-5 w-5 mx-auto mb-2" />
                   <div className="text-sm font-semibold">Partners</div>
@@ -239,11 +237,10 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, lead_type: 'distribution' })}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    formData.lead_type === 'distribution'
-                      ? 'border-blue-600 bg-blue-50 text-blue-900'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
+                  className={`p-4 rounded-lg border-2 transition-all ${formData.lead_type === 'distribution'
+                    ? 'border-blue-600 bg-blue-50 text-blue-900'
+                    : 'border-slate-200 hover:border-slate-300'
+                    }`}
                 >
                   <Building2 className="h-5 w-5 mx-auto mb-2" />
                   <div className="text-sm font-semibold">Distribution</div>
@@ -294,7 +291,35 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Website</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-slate-700">Website</label>
+                    {formData.website && formData.website.includes('.') && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const domain = formData.website.replace('https://', '').replace('http://', '').split('/')[0];
+                          const toastId = toast.loading('Enriching lead data...');
+                          try {
+                            const { enrichCompanyByDomain } = await import('../../lib/apolloService');
+                            const data = await enrichCompanyByDomain(domain);
+                            setFormData(prev => ({
+                              ...prev,
+                              company_name: prev.company_name || data.name,
+                              industry: prev.industry || '', // Map if possible
+                              notes: (prev.notes || '') + '\n\n' + data.description + (data.linkedin_url ? `\nLinkedIn: ${data.linkedin_url}` : '')
+                            }));
+                            toast.success('Lead enriched!', { id: toastId });
+                          } catch (err) {
+                            toast.error('Enrichment failed', { id: toastId });
+                          }
+                        }}
+                        className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 bg-indigo-50 px-2 py-0.5 rounded-full transition-all active:scale-95"
+                      >
+                        <Zap className="h-2.5 w-2.5" />
+                        ENRICH
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={formData.website}
