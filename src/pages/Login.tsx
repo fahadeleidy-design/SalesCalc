@@ -77,7 +77,7 @@ export default function Login() {
 
       if (authData.user) {
         // Create profile with pending status
-        const { error: profileError } = await supabase
+        const { error: profileError } = await (supabase as any)
           .from('profiles')
           .insert({
             id: authData.user.id,
@@ -152,13 +152,13 @@ export default function Login() {
         )}
 
         {!showSignup ? (
-            <>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    {error}
-                  </div>
-                )}
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">

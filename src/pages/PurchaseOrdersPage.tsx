@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { FileText, Plus, Search, Filter, Download, Eye, Calendar, Package, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { exportProfessionalPOPDF } from '../lib/poPdfExport';
-import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
 import { format } from 'date-fns';

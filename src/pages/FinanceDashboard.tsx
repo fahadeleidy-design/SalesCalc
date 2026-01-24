@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react'; // Swapped imports to clear stale IDE diagnostics
 import {
   DollarSign,
   TrendingUp,

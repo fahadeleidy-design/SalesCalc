@@ -7,9 +7,6 @@ import CustomItemRequestModal, { type CustomItemData } from './CustomItemRequest
 import CustomerQuickAddModal from '../customers/CustomerQuickAddModal';
 import { formatCurrency } from '../../lib/currencyUtils';
 import {
-  validatePrice,
-  validateQuantity,
-  validateDiscount,
   validateTaxRate,
 } from '../../lib/validation';
 
@@ -21,6 +18,7 @@ type QuotationItem = Database['public']['Tables']['quotation_items']['Insert'] &
   customItemRequest?: CustomItemData;
   modifications?: string;
   needs_engineering_review?: boolean;
+  base_unit_price?: number;
 };
 
 interface QuotationFormProps {
@@ -79,7 +77,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         setFormData(prev => ({
           ...prev,
           valid_until: validUntil.toISOString().split('T')[0],
-          terms_and_conditions: settingsResult.data?.default_terms_and_conditions || '',
+          terms_and_conditions: (settingsResult.data as any)?.default_terms_and_conditions || '',
         }));
       }
     } catch (error) {
@@ -189,7 +187,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
       value = newPrice;
     }
 
-    item[field] = value;
+    (item as any)[field] = value;
 
     // Simple calculation: quantity × unit_price (no per-item discount)
     const quantity = Math.round(item.quantity || 1);
@@ -259,17 +257,17 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
       let savedQuotationId = quotationId;
 
       if (quotationId) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('quotations')
           .update(quotationData as any)
           .eq('id', quotationId);
 
         if (error) throw error;
 
-        await supabase.from('quotation_items').delete().eq('quotation_id', quotationId);
+        await (supabase as any).from('quotation_items').delete().eq('quotation_id', quotationId);
       } else {
         const quotationNumber = `QUO-${Date.now()}`;
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('quotations')
           .insert({ ...quotationData, quotation_number: quotationNumber } as any)
           .select()
@@ -301,7 +299,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         };
       });
 
-      const { data: insertedItems, error: itemsError } = await supabase
+      const { data: insertedItems, error: itemsError } = await (supabase as any)
         .from('quotation_items')
         .insert(itemsToInsert as any)
         .select();
@@ -343,7 +341,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
           .filter((req) => req !== null);
 
         if (customItemRequests.length > 0) {
-          const { error: requestsError } = await supabase
+          const { error: requestsError } = await (supabase as any)
             .from('custom_item_requests')
             .insert(customItemRequests as any);
 
@@ -561,8 +559,8 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                     readOnly={profile?.role === 'sales' || profile?.role === 'manager'}
                     disabled={profile?.role === 'sales' || profile?.role === 'manager'}
                     className={`w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${profile?.role === 'sales' || profile?.role === 'manager'
-                        ? 'bg-slate-100 cursor-not-allowed text-slate-600'
-                        : ''
+                      ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+                      : ''
                       }`}
                   />
                   {(profile?.role === 'sales' || profile?.role === 'manager') && (
@@ -711,11 +709,11 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                     min={item.base_unit_price || item.product?.unit_price || 0}
                                     step="0.5"
                                     className={`w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${(
-                                        ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
-                                        (item.is_custom && item.custom_item_status === 'pending')
-                                      )
-                                        ? 'bg-slate-100 cursor-not-allowed text-slate-600'
-                                        : ''
+                                      ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
+                                      (item.is_custom && item.custom_item_status === 'pending')
+                                    )
+                                      ? 'bg-slate-100 cursor-not-allowed text-slate-600'
+                                      : ''
                                       }`}
                                     disabled={
                                       ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||

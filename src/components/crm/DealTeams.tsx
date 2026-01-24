@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { Users, Plus, X, Shield, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface TeamMember {
   id: string;
@@ -24,7 +23,6 @@ interface DealTeamsProps {
 }
 
 export default function DealTeams({ opportunityId }: Omit<DealTeamsProps, 'opportunityName'>) {
-  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -42,13 +40,13 @@ export default function DealTeams({ opportunityId }: Omit<DealTeamsProps, 'oppor
         .order('added_at', { ascending: false });
 
       if (error) throw error;
-      return data as TeamMember[];
+      return (data || []) as TeamMember[];
     },
   });
 
   const removeMemberMutation = useMutation({
     mutationFn: async (memberId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('crm_opportunity_teams')
         .update({ removed_at: new Date().toISOString() })
         .eq('id', memberId);
@@ -190,7 +188,7 @@ function AddTeamMemberModal({
   const { data: availableUsers } = useQuery({
     queryKey: ['available-users'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('id, full_name, email, role')
         .in('role', ['sales', 'manager', 'ceo'])
@@ -203,7 +201,7 @@ function AddTeamMemberModal({
 
   const addMemberMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('crm_opportunity_teams').insert({
+      const { error } = await (supabase as any).from('crm_opportunity_teams').insert({
         opportunity_id: opportunityId,
         user_id: selectedUser,
         role,
@@ -245,7 +243,7 @@ function AddTeamMemberModal({
               required
             >
               <option value="">Choose a user...</option>
-              {availableUsers?.map((user) => (
+              {availableUsers?.map((user: any) => (
                 <option key={user.id} value={user.id}>
                   {user.full_name} ({user.email})
                 </option>

@@ -18,6 +18,7 @@ interface Profile {
   theme: string;
   notifications_enabled: boolean;
   force_password_change?: boolean;
+  account_status?: 'pending' | 'approved' | 'rejected' | null;
 }
 
 interface AuthContextType {
@@ -47,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -63,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setShowPasswordChange(true);
     }
 
-    return data;
+    return data as Profile | null;
   };
 
   const refreshProfile = async () => {

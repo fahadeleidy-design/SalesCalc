@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Save, FileText, AlertCircle } from 'lucide-react';
+import { X, FileText, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/currencyUtils';
 import type { Database } from '../../lib/database.types';
