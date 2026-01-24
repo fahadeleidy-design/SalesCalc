@@ -80,8 +80,8 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
         name: entityType === 'opportunity'
           ? `${item.name} ${item.customer ? `(${item.customer.company_name})` : ''}`
           : entityType === 'lead'
-          ? `${item.contact_name}${item.company_name ? ` - ${item.company_name}` : ''}`
-          : item.company_name,
+            ? `${item.contact_name}${item.company_name ? ` - ${item.company_name}` : ''}`
+            : item.company_name,
         type: entityType,
       })) || [];
     },
@@ -98,6 +98,16 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
         throw new Error('Please select an entity');
       }
 
+      let sentimentData = null;
+      if (formData.description && formData.description.length > 10) {
+        try {
+          const { analyzeSentiment } = await import('../../lib/sentimentService');
+          sentimentData = await analyzeSentiment(formData.description);
+        } catch (err) {
+          console.error('Sentiment analysis skipped', err);
+        }
+      }
+
       const activityData = {
         activity_type: activityType,
         subject: formData.subject,
@@ -108,6 +118,9 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
         follow_up_date: formData.follow_up_date || null,
         completed: formData.completed,
         [`${selectedEntity.type}_id`]: selectedEntity.id,
+        sentiment_score: sentimentData?.score || null,
+        sentiment_label: sentimentData?.label || null,
+        sentiment_summary: sentimentData?.summary || null,
       };
 
       const { error } = await supabase
@@ -160,11 +173,10 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
                       setSelectedEntity(null);
                       setSearchQuery('');
                     }}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${
-                      entityType === type.value
+                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${entityType === type.value
                         ? 'border-orange-500 bg-orange-50 text-orange-700'
                         : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                    }`}
+                      }`}
                   >
                     <TypeIcon className="h-6 w-6" />
                     <span className="text-sm font-medium">{type.label}</span>
@@ -204,9 +216,8 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
                       <button
                         key={entity.id}
                         onClick={() => setSelectedEntity(entity)}
-                        className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 ${
-                          selectedEntity?.id === entity.id ? 'bg-orange-50 text-orange-700' : ''
-                        }`}
+                        className={`w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 ${selectedEntity?.id === entity.id ? 'bg-orange-50 text-orange-700' : ''
+                          }`}
                       >
                         <span className="text-sm font-medium">{entity.name}</span>
                       </button>
@@ -239,11 +250,10 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
                   <button
                     key={type.value}
                     onClick={() => setActivityType(type.value)}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
-                      activityType === type.value
+                    className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-colors ${activityType === type.value
                         ? 'border-orange-500 bg-orange-50 text-orange-700'
                         : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                    }`}
+                      }`}
                   >
                     <TypeIcon className="h-5 w-5" />
                     <span className="text-xs font-medium">{type.label}</span>
@@ -263,13 +273,12 @@ export default function QuickActivityLogModal({ onClose }: QuickActivityLogModal
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              placeholder={`e.g., ${
-                activityType === 'call' ? 'Follow-up call to discuss requirements' :
-                activityType === 'email' ? 'Sent proposal document' :
-                activityType === 'meeting' ? 'Product demonstration meeting' :
-                activityType === 'note' ? 'Customer feedback notes' :
-                'Follow up on pending items'
-              }`}
+              placeholder={`e.g., ${activityType === 'call' ? 'Follow-up call to discuss requirements' :
+                  activityType === 'email' ? 'Sent proposal document' :
+                    activityType === 'meeting' ? 'Product demonstration meeting' :
+                      activityType === 'note' ? 'Customer feedback notes' :
+                        'Follow up on pending items'
+                }`}
               required
             />
           </div>

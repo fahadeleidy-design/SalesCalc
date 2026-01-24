@@ -99,10 +99,25 @@ export default function ActivityTimeline({ entityType, entityId }: ActivityTimel
             </div>
 
             {/* Content */}
-            <div className="flex-1 bg-white border border-slate-200 rounded-lg p-4">
+            <div className={`flex-1 bg-white border border-slate-200 rounded-lg p-4 relative overflow-hidden ${activity.sentiment_label === 'risk' ? 'border-l-4 border-l-red-500' :
+                activity.sentiment_label === 'critical' ? 'border-l-4 border-l-red-700' :
+                  activity.sentiment_label === 'positive' ? 'border-l-4 border-l-green-500' :
+                    ''
+              }`}>
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
-                  <h4 className="font-semibold text-slate-900">{activity.subject}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-slate-900">{activity.subject}</h4>
+                    {activity.sentiment_label && (
+                      <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${activity.sentiment_label === 'positive' ? 'bg-green-100 text-green-700' :
+                          activity.sentiment_label === 'risk' ? 'bg-red-100 text-red-600' :
+                            activity.sentiment_label === 'critical' ? 'bg-red-200 text-red-800' :
+                              'bg-slate-100 text-slate-600'
+                        }`}>
+                        {activity.sentiment_label}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-3 mt-1 text-sm text-slate-600">
                     <span className="capitalize">{activity.activity_type.replace('_', ' ')}</span>
                     <span>•</span>
@@ -125,7 +140,13 @@ export default function ActivityTimeline({ entityType, entityId }: ActivityTimel
               </div>
 
               {activity.description && (
-                <p className="text-sm text-slate-700 mb-3">{activity.description}</p>
+                <p className="text-sm text-slate-700 mb-2">{activity.description}</p>
+              )}
+
+              {activity.sentiment_summary && (
+                <p className="text-[11px] italic text-slate-500 mb-3 flex items-center gap-1">
+                  <span className="opacity-70">AI Summary:</span> {activity.sentiment_summary}
+                </p>
               )}
 
               {activity.follow_up_date && (
