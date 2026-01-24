@@ -294,8 +294,8 @@ export default function CRMPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-colors whitespace-nowrap ${activeTab === tab.id
-                    ? 'border-orange-600 text-orange-600'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                  ? 'border-orange-600 text-orange-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
                   }`}
               >
                 <Icon className="h-5 w-5" />
@@ -632,12 +632,12 @@ function LeadsView() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${lead.lead_status === 'qualified'
-                          ? 'bg-green-100 text-green-800'
-                          : lead.lead_status === 'new'
-                            ? 'bg-blue-100 text-blue-800'
-                            : lead.lead_status === 'contacted'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-slate-100 text-slate-800'
+                        ? 'bg-green-100 text-green-800'
+                        : lead.lead_status === 'new'
+                          ? 'bg-blue-100 text-blue-800'
+                          : lead.lead_status === 'contacted'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-slate-100 text-slate-800'
                         }`}>
                         {lead.lead_status}
                       </span>
@@ -1604,12 +1604,12 @@ function OpportunitiesView() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${opp.stage === 'Closed Won'
-                          ? 'bg-green-100 text-green-800'
-                          : opp.stage === 'Closed Lost'
-                            ? 'bg-red-100 text-red-800'
-                            : opp.stage === 'Negotiation'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-blue-100 text-blue-800'
+                        ? 'bg-green-100 text-green-800'
+                        : opp.stage === 'Closed Lost'
+                          ? 'bg-red-100 text-red-800'
+                          : opp.stage === 'Negotiation'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-blue-100 text-blue-800'
                         }`}>
                         {opp.stage}
                       </span>
@@ -2087,13 +2087,67 @@ function OpportunityModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
-          <h2 className="text-xl font-bold text-slate-900">
-            {opportunity ? 'Edit Opportunity' : 'Add New Opportunity'}
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-slate-900">
+              {opportunity ? 'Edit Opportunity' : 'Add New Opportunity'}
+            </h2>
+            {opportunity && (
+              <button
+                type="button"
+                onClick={handleFetchRecap}
+                disabled={isSummarizing}
+                className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs font-bold rounded-full hover:from-purple-600 hover:to-indigo-700 transition-all shadow-sm hover:shadow active:scale-95 disabled:opacity-50"
+              >
+                {isSummarizing ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                {isSummarizing ? 'Thinking...' : '✨ AI Recap'}
+              </button>
+            )}
+          </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="h-6 w-6" />
           </button>
         </div>
+
+        {/* AI Recap Card - Glassmorphism style */}
+        {showRecap && recapData && (
+          <div className="mx-6 mt-4 p-5 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 border border-indigo-100 rounded-xl animate-fade-in relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2">
+              <button onClick={() => setShowRecap(false)} className="text-indigo-400 hover:text-indigo-600"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <Sparkles className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-indigo-900 mb-2">{recapData.status}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Recent Developments</h4>
+                    <ul className="text-xs text-indigo-700 space-y-1">
+                      {recapData.keyDevelopments?.map((d: string, i: number) => <li key={i}>• {d}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-1">Next Steps</h4>
+                    <ul className="text-xs text-indigo-700 space-y-1">
+                      {recapData.nextSteps?.map((s: string, i: number) => <li key={i}>→ {s}</li>)}
+                    </ul>
+                  </div>
+                </div>
+                {recapData.risks?.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-indigo-100/50">
+                    <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1">Detected Risks</p>
+                    <p className="text-xs text-red-600">{recapData.risks.join(', ')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Basic Information */}
@@ -2620,8 +2674,8 @@ function ActivitiesView() {
                 key={type.value}
                 onClick={() => setFilterType(type.value)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors ${filterType === type.value
-                    ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
               >
                 <Icon className="h-4 w-4" />
