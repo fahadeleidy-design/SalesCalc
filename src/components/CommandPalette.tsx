@@ -9,15 +9,14 @@ import {
   DollarSign,
   BarChart3,
   Plus,
-  Download,
-  Upload,
-  Filter,
   ArrowRight,
   Command,
   CheckCircle,
   Wrench,
   X,
+  Loader2,
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -166,20 +165,103 @@ export default function CommandPalette() {
     },
   ];
 
-  const filteredCommands = commands.filter((cmd) => {
-    if (cmd.roles && !cmd.roles.includes(profile?.role || '')) {
-      return false;
-    }
+  const [dbResults, setDbResults] = useState<CommandAction[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-    if (!query.trim()) return true;
+  useEffect(() => {
+    const searchDatabase = async () => {
+      if (!query.trim() || query.length < 2) {
+        setDbResults([]);
+        return;
+      }
 
-    const searchTerm = query.toLowerCase();
-    const matchesLabel = cmd.label.toLowerCase().includes(searchTerm);
-    const matchesDescription = cmd.description?.toLowerCase().includes(searchTerm);
-    const matchesKeywords = cmd.keywords?.some((k) => k.toLowerCase().includes(searchTerm));
+      setIsSearching(true);
+      try {
+        const searchTerm = `%${query}%`;
 
-    return matchesLabel || matchesDescription || matchesKeywords;
-  });
+        // Parallel fetching for speed
+        const [leads, opportunities, products] = await Promise.all([
+          supabase.from('crm_leads')
+            .select('id, company_name, contact_name')
+            .or(`company_name.ilike.${searchTerm},contact_name.ilike.${searchTerm}`)
+            .limit(3),
+          supabase.from('crm_opportunities')
+            .select('id, name, amount')
+            .ilike('name', searchTerm)
+            .limit(3),
+          supabase.from('products')
+            .select('id, name, sku')
+            .or(`name.ilike.${searchTerm},sku.ilike.${searchTerm}`)
+            .limit(3)
+        ]);
+
+        const newResults: CommandAction[] = [];
+
+        // Map Leads
+        leads.data?.forEach((lead: any) => {
+          newResults.push({
+            id: `db-lead-${lead.id}`,
+            label: lead.company_name,
+            description: `Lead: ${lead.contact_name}`,
+            icon: Users,
+            category: 'leads' as any,
+            action: () => navigate('/crm?tab=leads') // Replace with specific route if available
+          });
+        });
+
+        // Map Opportunities
+        opportunities.data?.forEach((opp: any) => {
+          newResults.push({
+            id: `db-opp-${opp.id}`,
+            label: opp.name,
+            description: `Opportunity: $${opp.amount.toLocaleString()}`,
+            icon: Target,
+            category: 'opportunities' as any,
+            action: () => navigate('/crm?tab=opportunities')
+          });
+        });
+
+        // Map Products
+        products.data?.forEach((prod: any) => {
+          newResults.push({
+            id: `db-prod-${prod.id}`,
+            label: prod.name,
+            description: `Product SKU: ${prod.sku}`,
+            icon: Package,
+            category: 'products' as any,
+            action: () => navigate('/products')
+          });
+        });
+
+        setDbResults(newResults);
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const timer = setTimeout(searchDatabase, 300);
+    return () => clearTimeout(timer);
+  }, [query, navigate]);
+
+  const filteredCommands = [
+    ...commands.filter((cmd) => {
+      if (cmd.roles && !cmd.roles.includes(profile?.role || '')) {
+        return false;
+      }
+
+      if (!query.trim()) return true;
+
+      const searchTerm = query.toLowerCase();
+      const matchesLabel = cmd.label.toLowerCase().includes(searchTerm);
+      const matchesDescription = cmd.description?.toLowerCase().includes(searchTerm);
+      const matchesKeywords = cmd.keywords?.some((k) => k.toLowerCase().includes(searchTerm));
+
+      return matchesLabel || matchesDescription || matchesKeywords;
+    }),
+    ...dbResults
+  ];
 
   const groupedCommands = filteredCommands.reduce((acc, cmd) => {
     if (!acc[cmd.category]) {
@@ -258,16 +340,19 @@ export default function CommandPalette() {
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[600px] flex flex-col animate-scale-in">
         <div className="flex items-center gap-3 p-4 border-b border-slate-200">
           <Command className="w-5 h-5 text-slate-400 flex-shrink-0" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a command or search..."
-            className="flex-1 outline-none text-slate-900 placeholder-slate-400 text-sm"
-            autoFocus
-          />
+          <div className="flex-1 flex items-center gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a command or search..."
+              className="flex-1 outline-none text-slate-900 placeholder-slate-400 text-sm"
+              autoFocus
+            />
+            {isSearching && <Loader2 className="w-4 h-4 text-orange-500 animate-spin" />}
+          </div>
           <button
             onClick={() => {
               setIsOpen(false);
@@ -301,28 +386,24 @@ export default function CommandPalette() {
                         <button
                           key={cmd.id}
                           onClick={() => handleSelect(cmd)}
-                          className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all ${
-                            globalIndex === selectedIndex
-                              ? 'bg-orange-50 border border-orange-200 shadow-sm'
-                              : 'hover:bg-slate-50 border border-transparent'
-                          }`}
+                          className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all ${globalIndex === selectedIndex
+                            ? 'bg-orange-50 border border-orange-200 shadow-sm'
+                            : 'hover:bg-slate-50 border border-transparent'
+                            }`}
                         >
                           <div
-                            className={`flex-shrink-0 p-2 rounded-lg ${
-                              globalIndex === selectedIndex ? 'bg-orange-100' : 'bg-slate-100'
-                            }`}
+                            className={`flex-shrink-0 p-2 rounded-lg ${globalIndex === selectedIndex ? 'bg-orange-100' : 'bg-slate-100'
+                              }`}
                           >
                             <Icon
-                              className={`w-4 h-4 ${
-                                globalIndex === selectedIndex ? 'text-orange-600' : 'text-slate-600'
-                              }`}
+                              className={`w-4 h-4 ${globalIndex === selectedIndex ? 'text-orange-600' : 'text-slate-600'
+                                }`}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p
-                              className={`text-sm font-medium truncate ${
-                                globalIndex === selectedIndex ? 'text-orange-900' : 'text-slate-900'
-                              }`}
+                              className={`text-sm font-medium truncate ${globalIndex === selectedIndex ? 'text-orange-900' : 'text-slate-900'
+                                }`}
                             >
                               {cmd.label}
                             </p>
@@ -331,9 +412,8 @@ export default function CommandPalette() {
                             )}
                           </div>
                           <ArrowRight
-                            className={`w-4 h-4 flex-shrink-0 ${
-                              globalIndex === selectedIndex ? 'text-orange-600' : 'text-slate-400'
-                            }`}
+                            className={`w-4 h-4 flex-shrink-0 ${globalIndex === selectedIndex ? 'text-orange-600' : 'text-slate-400'
+                              }`}
                           />
                         </button>
                       );
