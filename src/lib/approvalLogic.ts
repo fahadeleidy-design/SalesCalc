@@ -129,21 +129,32 @@ export async function getDiscountMatrixRule(
 
 export async function determineNextApprovalStatus(
   quotation: Quotation
-): Promise<{ status: QuotationStatus; requiresCEO: boolean }> {
+): Promise<{ status: QuotationStatus; requiresCEO: boolean; requiresFinance: boolean }> {
   // New discount rules:
   // Sales: 0-5% (submit to manager)
   // Manager: Can approve up to 10%
   // CEO: Approves >10% (only via manager)
 
   const discountPercentage = quotation.discount_percentage || 0;
+  const totalValue = quotation.total || 0;
 
-  // Sales can only submit up to 5%
-  // Manager approval required for >5%
-  // CEO approval required for >10%
+  // Get high value threshold from system settings
+  const { data: setting } = await (supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'high_value_threshold')
+    .maybeSingle() as any);
+
+  const highValueThreshold = setting ? parseFloat(String(setting.value)) : 100000;
+
+  // Rules:
+  // 1. Discount > 10% requires CEO approval
+  // 2. Total Value > Threshold requires Finance approval
   const requiresCEO = discountPercentage > 10;
+  const requiresFinance = totalValue > highValueThreshold;
 
   // Always start with Manager approval
-  return { status: 'pending_manager', requiresCEO };
+  return { status: 'pending_manager', requiresCEO, requiresFinance };
 }
 
 export async function submitQuotationForApproval(
@@ -176,7 +187,7 @@ export async function submitQuotationForApproval(
     };
   }
 
-  const { status: nextStatus, requiresCEO } = await determineNextApprovalStatus(quotation);
+  const { status: nextStatus, requiresCEO, requiresFinance } = await determineNextApprovalStatus(quotation);
 
   // Don't await AI prediction, let it run in the background
   callAIPredictionService(quotationId, quotation).catch(err =>
@@ -210,6 +221,8 @@ export async function submitQuotationForApproval(
       new_status: nextStatus,
       total: quotation.total,
       discount_percentage: quotation.discount_percentage,
+      requires_ceo: requiresCEO,
+      requires_finance: requiresFinance,
     },
   } as any);
 
@@ -313,24 +326,31 @@ export async function approveQuotation(
 
   if (approverRole === 'manager') {
     const discountPercentage = quotation.discount_percentage || 0;
+    const totalValue = quotation.total || 0;
+
+    // Get high value threshold
+    const { data: setting } = await (supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'high_value_threshold')
+      .maybeSingle() as any);
+
+    const highValueThreshold = setting ? parseFloat(String(setting.value)) : 100000;
 
     // Manager can approve up to 10%
     if (discountPercentage > 10) {
       // Discount >10% requires CEO approval
       nextStatus = 'pending_ceo';
-    } else if (discountPercentage > 10) {
-      // This should not happen - manager cannot approve >10%
-      return {
-        success: false,
-        nextStatus: previousStatus,
-        error: 'Manager cannot approve discounts greater than 10%. CEO approval required.'
-      };
+    } else if (totalValue > highValueThreshold) {
+      // High value requires Finance approval after Manager
+      nextStatus = 'pending_finance';
     } else {
-      // Discount ≤10%, manager can approve
+      // Discount ≤10% and low value, manager can approve fully
       nextStatus = 'approved';
     }
   } else if (approverRole === 'ceo') {
-    // CEO can approve any discount, send to finance
+    // CEO can approve any discount, send to finance if needed OR if total value is high
+    // Actually, for consistency, CEO approval always flows to finance review
     nextStatus = 'pending_finance';
   } else if (approverRole === 'finance') {
     // Finance final approval

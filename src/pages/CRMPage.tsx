@@ -31,6 +31,7 @@ import {
   Zap,
   Loader2,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import TasksManager from '../components/crm/TasksManager';
@@ -114,6 +115,7 @@ interface Opportunity {
   closed_won: boolean;
   won_reason: string | null;
   lost_reason: string | null;
+  synced_from_quote_id?: string | null;
   customer?: {
     company_name: string;
   };
@@ -1626,16 +1628,24 @@ function OpportunitiesView() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${opp.stage === 'Closed Won'
-                        ? 'bg-green-100 text-green-800'
-                        : opp.stage === 'Closed Lost'
-                          ? 'bg-red-100 text-red-800'
-                          : opp.stage === 'Negotiation'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
-                        {opp.stage}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${opp.stage === 'Closed Won'
+                          ? 'bg-green-100 text-green-800'
+                          : opp.stage === 'Closed Lost'
+                            ? 'bg-red-100 text-red-800'
+                            : opp.stage === 'Negotiation'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                          {opp.stage}
+                        </span>
+                        {opp.synced_from_quote_id && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 uppercase tracking-tighter">
+                            <RefreshCw className="w-2.5 h-2.5 animate-spin-slow" />
+                            Synced from Quote
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-slate-900">
                       {formatCurrency(opp.amount)}

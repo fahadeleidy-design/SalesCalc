@@ -292,6 +292,7 @@ export interface Database {
           submitted_to_customer_at: string | null;
           version_number: number;
           parent_version_id: string | null;
+          loss_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -415,6 +416,8 @@ export interface Database {
           engineering_price: number | null;
           engineering_notes: string | null;
           engineering_attachments: Json;
+          requested_by_date: string | null;
+          committed_date: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -812,6 +815,85 @@ export interface Database {
           created_at: string;
         };
       };
+      job_orders: {
+        Row: {
+          id: string;
+          job_order_number: string;
+          quotation_id: string;
+          customer_id: string;
+          priority: string;
+          status: string;
+          due_date: string | null;
+          production_notes: string | null;
+          is_production_ready: boolean;
+          engineering_accepted_at: string | null;
+          generated_by: string;
+          generated_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          job_order_number: string;
+          quotation_id: string;
+          customer_id: string;
+          priority?: string;
+          status?: string;
+          due_date?: string | null;
+          production_notes?: string | null;
+          is_production_ready?: boolean;
+          engineering_accepted_at?: string | null;
+          generated_by: string;
+          generated_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          job_order_number?: string;
+          quotation_id?: string;
+          customer_id?: string;
+          priority?: string;
+          status?: string;
+          due_date?: string | null;
+          production_notes?: string | null;
+          is_production_ready?: boolean;
+          engineering_accepted_at?: string | null;
+          generated_by?: string;
+          generated_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      job_order_items: {
+        Row: {
+          id: string;
+          job_order_id: string;
+          product_id: string | null;
+          description: string;
+          quantity: number;
+          unit: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          job_order_id: string;
+          product_id?: string | null;
+          description: string;
+          quantity: number;
+          unit: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          job_order_id?: string;
+          product_id?: string | null;
+          description?: string;
+          quantity?: number;
+          unit?: string;
+          created_at?: string;
+        };
+      };
       customer_quotation_responses: {
         Row: {
           id: string;
@@ -857,6 +939,29 @@ export interface Database {
           sent_at: string | null;
           error_message: string | null;
           created_at: string;
+        };
+      };
+      quotation_pricing_comments: {
+        Row: {
+          id: string;
+          quotation_id: string;
+          user_id: string;
+          comment: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          quotation_id: string;
+          user_id: string;
+          comment: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          quotation_id?: string;
+          user_id?: string;
+          comment?: string;
+          created_at?: string;
         };
       };
     };

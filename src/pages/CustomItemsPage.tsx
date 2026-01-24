@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
+import PricingComments from '../components/engineering/PricingComments';
+import { MessageCircle } from 'lucide-react';
 
 type CustomItemRequest = Database['public']['Tables']['custom_item_requests']['Row'] & {
   quotation: {
@@ -23,6 +25,7 @@ export default function CustomItemsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedQuotationId, setSelectedQuotationId] = useState<string | null>(null);
 
   useEffect(() => {
     loadRequests();
@@ -37,7 +40,8 @@ export default function CustomItemsPage() {
           quotation_number,
           customer:customers(company_name)
         ),
-        requested_by:profiles!custom_item_requests_requested_by_id_fkey(full_name)
+        requested_by:profiles!custom_item_requests_requested_by_fkey(full_name),
+        quotation_item:quotation_items(quantity)
       `)
       .order('created_at', { ascending: false });
 
@@ -167,31 +171,28 @@ export default function CustomItemsPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                statusFilter === 'all'
-                  ? 'bg-coral-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'all'
+                ? 'bg-coral-600 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
             >
               All
             </button>
             <button
               onClick={() => setStatusFilter('pending')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                statusFilter === 'pending'
-                  ? 'bg-coral-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'pending'
+                ? 'bg-coral-600 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
             >
               Pending
             </button>
             <button
               onClick={() => setStatusFilter('priced')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                statusFilter === 'priced'
-                  ? 'bg-coral-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${statusFilter === 'priced'
+                ? 'bg-coral-600 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
             >
               Priced
             </button>
@@ -245,14 +246,35 @@ export default function CustomItemsPage() {
                         </div>
                         <div>
                           <p className="font-medium text-slate-700">Quantity</p>
-                          <p>N/A</p>
+                          <p>{(request as any).quotation_item?.quantity || 'N/A'}</p>
+                        </div>
+                        <div className="col-span-2 mt-2">
+                          <div className="flex items-center gap-4">
+                            <div className="bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100">
+                              <p className="text-[10px] font-bold text-amber-600 uppercase">Requested By (SLA)</p>
+                              <p className="font-medium text-slate-900">{request.requested_by_date ? new Date(request.requested_by_date).toLocaleDateString() : 'Not Set'}</p>
+                            </div>
+                            {request.committed_date && (
+                              <div className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
+                                <p className="text-[10px] font-bold text-green-600 uppercase">Engineering Commitment</p>
+                                <p className="font-medium text-slate-900">{new Date(request.committed_date).toLocaleDateString()}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="text-right ml-4">
+                  <div className="flex flex-col gap-2 items-end ml-4">
+                    <button
+                      onClick={() => setSelectedQuotationId(request.quotation_id)}
+                      className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors border border-slate-200"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Discuss
+                    </button>
                     {request.status === 'priced' && request.engineering_price && (
-                      <div>
+                      <div className="text-right">
                         <div className="flex items-center gap-1 justify-end text-slate-600">
                           <DollarSign className="w-4 h-4" />
                           <span className="text-xl font-bold text-slate-900">
@@ -294,6 +316,27 @@ export default function CustomItemsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {selectedQuotationId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-end z-50 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md h-full shadow-2xl animate-in slide-in-from-right duration-300">
+            <div className="p-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-slate-900">Price Discussion</h3>
+                <button
+                  onClick={() => setSelectedQuotationId(null)}
+                  className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+                >
+                  <Search className="w-6 h-6 rotate-45" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                <PricingComments quotationId={selectedQuotationId} />
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -22,6 +22,15 @@ export default function ApprovalsPage() {
   const [comments, setComments] = useState('');
   const [processing, setProcessing] = useState(false);
   const [viewingId, setViewingId] = useState<string | undefined>();
+  const [highValueThreshold, setHighValueThreshold] = useState(100000);
+
+  useEffect(() => {
+    const fetchThreshold = async () => {
+      const { data } = await (supabase.from('system_settings').select('value').eq('key', 'high_value_threshold').maybeSingle() as any);
+      if (data) setHighValueThreshold(parseFloat(String(data.value)));
+    };
+    fetchThreshold();
+  }, []);
 
   // Helper function to calculate actual totals from items
   const calculateQuotationTotal = (quotation: Quotation) => {
@@ -218,6 +227,11 @@ export default function ApprovalsPage() {
                           <h4 className="font-semibold text-slate-900">
                             {quotation.quotation_number}
                           </h4>
+                          {calculateQuotationTotal(quotation) > highValueThreshold && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-bold rounded-full animate-pulse">
+                              HIGH VALUE
+                            </span>
+                          )}
                           <span className="text-sm text-slate-600">•</span>
                           <span className="text-sm text-slate-600">{quotation.title}</span>
                         </div>
@@ -332,8 +346,8 @@ export default function ApprovalsPage() {
                     actionType === 'approve'
                       ? 'Add any notes about this approval...'
                       : actionType === 'reject'
-                      ? 'Explain why this quotation is being rejected...'
-                      : 'Describe what changes are needed...'
+                        ? 'Explain why this quotation is being rejected...'
+                        : 'Describe what changes are needed...'
                   }
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 />
@@ -342,7 +356,13 @@ export default function ApprovalsPage() {
               {actionType === 'approve' && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-sm text-green-800">
-                    This quotation will be {profile?.role === 'manager' ? 'approved and ready for customer submission' : 'forwarded to the next approval stage'}.
+                    {profile?.role === 'manager'
+                      ? (calculateQuotationTotal(selectedQuotation) > highValueThreshold || selectedQuotation.discount_percentage > 10
+                        ? 'This quotation will be forwarded for CEO/Finance approval.'
+                        : 'This quotation will be fully approved and ready for the customer.')
+                      : (profile?.role === 'ceo'
+                        ? 'This quotation will be forwarded to Finance for final check.'
+                        : 'This quotation will be fully approved.')}
                   </p>
                 </div>
               )}
@@ -379,13 +399,12 @@ export default function ApprovalsPage() {
               <button
                 onClick={handleAction}
                 disabled={processing}
-                className={`px-6 py-2.5 rounded-lg font-medium text-white transition-colors disabled:opacity-50 ${
-                  actionType === 'approve'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : actionType === 'reject'
+                className={`px-6 py-2.5 rounded-lg font-medium text-white transition-colors disabled:opacity-50 ${actionType === 'approve'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : actionType === 'reject'
                     ? 'bg-red-600 hover:bg-red-700'
                     : 'bg-amber-600 hover:bg-amber-700'
-                }`}
+                  }`}
               >
                 {processing ? 'Processing...' : 'Confirm'}
               </button>

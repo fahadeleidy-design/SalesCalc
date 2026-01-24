@@ -6,6 +6,8 @@ import type { Database } from '../../lib/database.types';
 import { formatCurrency } from '../../lib/currencyUtils';
 import FileUpload, { UploadedFile } from './FileUpload';
 import QuotationViewModal from '../quotations/QuotationViewModal';
+import PricingComments from './PricingComments';
+import { Calendar } from 'lucide-react';
 
 type CustomItemRequest = Database['public']['Tables']['custom_item_requests']['Row'] & {
   quotation: Database['public']['Tables']['quotations']['Row'];
@@ -23,11 +25,12 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
   const { profile } = useAuth();
   const [price, setPrice] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+  const [committedDate, setCommittedDate] = useState<string>(request.committed_date || '');
   const [saving, setSaving] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [showQuotationView, setShowQuotationView] = useState(false);
 
-  const existingAttachments = request.engineering_attachments as UploadedFile[] || [];
+  const existingAttachments = (request.engineering_attachments as any) as UploadedFile[] || [];
 
   const specifications = request.specifications as Record<string, string> || {};
 
@@ -48,12 +51,13 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
     try {
       const { error: requestError } = await supabase
         .from('custom_item_requests')
-      // @ts-expect-error - Supabase type inference issue
+        // @ts-expect-error - Supabase type inference issue
         .update({
           status: 'priced',
           engineering_price: numericPrice,
           engineering_notes: notes || null,
           engineering_attachments: uploadedFiles,
+          committed_date: committedDate || null,
           priced_by: profile.id,
           priced_at: new Date().toISOString(),
         })
@@ -63,7 +67,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
 
       const { error: itemError } = await supabase
         .from('quotation_items')
-      // @ts-expect-error - Supabase type inference issue
+        // @ts-expect-error - Supabase type inference issue
         .update({
           unit_price: numericPrice,
           line_total: numericPrice * request.quotation_item.quantity,
@@ -118,10 +122,10 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
             updateData.status = 'draft';
           }
 
-          const { error: quotationUpdateError } = await supabase
+          const { error: quotationUpdateError } = await (supabase
             .from('quotations')
             .update(updateData)
-            .eq('id', request.quotation_id);
+            .eq('id', request.quotation_id) as any);
 
           if (quotationUpdateError) {
             console.error('Error updating quotation:', quotationUpdateError);
@@ -137,7 +141,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
               .single();
 
             if (quotationData) {
-              await supabase.from('notifications').insert({
+              await (supabase.from('notifications').insert({
                 user_id: (quotationData as any).sales_rep_id,
                 type: 'pricing_complete',
                 title: 'Pricing Complete',
@@ -145,7 +149,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
                 link: `/quotations`,
                 related_quotation_id: request.quotation_id,
                 is_read: false,
-              });
+              }) as any);
             }
           }
         }
@@ -211,7 +215,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
             </div>
           </div>
 
-          {request.quotation_item.base_unit_price && (
+          {request.quotation_item.unit_price && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -224,7 +228,7 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-blue-900">
-                    {formatCurrency(request.quotation_item.base_unit_price)}
+                    {formatCurrency(request.quotation_item.unit_price)}
                   </p>
                   <p className="text-xs text-blue-700">per unit</p>
                 </div>
@@ -307,6 +311,24 @@ export default function PricingModal({ request, onClose, onSubmit }: PricingModa
               <strong>Note:</strong> Once submitted, this price will automatically update the
               quotation and the sales rep will be notified that pricing is complete.
             </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-200">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Committed Delivery/Completion Date (SLA)</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  type="date"
+                  value={committedDate}
+                  onChange={(e) => setCommittedDate(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"
+                />
+              </div>
+            </div>
+            <div className="h-[400px]">
+              <PricingComments quotationId={request.quotation_id} />
+            </div>
           </div>
         </div>
 
