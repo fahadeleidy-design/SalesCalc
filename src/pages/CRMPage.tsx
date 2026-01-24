@@ -53,6 +53,8 @@ import PartnerManagement from '../components/crm/PartnerManagement';
 import CompetitorIntelligence from '../components/crm/CompetitorIntelligence';
 import CustomerSuccessHub from '../components/crm/CustomerSuccessHub';
 import ReferralTracker from '../components/crm/ReferralTracker';
+import AILeadScoring from '../components/crm/AILeadScoring';
+import AIForecastingDashboard from '../components/crm/AIForecastingDashboard';
 import { useSalesTeam } from '../hooks/useSalesTeam';
 import {
   exportLeadsToExcel,
@@ -122,7 +124,7 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals' | 'ai-scoring' | 'ai-forecast'>('overview');
 
   // Fetch CRM stats
   const { data: stats, isLoading: _statsLoading } = useQuery({
@@ -149,7 +151,7 @@ export default function CRMPage() {
 
           leadsQuery = leadsQuery.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
         } else {
-          leadsQuery = leadsQuery.eq('assigned_to', userId);
+          leadsQuery = leadsQuery.eq('assigned_to', userId || '');
         }
       }
 
@@ -175,7 +177,7 @@ export default function CRMPage() {
 
           qualifiedQuery = qualifiedQuery.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
         } else {
-          qualifiedQuery = qualifiedQuery.eq('assigned_to', userId);
+          qualifiedQuery = qualifiedQuery.eq('assigned_to', userId || '');
         }
       }
 
@@ -198,7 +200,7 @@ export default function CRMPage() {
 
           oppsQuery = oppsQuery.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
         } else {
-          oppsQuery = oppsQuery.eq('assigned_to', userId);
+          oppsQuery = oppsQuery.eq('assigned_to', userId || '');
         }
       }
 
@@ -233,7 +235,7 @@ export default function CRMPage() {
 
           activitiesQuery = activitiesQuery.in('assigned_to', ((teamMembers || []) as any[]).map((tm: any) => tm.sales_rep_id));
         } else {
-          activitiesQuery = activitiesQuery.eq('assigned_to', userId);
+          activitiesQuery = activitiesQuery.eq('assigned_to', userId || '');
         }
       }
 
@@ -295,6 +297,8 @@ export default function CRMPage() {
             { id: 'competitors', label: 'Competitors', icon: Target },
             { id: 'success', label: 'Customer Success', icon: Users },
             { id: 'referrals', label: 'Referrals', icon: Users },
+            { id: 'ai-scoring', label: '✨ AI Scoring', icon: Sparkles },
+            { id: 'ai-forecast', label: '✨ AI Forecast', icon: Sparkles },
             { id: 'tasks', label: 'Tasks', icon: ClipboardCheck },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -384,6 +388,8 @@ export default function CRMPage() {
       {activeTab === 'competitors' && <CompetitorIntelligence />}
       {activeTab === 'success' && <CustomerSuccessHub />}
       {activeTab === 'referrals' && <ReferralTracker />}
+      {activeTab === 'ai-scoring' && <AILeadScoring />}
+      {activeTab === 'ai-forecast' && <AIForecastingDashboard />}
       {activeTab === 'tasks' && <TasksManager showAll={true} />}
     </div>
   );
@@ -791,7 +797,7 @@ function LeadsView() {
   );
 }
 
-function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }) {
+function _LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }) {
   const queryClient = useQueryClient();
   const [showConversion, setShowConversion] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
@@ -814,6 +820,7 @@ function LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }
 
   const convertToOpportunityMutation = useMutation({
     mutationFn: async (leadId: string) => {
+      // @ts-ignore - Supabase types don't include custom function params
       const { data, error } = await supabase.rpc('convert_lead_to_opportunity', {
         p_lead_id: leadId,
       });
@@ -1015,6 +1022,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
 
   const convertToOpportunityMutation = useMutation({
     mutationFn: async (leadId: string) => {
+      // @ts-ignore - Supabase types don't include custom function params
       const { data, error } = await supabase.rpc('convert_lead_to_opportunity', {
         p_lead_id: leadId,
       });
@@ -1050,6 +1058,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
         };
         const { error } = await supabase
           .from('crm_leads')
+          // @ts-expect-error - Supabase types don't match runtime schema
           .update(updateData as any)
           .eq('id', lead.id);
         if (error) throw error;
@@ -1429,7 +1438,7 @@ function OpportunitiesView() {
   });
 
   // Group by stage for pipeline view
-  const stageGroups = {
+  const _stageGroups = {
     creating_proposition: filteredOpportunities?.filter(o => o.stage === 'creating_proposition') || [],
     proposition_accepted: filteredOpportunities?.filter(o => o.stage === 'proposition_accepted') || [],
     going_our_way: filteredOpportunities?.filter(o => o.stage === 'going_our_way') || [],
@@ -1769,7 +1778,7 @@ function OpportunitiesView() {
   );
 }
 
-function PipelineColumn({
+function _PipelineColumn({
   stage,
   opportunities,
   onEdit,
@@ -1963,6 +1972,7 @@ function OpportunityModal({
     tax_id: '',
     industry: '',
     customer_type: 'direct_sales',
+    payment_terms: 'net_30',
   });
 
   const createCustomerMutation = useMutation({
@@ -1996,6 +2006,7 @@ function OpportunityModal({
         tax_id: '',
         industry: '',
         customer_type: 'direct_sales',
+        payment_terms: 'net_30',
       });
       toast.success('Customer created successfully');
     },
@@ -2048,6 +2059,7 @@ function OpportunityModal({
         // Update lead status to converted
         await supabase
           .from('crm_leads')
+          // @ts-expect-error - Supabase types don't match runtime schema
           .update({ lead_status: 'converted' } as any)
           .eq('id', formData.lead_id);
 
@@ -2071,6 +2083,7 @@ function OpportunityModal({
         };
         const { error } = await supabase
           .from('crm_opportunities')
+          // @ts-expect-error - Supabase types don't match runtime schema
           .update(updateData as any)
           .eq('id', opportunity.id);
         if (error) throw error;
@@ -2591,7 +2604,7 @@ function OpportunityModal({
 function ActivitiesView() {
   const { profile } = useAuth();
   const [showActivityModal, setShowActivityModal] = useState(false);
-  const [selectedEntity, setSelectedEntity] = useState<{ type: 'lead' | 'opportunity' | 'customer', id: string, name: string } | null>(null);
+  const [_selectedEntity, setSelectedEntity] = useState<{ type: 'lead' | 'opportunity' | 'customer', id: string, name: string } | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
 
   // Fetch all activities

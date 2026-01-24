@@ -1,16 +1,10 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import {
     Target,
     Plus,
     Search,
-    Edit2,
-    Trash2,
     X,
     TrendingUp,
-    TrendingDown,
     Award,
     AlertTriangle,
     CheckCircle,
@@ -20,7 +14,6 @@ import {
     Globe,
     BarChart3,
     Eye,
-    Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../lib/currencyUtils';
@@ -232,8 +225,8 @@ export default function CompetitorIntelligence() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                                 className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${activeTab === tab.id
-                                        ? 'border-orange-500 text-orange-600'
-                                        : 'border-transparent text-slate-600 hover:text-slate-900'
+                                    ? 'border-orange-500 text-orange-600'
+                                    : 'border-transparent text-slate-600 hover:text-slate-900'
                                     }`}
                             >
                                 <tab.icon className="h-4 w-4" />

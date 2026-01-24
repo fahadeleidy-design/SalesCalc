@@ -1,27 +1,19 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import {
     Building2,
     Users,
     Plus,
     Search,
     Edit2,
-    Trash2,
     X,
-    Award,
     DollarSign,
     TrendingUp,
     CheckCircle,
     Clock,
-    AlertTriangle,
-    Star,
     Briefcase,
     Mail,
     Phone,
     Globe,
-    Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../../lib/currencyUtils';
@@ -134,8 +126,7 @@ const mockDeals: PartnerDeal[] = [
 ];
 
 export default function PartnerManagement() {
-    const { profile } = useAuth();
-    const queryClient = useQueryClient();
+    // Note: useAuth and useQueryClient are available for future Supabase integration
     const [searchTerm, setSearchTerm] = useState('');
     const [filterTier, setFilterTier] = useState<string>('all');
     const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -147,7 +138,6 @@ export default function PartnerManagement() {
     // Use mock data for now (would be Supabase query in production)
     const partners = mockPartners;
     const deals = mockDeals;
-    const isLoading = false;
 
     const filteredPartners = partners.filter((partner) => {
         const matchesSearch =
@@ -302,8 +292,8 @@ export default function PartnerManagement() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                                 className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${activeTab === tab.id
-                                        ? 'border-orange-500 text-orange-600'
-                                        : 'border-transparent text-slate-600 hover:text-slate-900'
+                                    ? 'border-orange-500 text-orange-600'
+                                    : 'border-transparent text-slate-600 hover:text-slate-900'
                                     }`}
                             >
                                 <tab.icon className="h-4 w-4" />
@@ -474,8 +464,8 @@ export default function PartnerManagement() {
                                                     <td className="py-3 px-4">
                                                         <span
                                                             className={`px-2 py-1 text-xs font-medium rounded-full ${deal.payout_status === 'paid'
-                                                                    ? 'bg-green-100 text-green-700'
-                                                                    : 'bg-amber-100 text-amber-700'
+                                                                ? 'bg-green-100 text-green-700'
+                                                                : 'bg-amber-100 text-amber-700'
                                                                 }`}
                                                         >
                                                             {deal.payout_status.toUpperCase()}
@@ -534,12 +524,12 @@ export default function PartnerManagement() {
                                                     <div className="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
                                                         <div
                                                             className={`h-full ${tier === 'platinum'
-                                                                    ? 'bg-purple-500'
-                                                                    : tier === 'gold'
-                                                                        ? 'bg-yellow-500'
-                                                                        : tier === 'silver'
-                                                                            ? 'bg-slate-400'
-                                                                            : 'bg-amber-500'
+                                                                ? 'bg-purple-500'
+                                                                : tier === 'gold'
+                                                                    ? 'bg-yellow-500'
+                                                                    : tier === 'silver'
+                                                                        ? 'bg-slate-400'
+                                                                        : 'bg-amber-500'
                                                                 }`}
                                                             style={{ width: `${percentage}%` }}
                                                         />
@@ -562,12 +552,12 @@ export default function PartnerManagement() {
                                                     <div className="flex items-center gap-3">
                                                         <span
                                                             className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${index === 0
-                                                                    ? 'bg-yellow-100 text-yellow-700'
-                                                                    : index === 1
-                                                                        ? 'bg-slate-100 text-slate-700'
-                                                                        : index === 2
-                                                                            ? 'bg-amber-100 text-amber-700'
-                                                                            : 'bg-slate-50 text-slate-600'
+                                                                ? 'bg-yellow-100 text-yellow-700'
+                                                                : index === 1
+                                                                    ? 'bg-slate-100 text-slate-700'
+                                                                    : index === 2
+                                                                        ? 'bg-amber-100 text-amber-700'
+                                                                        : 'bg-slate-50 text-slate-600'
                                                                 }`}
                                                         >
                                                             {index + 1}
