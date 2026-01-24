@@ -51,6 +51,7 @@ import SalesForecastBoard from '../components/crm/SalesForecastBoard';
 import WorkflowAutomation from '../components/crm/WorkflowAutomation';
 import DocumentManager from '../components/crm/DocumentManager';
 import SalesCoachingPanel from '../components/crm/SalesCoachingPanel';
+import EmailIntegrationHub from '../components/crm/EmailIntegrationHub';
 import { useSalesTeam } from '../hooks/useSalesTeam';
 import {
   exportLeadsToExcel,
@@ -120,7 +121,7 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations'>('overview');
 
   // Fetch CRM stats
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -288,6 +289,7 @@ export default function CRMPage() {
             { id: 'automation', label: 'Automation', icon: Zap },
             { id: 'documents', label: 'Documents', icon: FileText },
             { id: 'coaching', label: 'Coaching', icon: Target },
+            { id: 'integrations', label: 'Integrations', icon: Mail },
             { id: 'tasks', label: 'Tasks', icon: ClipboardCheck },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -372,6 +374,7 @@ export default function CRMPage() {
       {activeTab === 'automation' && <WorkflowAutomation />}
       {activeTab === 'documents' && <DocumentManager />}
       {activeTab === 'coaching' && <SalesCoachingPanel />}
+      {activeTab === 'integrations' && <EmailIntegrationHub />}
       {activeTab === 'tasks' && <TasksManager showAll={true} />}
     </div>
   );

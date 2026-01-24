@@ -14,6 +14,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { formatCurrency } from '../../lib/currencyUtils';
+import PipelineVelocityChart from './PipelineVelocityChart';
 
 interface CRMMetrics {
   totalLeads: number;
@@ -276,6 +277,9 @@ export default function CRMAnalyticsDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Pipeline Velocity Chart */}
+      <PipelineVelocityChart />
     </div>
   );
 }
