@@ -56,6 +56,12 @@ import CustomerSuccessHub from '../components/crm/CustomerSuccessHub';
 import ReferralTracker from '../components/crm/ReferralTracker';
 import AILeadScoring from '../components/crm/AILeadScoring';
 import AIForecastingDashboard from '../components/crm/AIForecastingDashboard';
+import AccountsListView from '../components/crm/AccountsListView';
+import ContactsListView from '../components/crm/ContactsListView';
+import CampaignsView from '../components/crm/CampaignsView';
+import CommunicationHub from '../components/crm/CommunicationHub';
+import NextBestAction from '../components/crm/NextBestAction';
+import AICopywriter from '../components/crm/AICopywriter';
 import { useSalesTeam } from '../hooks/useSalesTeam';
 import {
   exportLeadsToExcel,
@@ -126,7 +132,7 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'leads' | 'opportunities' | 'activities' | 'analytics' | 'tasks' | 'pipeline' | 'intelligence' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals' | 'ai-scoring' | 'ai-forecast'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'contacts' | 'leads' | 'opportunities' | 'activities' | 'campaigns' | 'intelligence' | 'communication' | 'analytics' | 'tasks' | 'pipeline' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals' | 'ai-scoring' | 'ai-forecast'>('overview');
 
   // Fetch CRM stats
   const { data: stats, isLoading: _statsLoading } = useQuery({
@@ -282,9 +288,14 @@ export default function CRMPage() {
         <nav className="flex gap-6 overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: BarChart3 },
+            { id: 'accounts', label: 'Accounts', icon: Building2 },
+            { id: 'contacts', label: 'Contacts', icon: Users },
             { id: 'leads', label: 'Leads', icon: Users },
             { id: 'opportunities', label: 'Opportunities', icon: TrendingUp },
             { id: 'pipeline', label: 'Pipeline', icon: Target },
+            { id: 'communication', label: 'Comm Hub', icon: MessageSquare },
+            { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
+            { id: 'intelligence', label: 'AI Actions', icon: Lightbulb },
             { id: 'forecast', label: 'Forecast', icon: TrendingUp },
             { id: 'activities', label: 'Activities', icon: Calendar },
             { id: 'analytics', label: 'Analytics', icon: LineChart },
@@ -371,6 +382,21 @@ export default function CRMPage() {
 
           <CRMOverview />
         </>
+      )}
+
+      {activeTab === 'accounts' && <AccountsListView />}
+      {activeTab === 'contacts' && <ContactsListView />}
+      {activeTab === 'campaigns' && <CampaignsView />}
+      {activeTab === 'communication' && <CommunicationHub />}
+      {activeTab === 'intelligence' && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 font-inter">
+          <NextBestAction />
+          <AICopywriter context={{
+            recipientName: 'Valued Customer',
+            companyName: 'Potential Enterprise',
+            goal: 'Close deal'
+          }} />
+        </div>
       )}
 
       {activeTab === 'leads' && <LeadsView />}
