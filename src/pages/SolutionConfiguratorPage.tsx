@@ -33,27 +33,46 @@ interface SelectedProduct {
 }
 
 interface Requirements {
-    users: number;
-    deployment: 'cloud' | 'on-premise' | 'hybrid';
-    integrations: string[];
-    compliance: string[];
-    budget_range: string;
+    project_type: 'office' | 'hospitality' | 'mixed';
+    space_sqm: number;
+    workstations: number;
+    hotel_rooms: number;
+    finish_grade: 'economy' | 'standard' | 'premium' | 'luxury';
+    materials: string[];
+    services: string[];
     timeline: string;
+    fire_rating_required: boolean;
 }
 
 const WIZARD_STEPS = [
-    { id: 'requirements', title: 'Requirements', icon: Target },
+    { id: 'requirements', title: 'Project Details', icon: Target },
     { id: 'products', title: 'Select Products', icon: Package },
     { id: 'configure', title: 'Configure', icon: Wand2 },
     { id: 'review', title: 'Review & Save', icon: FileText },
 ];
 
-const INTEGRATION_OPTIONS = ['SAP', 'Oracle', 'Salesforce', 'HubSpot', 'Microsoft 365', 'Slack', 'Custom API'];
-const COMPLIANCE_OPTIONS = ['SOC2', 'ISO 27001', 'GDPR', 'HIPAA', 'PCI-DSS'];
-const DEPLOYMENT_OPTIONS = [
-    { value: 'cloud', label: 'Cloud (SaaS)' },
-    { value: 'on-premise', label: 'On-Premise' },
-    { value: 'hybrid', label: 'Hybrid' },
+// Furniture industry options
+const PROJECT_TYPES = [
+    { value: 'office', label: 'Office Furniture' },
+    { value: 'hospitality', label: 'Hospitality/Hotel' },
+    { value: 'mixed', label: 'Mixed Project' },
+];
+
+const FINISH_GRADES = [
+    { value: 'economy', label: 'Economy', description: 'Basic laminate, fabric' },
+    { value: 'standard', label: 'Standard', description: 'Mid-grade materials' },
+    { value: 'premium', label: 'Premium', description: 'High-quality finishes' },
+    { value: 'luxury', label: 'Luxury', description: 'Top-tier materials, custom design' },
+];
+
+const MATERIAL_OPTIONS = ['Laminate', 'Veneer', 'Solid Wood', 'Metal', 'Leather', 'Fabric', 'Glass', 'Marble', 'HPL'];
+const SERVICE_OPTIONS = ['Space Planning', 'Design Consultation', 'Installation', 'Delivery', 'Removal of Old Furniture', 'Custom Manufacturing', 'Project Management'];
+
+const FURNITURE_CATEGORIES = [
+    { id: 'office', label: 'Office Furniture', subcats: ['Desks', 'Workstations', 'Task Chairs', 'Storage', 'Meeting'] },
+    { id: 'hospitality', label: 'Hospitality', subcats: ['Bedding', 'Casegoods', 'Hotel Seating', 'Lighting'] },
+    { id: 'chairs', label: 'Imported Chairs', subcats: ['Executive', 'Mesh', 'Visitor', 'Lounge'] },
+    { id: 'services', label: 'Services', subcats: ['Logistics', 'Design', 'Installation'] },
 ];
 
 export default function SolutionConfiguratorPage() {
@@ -68,13 +87,17 @@ export default function SolutionConfiguratorPage() {
     // Form state
     const [configName, setConfigName] = useState('');
     const [opportunityId, setOpportunityId] = useState('');
+    const [activeCategory, setActiveCategory] = useState('all');
     const [requirements, setRequirements] = useState<Requirements>({
-        users: 10,
-        deployment: 'cloud',
-        integrations: [],
-        compliance: [],
-        budget_range: '',
+        project_type: 'office',
+        space_sqm: 100,
+        workstations: 0,
+        hotel_rooms: 0,
+        finish_grade: 'standard',
+        materials: [],
+        services: [],
         timeline: '',
+        fire_rating_required: false,
     });
     const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
     const [discountPercentage, setDiscountPercentage] = useState(0);
@@ -102,10 +125,12 @@ export default function SolutionConfiguratorPage() {
     };
 
     const filteredProducts = products.filter(
-        (p) =>
-            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.category?.toLowerCase().includes(searchTerm.toLowerCase())
+        (p) => {
+            const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.description?.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
+            return matchesSearch && matchesCategory;
+        }
     );
 
     const addProduct = (product: Product) => {
@@ -170,12 +195,15 @@ export default function SolutionConfiguratorPage() {
             setConfigName('');
             setOpportunityId('');
             setRequirements({
-                users: 10,
-                deployment: 'cloud',
-                integrations: [],
-                compliance: [],
-                budget_range: '',
+                project_type: 'office',
+                space_sqm: 100,
+                workstations: 0,
+                hotel_rooms: 0,
+                finish_grade: 'standard',
+                materials: [],
+                services: [],
                 timeline: '',
+                fire_rating_required: false,
             });
             setSelectedProducts([]);
             setDiscountPercentage(0);
@@ -192,7 +220,7 @@ export default function SolutionConfiguratorPage() {
     const canProceed = () => {
         switch (currentStep) {
             case 0:
-                return requirements.users > 0 && requirements.deployment;
+                return requirements.space_sqm > 0 && requirements.project_type;
             case 1:
                 return selectedProducts.length > 0;
             case 2:
@@ -253,89 +281,144 @@ export default function SolutionConfiguratorPage() {
 
                 {/* Step Content */}
                 <div className="min-h-[400px]">
-                    {/* Step 1: Requirements */}
+                    {/* Step 1: Project Details */}
                     {currentStep === 0 && (
                         <div className="space-y-6">
-                            <h2 className="text-lg font-semibold text-slate-900">Gather Customer Requirements</h2>
+                            <h2 className="text-lg font-semibold text-slate-900">Project Details</h2>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">Number of Users</label>
-                                    <input
-                                        type="number"
-                                        value={requirements.users}
-                                        onChange={(e) => setRequirements({ ...requirements, users: parseInt(e.target.value) || 0 })}
-                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                                        min="1"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">Deployment Model</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Project Type</label>
                                     <select
-                                        value={requirements.deployment}
-                                        onChange={(e) => setRequirements({ ...requirements, deployment: e.target.value as any })}
+                                        value={requirements.project_type}
+                                        onChange={(e) => setRequirements({ ...requirements, project_type: e.target.value as any })}
                                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                     >
-                                        {DEPLOYMENT_OPTIONS.map((opt) => (
+                                        {PROJECT_TYPES.map((opt) => (
                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                                         ))}
                                     </select>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">Required Integrations</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Space Size (sqm)</label>
+                                    <input
+                                        type="number"
+                                        value={requirements.space_sqm}
+                                        onChange={(e) => setRequirements({ ...requirements, space_sqm: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        min="1"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Finish Grade</label>
+                                    <select
+                                        value={requirements.finish_grade}
+                                        onChange={(e) => setRequirements({ ...requirements, finish_grade: e.target.value as any })}
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        {FINISH_GRADES.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label} - {opt.description}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {(requirements.project_type === 'office' || requirements.project_type === 'mixed') && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Number of Workstations</label>
+                                        <input
+                                            type="number"
+                                            value={requirements.workstations}
+                                            onChange={(e) => setRequirements({ ...requirements, workstations: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            min="0"
+                                        />
+                                    </div>
+                                )}
+
+                                {(requirements.project_type === 'hospitality' || requirements.project_type === 'mixed') && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Number of Hotel Rooms</label>
+                                        <input
+                                            type="number"
+                                            value={requirements.hotel_rooms}
+                                            onChange={(e) => setRequirements({ ...requirements, hotel_rooms: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            min="0"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Preferred Materials</label>
                                     <div className="flex flex-wrap gap-2">
-                                        {INTEGRATION_OPTIONS.map((integration) => (
+                                        {MATERIAL_OPTIONS.map((material) => (
                                             <button
-                                                key={integration}
+                                                key={material}
                                                 type="button"
                                                 onClick={() => {
-                                                    const current = requirements.integrations;
+                                                    const current = requirements.materials;
                                                     setRequirements({
                                                         ...requirements,
-                                                        integrations: current.includes(integration)
-                                                            ? current.filter((i) => i !== integration)
-                                                            : [...current, integration],
+                                                        materials: current.includes(material)
+                                                            ? current.filter((m) => m !== material)
+                                                            : [...current, material],
                                                     });
                                                 }}
-                                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${requirements.integrations.includes(integration)
-                                                    ? 'bg-indigo-600 text-white'
+                                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${requirements.materials.includes(material)
+                                                    ? 'bg-amber-600 text-white'
                                                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                                     }`}
                                             >
-                                                {integration}
+                                                {material}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">Compliance Requirements</label>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Required Services</label>
                                     <div className="flex flex-wrap gap-2">
-                                        {COMPLIANCE_OPTIONS.map((compliance) => (
+                                        {SERVICE_OPTIONS.map((service) => (
                                             <button
-                                                key={compliance}
+                                                key={service}
                                                 type="button"
                                                 onClick={() => {
-                                                    const current = requirements.compliance;
+                                                    const current = requirements.services;
                                                     setRequirements({
                                                         ...requirements,
-                                                        compliance: current.includes(compliance)
-                                                            ? current.filter((c) => c !== compliance)
-                                                            : [...current, compliance],
+                                                        services: current.includes(service)
+                                                            ? current.filter((s) => s !== service)
+                                                            : [...current, service],
                                                     });
                                                 }}
-                                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${requirements.compliance.includes(compliance)
-                                                    ? 'bg-emerald-600 text-white'
+                                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${requirements.services.includes(service)
+                                                    ? 'bg-indigo-600 text-white'
                                                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                                     }`}
                                             >
-                                                {compliance}
+                                                {service}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="flex items-center gap-6">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={requirements.fire_rating_required}
+                                        onChange={(e) => setRequirements({ ...requirements, fire_rating_required: e.target.checked })}
+                                        className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                                    />
+                                    <span className="text-sm text-slate-700">Fire Rating Compliance Required (Hotels/Commercial)</span>
+                                </label>
                             </div>
 
                             <div>
@@ -359,17 +442,43 @@ export default function SolutionConfiguratorPage() {
                     {/* Step 2: Select Products */}
                     {currentStep === 1 && (
                         <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-slate-900">Select Products</h2>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Search products..."
-                                        className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 w-64"
-                                    />
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-lg font-semibold text-slate-900">Select Products</h2>
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            placeholder="Search products..."
+                                            className="pl-9 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 w-64"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-100">
+                                    <button
+                                        onClick={() => setActiveCategory('all')}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeCategory === 'all'
+                                            ? 'bg-slate-900 text-white'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                            }`}
+                                    >
+                                        All Products
+                                    </button>
+                                    {FURNITURE_CATEGORIES.map((cat) => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => setActiveCategory(cat.id)}
+                                            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeCategory === cat.id
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                }`}
+                                        >
+                                            {cat.label}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -533,39 +642,61 @@ export default function SolutionConfiguratorPage() {
                                 <div className="bg-slate-50 rounded-xl p-6">
                                     <h3 className="font-medium text-slate-900 mb-4 flex items-center gap-2">
                                         <Target className="w-4 h-4" />
-                                        Requirements
+                                        Project Details
                                     </h3>
                                     <dl className="space-y-2 text-sm">
                                         <div className="flex justify-between">
-                                            <dt className="text-slate-600">Users</dt>
-                                            <dd className="font-medium">{requirements.users}</dd>
+                                            <dt className="text-slate-600">Project Type</dt>
+                                            <dd className="font-medium capitalize">{requirements.project_type}</dd>
                                         </div>
                                         <div className="flex justify-between">
-                                            <dt className="text-slate-600">Deployment</dt>
-                                            <dd className="font-medium capitalize">{requirements.deployment.replace('-', ' ')}</dd>
+                                            <dt className="text-slate-600">Space Size</dt>
+                                            <dd className="font-medium">{requirements.space_sqm} sqm</dd>
                                         </div>
-                                        {requirements.integrations.length > 0 && (
+                                        <div className="flex justify-between">
+                                            <dt className="text-slate-600">Finish Grade</dt>
+                                            <dd className="font-medium capitalize">{requirements.finish_grade}</dd>
+                                        </div>
+                                        {requirements.workstations > 0 && (
+                                            <div className="flex justify-between">
+                                                <dt className="text-slate-600">Workstations</dt>
+                                                <dd className="font-medium">{requirements.workstations}</dd>
+                                            </div>
+                                        )}
+                                        {requirements.hotel_rooms > 0 && (
+                                            <div className="flex justify-between">
+                                                <dt className="text-slate-600">Hotel Rooms</dt>
+                                                <dd className="font-medium">{requirements.hotel_rooms}</dd>
+                                            </div>
+                                        )}
+                                        {requirements.materials.length > 0 && (
                                             <div>
-                                                <dt className="text-slate-600 mb-1">Integrations</dt>
+                                                <dt className="text-slate-600 mb-1">Materials</dt>
                                                 <dd className="flex flex-wrap gap-1">
-                                                    {requirements.integrations.map((i) => (
-                                                        <span key={i} className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs">
-                                                            {i}
+                                                    {requirements.materials.map((m) => (
+                                                        <span key={m} className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs">
+                                                            {m}
                                                         </span>
                                                     ))}
                                                 </dd>
                                             </div>
                                         )}
-                                        {requirements.compliance.length > 0 && (
+                                        {requirements.services.length > 0 && (
                                             <div>
-                                                <dt className="text-slate-600 mb-1">Compliance</dt>
+                                                <dt className="text-slate-600 mb-1">Services</dt>
                                                 <dd className="flex flex-wrap gap-1">
-                                                    {requirements.compliance.map((c) => (
-                                                        <span key={c} className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs">
-                                                            {c}
+                                                    {requirements.services.map((s) => (
+                                                        <span key={s} className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs">
+                                                            {s}
                                                         </span>
                                                     ))}
                                                 </dd>
+                                            </div>
+                                        )}
+                                        {requirements.fire_rating_required && (
+                                            <div className="flex justify-between">
+                                                <dt className="text-slate-600">Fire Rating</dt>
+                                                <dd className="font-medium text-emerald-600">Required ✓</dd>
                                             </div>
                                         )}
                                     </dl>

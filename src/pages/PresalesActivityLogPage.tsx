@@ -10,24 +10,27 @@ import {
     Filter,
     X,
     Save,
-    Phone,
-    Presentation,
     MessageSquare,
     FileCheck,
     Users,
     Edit2,
     Trash2,
+    Map,
+    Layout,
+    Palette,
+    Factory,
+    ClipboardCheck,
 } from 'lucide-react';
 
 type ActivityType =
-    | 'demo'
-    | 'discovery_call'
-    | 'technical_qa'
+    | 'site_survey'
+    | 'mockup_setup'
+    | 'design_consultation'
     | 'proposal_review'
-    | 'poc_session'
-    | 'follow_up'
-    | 'internal_meeting'
-    | 'training'
+    | 'samples_presentation'
+    | 'boq_review'
+    | 'factory_coordination'
+    | 'installation_supervision'
     | 'other';
 
 interface PresalesActivity {
@@ -57,14 +60,14 @@ interface FormData {
 }
 
 const ACTIVITY_TYPE_CONFIG: Record<ActivityType, { label: string; icon: React.ElementType; color: string }> = {
-    demo: { label: 'Demo', icon: Presentation, color: 'bg-indigo-100 text-indigo-700' },
-    discovery_call: { label: 'Discovery Call', icon: Phone, color: 'bg-blue-100 text-blue-700' },
-    technical_qa: { label: 'Technical Q&A', icon: MessageSquare, color: 'bg-purple-100 text-purple-700' },
+    site_survey: { label: 'Site Survey', icon: Map, color: 'bg-blue-100 text-blue-700' },
+    mockup_setup: { label: 'Mockup Setup', icon: Layout, color: 'bg-indigo-100 text-indigo-700' },
+    design_consultation: { label: 'Design Consultation', icon: MessageSquare, color: 'bg-purple-100 text-purple-700' },
     proposal_review: { label: 'Proposal Review', icon: FileCheck, color: 'bg-amber-100 text-amber-700' },
-    poc_session: { label: 'POC Session', icon: Target, color: 'bg-emerald-100 text-emerald-700' },
-    follow_up: { label: 'Follow Up', icon: Phone, color: 'bg-cyan-100 text-cyan-700' },
-    internal_meeting: { label: 'Internal Meeting', icon: Users, color: 'bg-slate-100 text-slate-700' },
-    training: { label: 'Training', icon: Activity, color: 'bg-orange-100 text-orange-700' },
+    samples_presentation: { label: 'Samples Presentation', icon: Palette, color: 'bg-rose-100 text-rose-700' },
+    boq_review: { label: 'BOQ Review', icon: ClipboardCheck, color: 'bg-emerald-100 text-emerald-700' },
+    factory_coordination: { label: 'Factory Coordination', icon: Factory, color: 'bg-slate-100 text-slate-700' },
+    installation_supervision: { label: 'Installation Supervision', icon: Users, color: 'bg-orange-100 text-orange-700' },
     other: { label: 'Other', icon: Activity, color: 'bg-gray-100 text-gray-700' },
 };
 
@@ -80,7 +83,7 @@ export default function PresalesActivityLogPage() {
 
     const now = new Date();
     const [formData, setFormData] = useState<FormData>({
-        activity_type: 'demo',
+        activity_type: 'site_survey',
         title: '',
         description: '',
         activity_date: now.toISOString().split('T')[0],
@@ -167,7 +170,7 @@ export default function PresalesActivityLogPage() {
     const resetForm = () => {
         const now = new Date();
         setFormData({
-            activity_type: 'demo',
+            activity_type: 'site_survey',
             title: '',
             description: '',
             activity_date: now.toISOString().split('T')[0],
@@ -260,15 +263,15 @@ export default function PresalesActivityLogPage() {
                     </p>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                    <p className="text-sm text-slate-600">Demos</p>
+                    <p className="text-sm text-slate-600">Mockups</p>
                     <p className="text-2xl font-bold text-indigo-600">
-                        {activities.filter((a) => a.activity_type === 'demo').length}
+                        {activities.filter((a) => a.activity_type === 'mockup_setup').length}
                     </p>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                    <p className="text-sm text-slate-600">Discovery Calls</p>
+                    <p className="text-sm text-slate-600">Site Surveys</p>
                     <p className="text-2xl font-bold text-blue-600">
-                        {activities.filter((a) => a.activity_type === 'discovery_call').length}
+                        {activities.filter((a) => a.activity_type === 'site_survey').length}
                     </p>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">

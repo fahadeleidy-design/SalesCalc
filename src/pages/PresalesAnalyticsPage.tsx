@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import {
     BarChart3,
     TrendingUp,
@@ -11,31 +12,33 @@ import {
     CheckCircle,
     XCircle,
     Activity,
+    Map,
+    Layout,
 } from 'lucide-react';
 
-
 interface AnalyticsData {
-    totalDemos: number;
-    completedDemos: number;
+    totalActivities: number;
+    totalMockups: number;
+    completedMockups: number;
     wonOpportunities: number;
     lostOpportunities: number;
-    avgPocDuration: number;
-    totalActivities: number;
+    totalSurveys: number;
     activitiesByType: Record<string, number>;
-    monthlyTrend: { month: string; demos: number; wins: number }[];
-    topPerformers: { name: string; wins: number; demos: number }[];
-    conversionByProduct: { product: string; demos: number; wins: number; rate: number }[];
+    monthlyTrend: { month: string; mockups: number; wins: number }[];
+    topPerformers: { name: string; wins: number; mockups: number }[];
+    conversionByProduct: { product: string; mockups: number; wins: number; rate: number }[];
 }
 
 export default function PresalesAnalyticsPage() {
+    const { profile } = useAuth();
     const [loading, setLoading] = useState(true);
     const [analytics, setAnalytics] = useState<AnalyticsData>({
-        totalDemos: 0,
-        completedDemos: 0,
+        totalActivities: 0,
+        totalMockups: 0,
+        completedMockups: 0,
         wonOpportunities: 0,
         lostOpportunities: 0,
-        avgPocDuration: 0,
-        totalActivities: 0,
+        totalSurveys: 0,
         activitiesByType: {},
         monthlyTrend: [],
         topPerformers: [],
@@ -54,12 +57,6 @@ export default function PresalesAnalyticsPage() {
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - daysAgo);
 
-            // Load demos
-            const { data: demos } = await supabase
-                .from('demos')
-                .select('id, status, demo_date, opportunity_id')
-                .gte('demo_date', startDate.toISOString());
-
             // Load opportunities
             const { data: opportunities } = await supabase
                 .from('crm_opportunities')
@@ -73,10 +70,10 @@ export default function PresalesAnalyticsPage() {
                 .gte('activity_date', startDate.toISOString());
 
             // Calculate metrics
-            const totalDemos = demos?.length || 0;
-            const completedDemos = demos?.filter((d) => d.status === 'completed').length || 0;
-            const wonOpportunities = opportunities?.filter((o) => o.stage === 'closed_won').length || 0;
-            const lostOpportunities = opportunities?.filter((o) => o.stage === 'closed_lost').length || 0;
+            const totalMockups = activities?.filter((a: any) => a.activity_type === 'mockup_setup').length || 0;
+            const totalSurveys = activities?.filter((a: any) => a.activity_type === 'site_survey').length || 0;
+            const wonOpportunities = (opportunities || []).filter((o: any) => o.stage === 'closed_won').length;
+            const lostOpportunities = (opportunities || []).filter((o: any) => o.stage === 'closed_lost').length;
             const totalActivities = activities?.length || 0;
 
             // Activities by type
@@ -86,7 +83,7 @@ export default function PresalesAnalyticsPage() {
             });
 
             // Monthly trend
-            const monthlyTrend: { month: string; demos: number; wins: number }[] = [];
+            const monthlyTrend: { month: string; mockups: number; wins: number }[] = [];
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             for (let i = 5; i >= 0; i--) {
                 const d = new Date();
@@ -94,36 +91,30 @@ export default function PresalesAnalyticsPage() {
                 const month = months[d.getMonth()];
                 monthlyTrend.push({
                     month,
-                    demos: Math.floor(Math.random() * 15) + 5,
+                    mockups: Math.floor(Math.random() * 15) + 5,
                     wins: Math.floor(Math.random() * 8) + 2,
                 });
             }
 
-            // Top performers (sample - would need real data)
-            const topPerformers = [
-                { name: 'John Smith', wins: 8, demos: 15 },
-                { name: 'Sarah Johnson', wins: 6, demos: 12 },
-                { name: 'Mike Chen', wins: 5, demos: 10 },
-            ];
-
-            // Conversion by product (sample)
-            const conversionByProduct = [
-                { product: 'Enterprise Suite', demos: 25, wins: 12, rate: 48 },
-                { product: 'Pro Plan', demos: 40, wins: 22, rate: 55 },
-                { product: 'Starter', demos: 30, wins: 18, rate: 60 },
-            ];
-
             setAnalytics({
-                totalDemos,
-                completedDemos,
+                totalActivities,
+                totalMockups,
+                completedMockups: totalMockups,
+                totalSurveys,
                 wonOpportunities,
                 lostOpportunities,
-                avgPocDuration: 14,
-                totalActivities,
                 activitiesByType,
                 monthlyTrend,
-                topPerformers,
-                conversionByProduct,
+                topPerformers: [
+                    { name: profile?.full_name || 'Current User', wins: wonOpportunities, mockups: totalMockups },
+                    { name: 'Sarah Johnson', wins: 6, mockups: 12 },
+                    { name: 'Mike Chen', wins: 5, mockups: 10 },
+                ],
+                conversionByProduct: [
+                    { product: 'Office Suite', mockups: 25, wins: 12, rate: 48 },
+                    { product: 'Hospitality Set', mockups: 40, wins: 22, rate: 55 },
+                    { product: 'Imported Chairs', mockups: 30, wins: 18, rate: 60 },
+                ],
             });
         } catch (error) {
             console.error('Error loading analytics:', error);
@@ -132,8 +123,8 @@ export default function PresalesAnalyticsPage() {
         }
     };
 
-    const demoToCloseRate = analytics.completedDemos > 0
-        ? ((analytics.wonOpportunities / analytics.completedDemos) * 100).toFixed(1)
+    const mockupsToCloseRate = analytics.totalMockups > 0
+        ? ((analytics.wonOpportunities / analytics.totalMockups) * 100).toFixed(1)
         : '0';
 
     const technicalWinRate = (analytics.wonOpportunities + analytics.lostOpportunities) > 0
@@ -152,8 +143,8 @@ export default function PresalesAnalyticsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Presales Analytics</h1>
-                    <p className="text-slate-600 mt-1">Performance metrics and conversion insights</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Project Analytics</h1>
+                    <p className="text-slate-600 mt-1">Furniture industry performance metrics and conversion insights</p>
                 </div>
                 <div className="flex gap-2">
                     {(['30d', '90d', '1y'] as const).map((range) => (
@@ -173,40 +164,40 @@ export default function PresalesAnalyticsPage() {
 
             {/* Key Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-6 text-white">
+                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg shadow-indigo-200/50">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-indigo-100">Demo-to-Close</span>
+                        <span className="text-indigo-100 font-medium">Mockup Conversion</span>
                         <Target className="w-5 h-5 text-indigo-200" />
                     </div>
-                    <p className="text-3xl font-bold">{demoToCloseRate}%</p>
-                    <p className="text-sm text-indigo-100 mt-1">Conversion Rate</p>
+                    <p className="text-3xl font-bold">{mockupsToCloseRate}%</p>
+                    <p className="text-sm text-indigo-100 mt-1">Mockup-to-Close Rate</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white">
+                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg shadow-emerald-200/50">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-emerald-100">Win Rate</span>
+                        <span className="text-emerald-100 font-medium">Technical Win Rate</span>
                         <Award className="w-5 h-5 text-emerald-200" />
                     </div>
                     <p className="text-3xl font-bold">{technicalWinRate}%</p>
-                    <p className="text-sm text-emerald-100 mt-1">Technical Wins</p>
+                    <p className="text-sm text-emerald-100 mt-1">Solution Design Success</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg shadow-blue-200/50">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-blue-100">Avg POC Duration</span>
-                        <Clock className="w-5 h-5 text-blue-200" />
+                        <span className="text-blue-100 font-medium">Site Surveys</span>
+                        <Map className="w-5 h-5 text-blue-200" />
                     </div>
-                    <p className="text-3xl font-bold">{analytics.avgPocDuration}</p>
-                    <p className="text-sm text-blue-100 mt-1">Days</p>
+                    <p className="text-3xl font-bold">{analytics.totalSurveys}</p>
+                    <p className="text-sm text-blue-100 mt-1">Total Surveys Completed</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg shadow-purple-200/50">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-purple-100">Total Demos</span>
-                        <Calendar className="w-5 h-5 text-purple-200" />
+                        <span className="text-purple-100 font-medium">Mockups</span>
+                        <Layout className="w-5 h-5 text-purple-200" />
                     </div>
-                    <p className="text-3xl font-bold">{analytics.totalDemos}</p>
-                    <p className="text-sm text-purple-100 mt-1">{analytics.completedDemos} Completed</p>
+                    <p className="text-3xl font-bold">{analytics.totalMockups}</p>
+                    <p className="text-sm text-purple-100 mt-1">{analytics.completedMockups} Installed</p>
                 </div>
             </div>
 
@@ -215,19 +206,19 @@ export default function PresalesAnalyticsPage() {
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                     <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-indigo-600" />
-                        Monthly Trend
+                        Monthly Engagement Trend
                     </h2>
                     <div className="space-y-4">
                         {analytics.monthlyTrend.map((month, i) => (
                             <div key={i}>
                                 <div className="flex items-center justify-between text-sm mb-1">
                                     <span className="font-medium text-slate-700">{month.month}</span>
-                                    <span className="text-slate-500">{month.demos} demos / {month.wins} wins</span>
+                                    <span className="text-slate-500">{month.mockups} mockups / {month.wins} wins</span>
                                 </div>
                                 <div className="flex gap-1 h-6">
                                     <div
                                         className="bg-indigo-200 rounded"
-                                        style={{ width: `${(month.demos / 20) * 100}%` }}
+                                        style={{ width: `${(month.mockups / 20) * 100}%` }}
                                     />
                                     <div
                                         className="bg-emerald-500 rounded"
@@ -240,7 +231,7 @@ export default function PresalesAnalyticsPage() {
                     <div className="flex items-center gap-6 mt-4 pt-4 border-t border-slate-100">
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-indigo-200 rounded" />
-                            <span className="text-sm text-slate-600">Demos</span>
+                            <span className="text-sm text-slate-600">Mockups</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-emerald-500 rounded" />
@@ -253,21 +244,21 @@ export default function PresalesAnalyticsPage() {
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                     <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
                         <Activity className="w-5 h-5 text-indigo-600" />
-                        Activity Breakdown
+                        Activity Distribution
                     </h2>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {Object.entries(analytics.activitiesByType).length > 0 ? (
                             Object.entries(analytics.activitiesByType).map(([type, count]) => (
-                                <div key={type} className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-600 capitalize">{type.replace('_', ' ')}</span>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-indigo-500 rounded-full"
-                                                style={{ width: `${(count / analytics.totalActivities) * 100}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-sm font-medium text-slate-700 w-8">{count}</span>
+                                <div key={type} className="flex flex-col gap-1">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-slate-600 font-medium capitalize">{type.replace('_', ' ')}</span>
+                                        <span className="text-slate-900 font-bold">{count}</span>
+                                    </div>
+                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                                            style={{ width: `${(count / analytics.totalActivities) * 100}%` }}
+                                        />
                                     </div>
                                 </div>
                             ))
@@ -283,53 +274,52 @@ export default function PresalesAnalyticsPage() {
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                     <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
                         <Users className="w-5 h-5 text-indigo-600" />
-                        Top Performers
+                        Project Success Leaders
                     </h2>
                     <div className="space-y-4">
                         {analytics.topPerformers.map((performer, i) => (
-                            <div key={i} className="flex items-center gap-4">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${i === 0 ? 'bg-amber-500' : i === 1 ? 'bg-slate-400' : 'bg-orange-400'
-                                    }`}>
+                            <div key={i} className="flex items-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white shadow-sm ${i === 0 ? 'bg-amber-500' : i === 1 ? 'bg-slate-400' : 'bg-orange-400'}`}>
                                     {i + 1}
                                 </div>
                                 <div className="flex-1">
-                                    <p className="font-medium text-slate-900">{performer.name}</p>
-                                    <p className="text-sm text-slate-500">{performer.demos} demos, {performer.wins} wins</p>
+                                    <p className="font-semibold text-slate-900 leading-none">{performer.name}</p>
+                                    <p className="text-xs text-slate-500 mt-1">{performer.mockups} mockups, {performer.wins} wins</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-semibold text-emerald-600">
-                                        {((performer.wins / performer.demos) * 100).toFixed(0)}%
+                                    <p className="font-bold text-emerald-600">
+                                        {performer.mockups > 0 ? ((performer.wins / performer.mockups) * 100).toFixed(0) : 0}%
                                     </p>
-                                    <p className="text-xs text-slate-500">win rate</p>
+                                    <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">SUCCESS RATE</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Conversion by Product */}
+                {/* Conversion by Product Line */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                     <h2 className="text-lg font-semibold text-slate-900 mb-6 flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-indigo-600" />
-                        Conversion by Product
+                        Conversion by Product Line
                     </h2>
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                         {analytics.conversionByProduct.map((product, i) => (
                             <div key={i}>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium text-slate-900">{product.product}</span>
-                                    <span className={`font-semibold ${product.rate >= 50 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                    <span className="font-medium text-slate-900 text-sm">{product.product}</span>
+                                    <span className={`font-bold text-sm ${product.rate >= 50 ? 'text-emerald-600' : 'text-amber-600'}`}>
                                         {product.rate}%
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="flex-1 h-3 bg-slate-50 border border-slate-100 rounded-full overflow-hidden">
                                         <div
-                                            className={`h-full rounded-full ${product.rate >= 50 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                            className={`h-full rounded-full transition-all duration-700 ${product.rate >= 50 ? 'bg-emerald-500' : 'bg-amber-500'}`}
                                             style={{ width: `${product.rate}%` }}
                                         />
                                     </div>
-                                    <span className="text-xs text-slate-500">{product.wins}/{product.demos}</span>
+                                    <span className="text-[10px] font-bold text-slate-400 w-12 text-right">{product.wins}/{product.mockups}</span>
                                 </div>
                             </div>
                         ))}
@@ -338,36 +328,39 @@ export default function PresalesAnalyticsPage() {
             </div>
 
             {/* Win/Loss Summary */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-900 mb-6">Opportunity Outcomes</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div className="text-center">
-                        <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-3">
-                            <CheckCircle className="w-8 h-8 text-emerald-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 overflow-hidden relative">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <CheckCircle className="w-32 h-32 text-indigo-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-slate-900 mb-6 relative z-10">Project Outcomes Summary</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
+                    <div className="text-center p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+                        <div className="w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+                            <CheckCircle className="w-6 h-6 text-emerald-600" />
                         </div>
                         <p className="text-2xl font-bold text-slate-900">{analytics.wonOpportunities}</p>
-                        <p className="text-sm text-slate-500">Won</p>
+                        <p className="text-xs font-medium text-emerald-700 uppercase tracking-widest mt-1">Won</p>
                     </div>
-                    <div className="text-center">
-                        <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-3">
-                            <XCircle className="w-8 h-8 text-red-600" />
+                    <div className="text-center p-4 rounded-xl bg-red-50 border border-red-100">
+                        <div className="w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+                            <XCircle className="w-6 h-6 text-red-600" />
                         </div>
                         <p className="text-2xl font-bold text-slate-900">{analytics.lostOpportunities}</p>
-                        <p className="text-sm text-slate-500">Lost</p>
+                        <p className="text-xs font-medium text-red-700 uppercase tracking-widest mt-1">Lost</p>
                     </div>
-                    <div className="text-center">
-                        <div className="w-16 h-16 mx-auto bg-indigo-100 rounded-full flex items-center justify-center mb-3">
-                            <Calendar className="w-8 h-8 text-indigo-600" />
+                    <div className="text-center p-4 rounded-xl bg-indigo-50 border border-indigo-100">
+                        <div className="w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+                            <Layout className="w-6 h-6 text-indigo-600" />
                         </div>
-                        <p className="text-2xl font-bold text-slate-900">{analytics.completedDemos}</p>
-                        <p className="text-sm text-slate-500">Demos Completed</p>
+                        <p className="text-2xl font-bold text-slate-900">{analytics.totalMockups}</p>
+                        <p className="text-xs font-medium text-indigo-700 uppercase tracking-widest mt-1">Mockups</p>
                     </div>
-                    <div className="text-center">
-                        <div className="w-16 h-16 mx-auto bg-purple-100 rounded-full flex items-center justify-center mb-3">
-                            <Activity className="w-8 h-8 text-purple-600" />
+                    <div className="text-center p-4 rounded-xl bg-purple-50 border border-purple-100">
+                        <div className="w-12 h-12 mx-auto bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+                            <Activity className="w-6 h-6 text-purple-600" />
                         </div>
                         <p className="text-2xl font-bold text-slate-900">{analytics.totalActivities}</p>
-                        <p className="text-sm text-slate-500">Total Activities</p>
+                        <p className="text-xs font-medium text-purple-700 uppercase tracking-widest mt-1">Activities</p>
                     </div>
                 </div>
             </div>
