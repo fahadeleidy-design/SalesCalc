@@ -4,6 +4,13 @@ import { supabase } from './supabase';
 // Types
 // =============================================================================
 
+export type DataSourceType =
+    | 'quotations'
+    | 'leads'
+    | 'opportunities'
+    | 'collections'
+    | 'purchase_orders';
+
 export type DimensionType =
     | 'sales_rep'
     | 'customer'
@@ -12,7 +19,11 @@ export type DimensionType =
     | 'time_period'
     | 'status'
     | 'manager'
-    | 'sector';
+    | 'sector'
+    | 'stage'
+    | 'source'
+    | 'supplier'
+    | 'payment_method';
 
 export type MetricType =
     | 'total_revenue'
@@ -23,7 +34,13 @@ export type MetricType =
     | 'quotation_count'
     | 'win_rate'
     | 'total_commission'
-    | 'avg_margin';
+    | 'avg_margin'
+    | 'pipeline_value'
+    | 'conversion_rate'
+    | 'avg_lead_score'
+    | 'collection_amount'
+    | 'po_total'
+    | 'tax_amount';
 
 export type ChartType =
     | 'grid'
@@ -73,6 +90,7 @@ export interface Filter {
 }
 
 export interface ReportConfig {
+    dataSource: DataSourceType;
     dimensions: Dimension[];
     metrics: Metric[];
     filters: Filter[];
@@ -123,7 +141,7 @@ export const AVAILABLE_DIMENSIONS: Record<DimensionType, { label: string; field:
     sales_rep: {
         label: 'Sales Representative',
         field: 'sales_rep_id',
-        joins: 'profiles!quotations_sales_rep_id_fkey'
+        joins: 'profiles'
     },
     customer: {
         label: 'Customer',
@@ -155,6 +173,23 @@ export const AVAILABLE_DIMENSIONS: Record<DimensionType, { label: string; field:
         label: 'Customer Sector',
         field: 'sector'
     },
+    stage: {
+        label: 'Sales Stage',
+        field: 'stage'
+    },
+    source: {
+        label: 'Lead Source',
+        field: 'source'
+    },
+    supplier: {
+        label: 'Supplier',
+        field: 'supplier_id',
+        joins: 'suppliers'
+    },
+    payment_method: {
+        label: 'Payment Method',
+        field: 'payment_method'
+    }
 };
 
 // =============================================================================
@@ -207,6 +242,36 @@ export const AVAILABLE_METRICS: Record<MetricType, { label: string; definition: 
         definition: 'AVG(profit_margin)',
         format: 'percentage'
     },
+    pipeline_value: {
+        label: 'Pipeline Value',
+        definition: 'SUM(expected_revenue)',
+        format: 'currency'
+    },
+    conversion_rate: {
+        label: 'Conversion Rate %',
+        definition: '(Converted / Total) × 100',
+        format: 'percentage'
+    },
+    avg_lead_score: {
+        label: 'Avg Lead Score',
+        definition: 'AVG(score)',
+        format: 'number'
+    },
+    collection_amount: {
+        label: 'Collection Amount',
+        definition: 'SUM(amount_collected)',
+        format: 'currency'
+    },
+    po_total: {
+        label: 'PO Total',
+        definition: 'SUM(total_amount)',
+        format: 'currency'
+    },
+    tax_amount: {
+        label: 'Tax Amount',
+        definition: 'SUM(tax)',
+        format: 'currency'
+    }
 };
 
 // =============================================================================
@@ -338,6 +403,34 @@ export async function deleteReport(id: string): Promise<void> {
 }
 
 /**
+ * Export results to CSV
+ */
+export function exportToCSV(data: Record<string, any>[], filename: string) {
+    if (data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => {
+            const value = row[header] ?? '';
+            // Escape commas and quotes
+            const escaped = String(value).replace(/"/g, '""');
+            return `"${escaped}"`;
+        }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/**
  * Toggle favorite status
  */
 export async function toggleFavorite(id: string, isFavorite: boolean): Promise<void> {
@@ -362,7 +455,10 @@ export async function duplicateReport(id: string): Promise<CustomReport> {
         name: `${original.name} (Copy)`,
         description: original.description,
         tags: original.tags,
-        report_config: original.report_config,
+        report_config: {
+            ...original.report_config,
+            dataSource: original.report_config.dataSource || 'quotations'
+        },
     });
 }
 
@@ -400,54 +496,69 @@ export async function executeReport(config: ReportConfig): Promise<ReportResult>
  * Build and execute the dynamic query based on report configuration
  */
 async function buildAndExecuteQuery(config: ReportConfig): Promise<Record<string, any>[]> {
-    // Get date range from filters
     const dateFilter = getDateFilter(config.dateRange);
+    let query: any;
 
-    // Base query on quotations with status filter
-    let query = supabase
-        .from('quotations')
-        .select(`
-      id,
-      quotation_number,
-      title,
-      total,
-      discount_percentage,
-      status,
-      created_at,
-      updated_at,
-      sales_rep_id,
-      customer_id,
-      profiles!sales_rep_id (
-        id,
-        full_name
-      ),
-      customers!customer_id (
-        id,
-        company_name,
-        sector,
-        customer_type
-      ),
-      quotation_items (
-        id,
-        quantity,
-        unit_price,
-        product_id,
-        products (
-          id,
-          name,
-          category,
-          cost_price
-        )
-      )
-    `)
-        .in('status', ['approved', 'deal_won', 'finance_approved', 'submitted_to_customer']) as any;
+    switch (config.dataSource) {
+        case 'leads':
+            query = supabase.from('crm_leads').select(`
+                *,
+                profiles:assigned_to (id, full_name)
+            `);
+            break;
+        case 'opportunities':
+            query = supabase.from('crm_opportunities').select(`
+                *,
+                profiles:assigned_to (id, full_name),
+                customers (id, company_name)
+            `);
+            break;
+        case 'collections':
+            query = supabase.from('collections').select(`
+                *,
+                quotations (id, quotation_number, customer_id, customers(company_name))
+            `);
+            break;
+        case 'purchase_orders':
+            query = supabase.from('purchase_orders').select(`
+                *,
+                suppliers (id, name),
+                quotations (id, quotation_number)
+            `);
+            break;
+        case 'quotations':
+        default:
+            query = supabase.from('quotations').select(`
+                id,
+                quotation_number,
+                title,
+                total,
+                status,
+                created_at,
+                sales_rep_id,
+                customer_id,
+                profiles!sales_rep_id (id, full_name),
+                customers!customer_id (id, company_name, sector, customer_type),
+                quotation_items (
+                    quantity,
+                    unit_price,
+                    products (id, name, category, cost_price)
+                )
+            `);
+            break;
+    }
 
     // Apply date filter
+    const dateField = config.dataSource === 'leads' ? 'created_at' :
+        config.dataSource === 'opportunities' ? 'created_at' :
+            config.dataSource === 'collections' ? 'payment_date' :
+                config.dataSource === 'purchase_orders' ? 'po_date' : 'created_at';
+
     if (dateFilter.start) {
-        query = query.gte('created_at', dateFilter.start);
+        query = query.gte(dateField, dateFilter.start);
     }
     if (dateFilter.end) {
-        query = query.lte('created_at', dateFilter.end);
+        query = query.lte(dateField, dateFilter.end);
     }
 
     // Apply custom filters
@@ -458,12 +569,6 @@ async function buildAndExecuteQuery(config: ReportConfig): Promise<Record<string
     const { data, error } = await query;
 
     if (error) {
-        console.error('❌ Dynamic Query error:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-        });
         throw error;
     }
 
@@ -615,26 +720,36 @@ function aggregateResults(
 }
 
 /**
- * Get dimension value from a quotation row
+ * Get dimension value from a row
  */
 function getDimensionValue(row: any, dimension: DimensionType): string {
     switch (dimension) {
         case 'sales_rep':
-            return row.sales_rep_id || 'unknown';
+            return row.sales_rep_id || row.assigned_to || row.profiles?.id || 'unknown';
         case 'customer':
-            return row.customer_id || 'unknown';
+            return row.customer_id || row.customers?.id || 'unknown';
         case 'product':
             return row.quotation_items?.[0]?.product_id || 'unknown';
         case 'product_category':
             return row.quotation_items?.[0]?.products?.category || 'Uncategorized';
         case 'time_period': {
-            const date = new Date(row.created_at);
+            const dateStr = row.created_at || row.payment_date || row.po_date;
+            if (!dateStr) return 'unknown';
+            const date = new Date(dateStr);
             return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         }
         case 'status':
             return row.status || 'unknown';
         case 'sector':
             return row.customers?.sector || 'Unknown';
+        case 'stage':
+            return row.stage || 'unknown';
+        case 'source':
+            return row.source || 'unknown';
+        case 'supplier':
+            return row.suppliers?.name || 'Unknown';
+        case 'payment_method':
+            return row.payment_method || 'unknown';
         default:
             return 'unknown';
     }
@@ -646,21 +761,31 @@ function getDimensionValue(row: any, dimension: DimensionType): string {
 function getDimensionLabel(row: any, dimension: DimensionType): string {
     switch (dimension) {
         case 'sales_rep':
-            return row.profiles?.full_name || 'Unknown Rep';
+            return row.profiles?.full_name || row.assigned_to_profile?.full_name || 'Unknown Rep';
         case 'customer':
-            return row.customers?.company_name || 'Unknown Customer';
+            return row.customers?.company_name || row.quotations?.customers?.company_name || 'Unknown Customer';
         case 'product':
             return row.quotation_items?.[0]?.products?.name || 'Unknown Product';
         case 'product_category':
             return row.quotation_items?.[0]?.products?.category || 'Uncategorized';
         case 'time_period': {
-            const date = new Date(row.created_at);
+            const dateStr = row.created_at || row.payment_date || row.po_date;
+            if (!dateStr) return 'Unknown';
+            const date = new Date(dateStr);
             return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
         }
         case 'status':
             return formatStatus(row.status);
         case 'sector':
             return row.customers?.sector || 'Unknown Sector';
+        case 'stage':
+            return row.stage?.replace(/_/g, ' ') || 'Unknown Stage';
+        case 'source':
+            return row.source || 'Unknown Source';
+        case 'supplier':
+            return row.suppliers?.name || 'Unknown Supplier';
+        case 'payment_method':
+            return row.payment_method ? row.payment_method.replace(/_/g, ' ') : 'Unknown Method';
         default:
             return 'Unknown';
     }
@@ -705,13 +830,12 @@ function calculateMetric(rows: any[], metric: MetricType): number {
             return rows.length;
 
         case 'win_rate': {
-            const won = rows.filter(r => r.status === 'deal_won').length;
+            const won = rows.filter(r => r.status === 'deal_won' || r.status === 'closed_won').length;
             return rows.length > 0 ? (won / rows.length) * 100 : 0;
         }
 
         case 'total_commission':
-            // This would need commission data joined
-            return 0;
+            return rows.reduce((sum, row) => sum + (row.commission_amount || 0), 0);
 
         case 'avg_margin': {
             const margins = rows.map(row => {
@@ -726,6 +850,28 @@ function calculateMetric(rows: any[], metric: MetricType): number {
                 : 0;
         }
 
+        case 'pipeline_value':
+            return rows.reduce((sum, row) => sum + (row.expected_revenue || 0), 0);
+
+        case 'conversion_rate': {
+            const converted = rows.filter(r => r.converted === true || r.status === 'converted').length;
+            return rows.length > 0 ? (converted / rows.length) * 100 : 0;
+        }
+
+        case 'avg_lead_score': {
+            const scores = rows.filter(r => typeof r.score === 'number').map(r => r.score);
+            return scores.length > 0 ? scores.reduce((sum, s) => sum + s, 0) / scores.length : 0;
+        }
+
+        case 'collection_amount':
+            return rows.reduce((sum, row) => sum + (row.amount_collected || 0), 0);
+
+        case 'po_total':
+            return rows.reduce((sum, row) => sum + (row.total_amount || 0), 0);
+
+        case 'tax_amount':
+            return rows.reduce((sum, row) => sum + (row.tax || 0), 0);
+
         default:
             return 0;
     }
@@ -735,6 +881,7 @@ function calculateMetric(rows: any[], metric: MetricType): number {
  * Format status for display
  */
 function formatStatus(status: string): string {
+    if (!status) return 'Unknown';
     const statusMap: Record<string, string> = {
         draft: 'Draft',
         pending_pricing: 'Pending Pricing',
@@ -748,8 +895,18 @@ function formatStatus(status: string): string {
         deal_lost: 'Lost',
         rejected: 'Rejected',
         changes_requested: 'Changes Requested',
+        // CRM
+        converted: 'Converted',
+        new: 'New',
+        contacted: 'Contacted',
+        qualified: 'Qualified',
+        discovery: 'Discovery',
+        proposal: 'Proposal',
+        negotiation: 'Negotiation',
+        closed_won: 'Won (CRM)',
+        closed_lost: 'Lost (CRM)',
     };
-    return statusMap[status] || status;
+    return statusMap[status] || status.replace(/_/g, ' ');
 }
 
 // =============================================================================
@@ -761,6 +918,7 @@ export const REPORT_TEMPLATES: { name: string; description: string; config: Repo
         name: 'Revenue by Sales Rep',
         description: 'Compare total revenue generated by each sales representative',
         config: {
+            dataSource: 'quotations',
             dimensions: [{ type: 'sales_rep', label: 'Sales Rep' }],
             metrics: [
                 { type: 'total_revenue', label: 'Total Revenue', format: 'currency' },
@@ -776,6 +934,7 @@ export const REPORT_TEMPLATES: { name: string; description: string; config: Repo
         name: 'Monthly Revenue Trend',
         description: 'Track revenue trends over time',
         config: {
+            dataSource: 'quotations',
             dimensions: [{ type: 'time_period', label: 'Month' }],
             metrics: [
                 { type: 'total_revenue', label: 'Revenue', format: 'currency' },
@@ -790,6 +949,7 @@ export const REPORT_TEMPLATES: { name: string; description: string; config: Repo
         name: 'Customer Analysis',
         description: 'Analyze top customers by revenue and profit margin',
         config: {
+            dataSource: 'quotations',
             dimensions: [{ type: 'customer', label: 'Customer', limit: 10 }],
             metrics: [
                 { type: 'total_revenue', label: 'Revenue', format: 'currency' },
@@ -805,6 +965,7 @@ export const REPORT_TEMPLATES: { name: string; description: string; config: Repo
         name: 'Product Profitability',
         description: 'Analyze profit margins by product category',
         config: {
+            dataSource: 'quotations',
             dimensions: [{ type: 'product_category', label: 'Category' }],
             metrics: [
                 { type: 'total_revenue', label: 'Revenue', format: 'currency' },
@@ -820,6 +981,7 @@ export const REPORT_TEMPLATES: { name: string; description: string; config: Repo
         name: 'Sector Performance',
         description: 'Compare performance across customer sectors',
         config: {
+            dataSource: 'quotations',
             dimensions: [{ type: 'sector', label: 'Sector' }],
             metrics: [
                 { type: 'total_revenue', label: 'Revenue', format: 'currency' },
@@ -829,6 +991,52 @@ export const REPORT_TEMPLATES: { name: string; description: string; config: Repo
             filters: [],
             visualization: { type: 'pie', showGrid: true, showChart: true },
             dateRange: { preset: 'this_year' },
+        },
+    },
+    {
+        name: 'Weekly Collections Overview',
+        description: 'Track collection efficiency and payment methods (Finance)',
+        config: {
+            dataSource: 'collections',
+            dimensions: [{ type: 'payment_method', label: 'Payment Method' }],
+            metrics: [
+                { type: 'collection_amount', label: 'Amount Collected', format: 'currency' },
+                { type: 'tax_amount', label: 'Tax', format: 'currency' },
+            ],
+            filters: [],
+            visualization: { type: 'bar', showGrid: true, showChart: true },
+            dateRange: { preset: 'this_week' },
+        },
+    },
+    {
+        name: 'Team Pipeline Health',
+        description: 'Monitor pipeline value by sales representative (Sales Manager)',
+        config: {
+            dataSource: 'opportunities',
+            dimensions: [{ type: 'sales_rep', label: 'Sales Rep' }],
+            metrics: [
+                { type: 'pipeline_value', label: 'Pipeline', format: 'currency' },
+                { type: 'avg_deal_size', label: 'Avg Deal', format: 'currency' },
+            ],
+            filters: [],
+            visualization: { type: 'bar', showGrid: true, showChart: true },
+            dateRange: { preset: 'this_month' },
+        },
+    },
+    {
+        name: 'Quarterly Revenue Dashboard',
+        description: 'High-level performance summary of all revenue streams (CEO)',
+        config: {
+            dataSource: 'quotations',
+            dimensions: [{ type: 'time_period', label: 'Month' }],
+            metrics: [
+                { type: 'total_revenue', label: 'Revenue', format: 'currency' },
+                { type: 'total_profit', label: 'Profit', format: 'currency' },
+                { type: 'profit_margin_pct', label: 'Margin %', format: 'percentage' },
+            ],
+            filters: [],
+            visualization: { type: 'area', showGrid: true, showChart: true },
+            dateRange: { preset: 'this_quarter' },
         },
     },
 ];

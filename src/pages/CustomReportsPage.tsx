@@ -14,6 +14,12 @@ import {
     X,
     CheckCircle,
     AlertCircle,
+    Download,
+    Target,
+    UserPlus,
+    DollarSign,
+    ShoppingCart,
+    Database,
 } from 'lucide-react';
 import {
     getReports,
@@ -23,6 +29,7 @@ import {
     toggleFavorite,
     executeReport,
     updateReport,
+    exportToCSV,
     CustomReport,
     ReportConfig,
     REPORT_TEMPLATES,
@@ -33,6 +40,7 @@ import {
     ChartType,
     TimePeriod,
     ReportResult,
+    DataSourceType,
 } from '../lib/reportBuilderService';
 import {
     BarChart,
@@ -70,6 +78,30 @@ const TIME_PERIOD_OPTIONS: { value: TimePeriod; label: string }[] = [
     { value: 'last_30_days', label: 'Last 30 Days' },
     { value: 'last_90_days', label: 'Last 90 Days' },
 ];
+
+const DATA_SOURCE_OPTIONS: { value: DataSourceType; label: string; icon: any }[] = [
+    { value: 'quotations', label: 'Quotations', icon: FileSpreadsheet },
+    { value: 'leads', label: 'Leads', icon: UserPlus },
+    { value: 'opportunities', label: 'Opportunities', icon: Target },
+    { value: 'collections', label: 'Collections', icon: DollarSign },
+    { value: 'purchase_orders', label: 'Purchase Orders', icon: ShoppingCart },
+];
+
+const METRICS_BY_SOURCE: Record<DataSourceType, MetricType[]> = {
+    quotations: ['total_revenue', 'avg_deal_size', 'total_cost', 'total_profit', 'profit_margin_pct', 'quotation_count', 'win_rate', 'total_commission', 'avg_margin', 'tax_amount'],
+    leads: ['quotation_count', 'avg_lead_score', 'conversion_rate'],
+    opportunities: ['pipeline_value', 'avg_deal_size', 'win_rate'],
+    collections: ['collection_amount', 'tax_amount'],
+    purchase_orders: ['po_total', 'tax_amount'],
+};
+
+const DIMENSIONS_BY_SOURCE: Record<DataSourceType, DimensionType[]> = {
+    quotations: ['sales_rep', 'customer', 'product', 'product_category', 'time_period', 'status', 'manager', 'sector'],
+    leads: ['sales_rep', 'time_period', 'status', 'source'],
+    opportunities: ['sales_rep', 'customer', 'time_period', 'status', 'stage'],
+    collections: ['customer', 'time_period', 'status', 'payment_method'],
+    purchase_orders: ['supplier', 'time_period', 'status'],
+};
 
 // =============================================================================
 // Main Component
@@ -414,6 +446,11 @@ function ReportBuilder({
     // State
     const [name, setName] = useState(initialReport?.name || template?.name || '');
     const [description, setDescription] = useState(initialReport?.description || template?.description || '');
+    const [dataSource, setDataSource] = useState<DataSourceType>(
+        initialReport?.report_config?.dataSource ||
+        template?.config?.dataSource ||
+        'quotations'
+    );
     const [selectedDimensions, setSelectedDimensions] = useState<DimensionType[]>(
         initialReport?.report_config?.dimensions?.map(d => d.type) ||
         template?.config?.dimensions?.map(d => d.type) ||
@@ -441,6 +478,7 @@ function ReportBuilder({
 
     // Build config from state
     const buildConfig = (): ReportConfig => ({
+        dataSource,
         dimensions: selectedDimensions.map(type => ({
             type,
             label: AVAILABLE_DIMENSIONS[type].label,
@@ -579,9 +617,40 @@ function ReportBuilder({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Configuration Panel */}
                 <div className="space-y-6">
+                    {/* Data Source */}
+                    <div className="bg-white rounded-lg p-6 border border-slate-200">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Database className="h-5 w-5 text-purple-600" />
+                            <h2 className="font-semibold text-slate-900">Data Source</h2>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2">
+                            {DATA_SOURCE_OPTIONS.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => {
+                                        setDataSource(opt.value);
+                                        // Reset metrics/dims that don't belong to the new source
+                                        setSelectedDimensions(prev => prev.filter(d => DIMENSIONS_BY_SOURCE[opt.value].includes(d)));
+                                        setSelectedMetrics(prev => prev.filter(m => METRICS_BY_SOURCE[opt.value].includes(m)));
+                                    }}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${dataSource === opt.value
+                                        ? 'border-purple-500 bg-purple-50 text-purple-700 ring-2 ring-purple-500/10'
+                                        : 'border-slate-200 hover:border-slate-300 text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                >
+                                    <opt.icon className={`h-5 w-5 ${dataSource === opt.value ? 'text-purple-600' : 'text-slate-400'}`} />
+                                    <span className="font-medium">{opt.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Report Details */}
                     <div className="bg-white rounded-lg p-6 border border-slate-200">
-                        <h2 className="font-semibold text-slate-900 mb-4">Report Details</h2>
+                        <div className="flex items-center gap-2 mb-4">
+                            <FileSpreadsheet className="h-5 w-5 text-purple-600" />
+                            <h2 className="font-semibold text-slate-900">Report Details</h2>
+                        </div>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -630,7 +699,7 @@ function ReportBuilder({
                             Dimensions <span className="text-sm text-slate-500 font-normal">(Group by)</span>
                         </h2>
                         <div className="space-y-2">
-                            {(Object.keys(AVAILABLE_DIMENSIONS) as DimensionType[]).map(dim => (
+                            {DIMENSIONS_BY_SOURCE[dataSource].map(dim => (
                                 <label
                                     key={dim}
                                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"
@@ -655,7 +724,7 @@ function ReportBuilder({
                             Metrics <span className="text-sm text-slate-500 font-normal">(Measure)</span>
                         </h2>
                         <div className="space-y-2">
-                            {(Object.keys(AVAILABLE_METRICS) as MetricType[]).map(metric => (
+                            {METRICS_BY_SOURCE[dataSource].map(metric => (
                                 <label
                                     key={metric}
                                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"
@@ -704,11 +773,22 @@ function ReportBuilder({
                     <div className="bg-white rounded-lg p-6 border border-slate-200 min-h-[600px]">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="font-semibold text-slate-900">Results</h2>
-                            {results && (
-                                <span className="text-sm text-slate-500">
-                                    {results.metadata.rowCount} rows • {results.metadata.executionTimeMs}ms
-                                </span>
-                            )}
+                            <div className="flex items-center gap-4">
+                                {results && (
+                                    <button
+                                        onClick={() => exportToCSV(results.data, name || 'report')}
+                                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        Export CSV
+                                    </button>
+                                )}
+                                {results && (
+                                    <span className="text-sm text-slate-500">
+                                        {results.metadata.rowCount} rows • {results.metadata.executionTimeMs}ms
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         {!results ? (
