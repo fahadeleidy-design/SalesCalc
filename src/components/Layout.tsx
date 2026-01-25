@@ -105,6 +105,12 @@ const navigationItems: NavItem[] = [
     roles: ['finance', 'ceo', 'admin'],
   },
   {
+    label: 'Demos',
+    icon: Target,
+    path: '/demos',
+    roles: ['solution_consultant', 'sales', 'manager'],
+  },
+  {
     label: 'Targets',
     icon: Target,
     path: '/targets',
