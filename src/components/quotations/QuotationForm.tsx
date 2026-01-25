@@ -22,6 +22,8 @@ type QuotationItem = Database['public']['Tables']['quotation_items']['Insert'] &
   unit_cost?: number;
   is_optional?: boolean;
   showModifications?: boolean;
+  finish_option?: string;
+  lead_time_weeks?: number;
 };
 
 interface QuotationFormProps {
@@ -146,6 +148,8 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
       modifications: '',
       needs_engineering_review: false,
       product,
+      finish_option: 'Standard',
+      lead_time_weeks: 4,
     };
     setItems([...items, newItem]);
     setShowProductSelector(false);
@@ -771,6 +775,29 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                 <div className="text-2xl font-black text-slate-900 text-right tabular-nums">
                                   {formatCurrency(item.line_total, formData.currency_code)}
                                 </div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-6 p-6 mt-4 bg-slate-100/50 rounded-3xl border border-slate-200/50">
+                              <div className="col-span-12 md:col-span-8">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Finish / Material</label>
+                                <input
+                                  type="text"
+                                  value={item.finish_option || 'Standard'}
+                                  onChange={(e) => updateItem(index, 'finish_option', e.target.value)}
+                                  placeholder="e.g. Walnut Veneer, Grey Fabric"
+                                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
+                                />
+                              </div>
+                              <div className="col-span-12 md:col-span-4">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Lead Time (Weeks)</label>
+                                <input
+                                  type="number"
+                                  value={item.lead_time_weeks || 4}
+                                  onChange={(e) => updateItem(index, 'lead_time_weeks', parseInt(e.target.value))}
+                                  min="1"
+                                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-center"
+                                />
                               </div>
                             </div>
 

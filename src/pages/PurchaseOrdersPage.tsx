@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Plus, Search, Filter, Download, Eye, Calendar, Package, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, Plus, Search, Filter, Download, Eye, Calendar, Package, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { exportProfessionalPOPDF } from '../lib/poPdfExport';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,8 @@ type PurchaseOrder = {
   status: string;
   payment_status: string;
   created_at: string;
+  dimensional_confirmed?: boolean;
+  production_status?: string;
   quotation: {
     quotation_number: string;
     customer: {
@@ -122,7 +124,9 @@ export default function PurchaseOrdersPage() {
       draft: { color: 'bg-slate-100 text-slate-700', label: 'Draft' },
       sent_to_supplier: { color: 'bg-blue-100 text-blue-700', label: 'Sent to Supplier' },
       acknowledged: { color: 'bg-purple-100 text-purple-700', label: 'Acknowledged' },
+      drawing_approval: { color: 'bg-indigo-100 text-indigo-700', label: 'Drawing Approval' },
       in_production: { color: 'bg-yellow-100 text-yellow-700', label: 'In Production' },
+      quality_check: { color: 'bg-emerald-100 text-emerald-700', label: 'Quality Check' },
       shipped: { color: 'bg-orange-100 text-orange-700', label: 'Shipped' },
       delivered: { color: 'bg-green-100 text-green-700', label: 'Delivered' },
       closed: { color: 'bg-slate-100 text-slate-600', label: 'Closed' },
@@ -334,12 +338,11 @@ export default function PurchaseOrdersPage() {
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">PO Number</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Supplier</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Quotation</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Customer</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 uppercase">Dims</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Total</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Status</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Payment</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Date</th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 uppercase">Actions</th>
                       </tr>
                     </thead>
@@ -357,6 +360,17 @@ export default function PurchaseOrdersPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="text-sm text-slate-900">{po.quotation.customer.company_name}</div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {po.dimensional_confirmed ? (
+                              <div className="flex justify-center" title="Dimensions Confirmed">
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                              </div>
+                            ) : (
+                              <div className="flex justify-center text-amber-500" title="Awaiting Verification">
+                                <AlertCircle className="w-4 h-4" />
+                              </div>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="font-medium text-slate-900">{formatCurrency(po.total)}</div>

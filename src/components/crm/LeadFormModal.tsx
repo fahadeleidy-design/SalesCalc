@@ -341,11 +341,14 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
                   >
                     <option value="">Select Source</option>
                     <option value="website">Website</option>
-                    <option value="referral">Referral</option>
-                    <option value="email">Email</option>
-                    <option value="phone">Phone</option>
-                    <option value="social">Social Media</option>
-                    <option value="event">Event</option>
+                    <option value="referral">Referral / Word of Mouth</option>
+                    <option value="architect_designer">Architect / Design Firm (A&D)</option>
+                    <option value="consultant_pm">Project Manager / Consultant</option>
+                    <option value="general_contractor">General Contractor</option>
+                    <option value="event">Trade Show / Exhibition</option>
+                    <option value="email">Email Campaign</option>
+                    <option value="phone">Cold Call / Phone</option>
+                    <option value="social">Social Media (LinkedIn/Instagram)</option>
                     <option value="advertising">Advertising</option>
                     <option value="other">Other</option>
                   </select>
@@ -467,7 +470,7 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
                       onChange={(e) => setFormData({ ...formData, project_details: e.target.value })}
                       rows={3}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Describe the project requirements..."
+                      placeholder="e.g. Office fit-out for 500 workstations, Hotel lobby refurbishment, Healthcare seating requirements..."
                     />
                   </div>
                   <div>

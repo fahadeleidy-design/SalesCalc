@@ -26,7 +26,8 @@ interface Partner {
     contact_phone?: string;
     website?: string;
     partner_tier: 'bronze' | 'silver' | 'gold' | 'platinum';
-    partner_type: 'reseller' | 'referral' | 'technology' | 'consulting';
+    partner_type: 'reseller' | 'referral' | 'technology' | 'consulting' | 'installation' | 'logistics';
+    certifications?: string[];
     commission_rate: number;
     status: 'pending' | 'active' | 'suspended';
     total_deals: number;
@@ -799,8 +800,24 @@ function AddPartnerModal({ onClose }: { onClose: () => void }) {
                                 <option value="referral">Referral</option>
                                 <option value="technology">Technology</option>
                                 <option value="consulting">Consulting</option>
+                                <option value="installation">Installation Partner</option>
+                                <option value="logistics">Logistics/Delivery</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Certifications (Furniture Industry)</label>
+                        <input
+                            type="text"
+                            placeholder="e.g. ANSI/BIFMA, ISO 9001, FSC"
+                            value={formData.notes.includes('Cert:') ? formData.notes.split('Cert:')[1].split('|')[0] : ''}
+                            onChange={(e) => {
+                                const certPart = `Cert:${e.target.value}|`;
+                                setFormData({ ...formData, notes: formData.notes.replace(/Cert:.*?\|/, '') + certPart });
+                            }}
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                        />
                     </div>
 
                     <div>
