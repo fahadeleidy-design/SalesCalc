@@ -8,6 +8,7 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 const roleColors: Record<UserRole, string> = {
   sales: 'bg-orange-100 text-orange-600',
   engineering: 'bg-teal-100 text-teal-700',
+  solution_consultant: 'bg-indigo-100 text-indigo-700',
   manager: 'bg-purple-100 text-purple-700',
   ceo: 'bg-red-100 text-red-700',
   finance: 'bg-green-100 text-green-700',
@@ -148,7 +149,7 @@ export default function UsersPage() {
       if (editingUser) {
         const { error } = await supabase
           .from('profiles')
-      // @ts-expect-error - Supabase type inference issue
+          // @ts-expect-error - Supabase type inference issue
           .update({
             email: formData.email,
             full_name: formData.full_name,
@@ -241,8 +242,8 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {(['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin'] as UserRole[]).map(
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+        {(['sales', 'engineering', 'solution_consultant', 'manager', 'ceo', 'finance', 'admin'] as UserRole[]).map(
           (role) => (
             <div key={role} className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -251,7 +252,9 @@ export default function UsersPage() {
                   {userCountByRole[role] || 0}
                 </span>
               </div>
-              <h3 className="text-xs font-medium text-slate-600 capitalize">{role}</h3>
+              <h3 className="text-xs font-medium text-slate-600 capitalize">
+                {role === 'solution_consultant' ? 'Solution Consultant' : role}
+              </h3>
             </div>
           )
         )}
@@ -309,9 +312,8 @@ export default function UsersPage() {
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium capitalize ${
-                        roleColors[user.role || 'sales']
-                      }`}
+                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium capitalize ${roleColors[user.role || 'sales']
+                        }`}
                     >
                       {user.role}
                     </span>
@@ -423,7 +425,7 @@ export default function UsersPage() {
                 >
                   <option value="sales">Sales</option>
                   <option value="engineering">Engineering</option>
-                  <option value="presales">Pre-Sales</option>
+                  <option value="solution_consultant">Solution Consultant</option>
                   <option value="manager">Manager</option>
                   <option value="ceo">CEO</option>
                   <option value="finance">Finance</option>

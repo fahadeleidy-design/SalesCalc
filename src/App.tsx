@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Layout from './components/Layout';
 import SalesDashboard from './pages/SalesDashboard';
 import EngineeringDashboard from './pages/EngineeringDashboard';
+import SolutionConsultantDashboard from './pages/SolutionConsultantDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import CEODashboard from './pages/CEODashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -76,8 +77,8 @@ function AppContent() {
         return <SalesDashboard />;
       case 'engineering':
         return <EngineeringDashboard />;
-      case 'presales':
-        return <EngineeringDashboard />;
+      case 'solution_consultant':
+        return <SolutionConsultantDashboard />;
       case 'manager':
         return <ManagerDashboard />;
       case 'finance':
@@ -110,15 +111,15 @@ function AppContent() {
       case '/dashboard':
         return getDashboardForRole();
       case '/quotations':
-        return hasAccess(['sales', 'finance', 'ceo', 'manager', 'presales']) ? <QuotationsPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'finance', 'ceo', 'manager', 'solution_consultant']) ? <QuotationsPage /> : <UnauthorizedPage />;
       case '/custom-items':
-        return hasAccess(['engineering', 'presales']) ? <CustomItemsPage /> : <UnauthorizedPage />;
+        return hasAccess(['engineering', 'solution_consultant']) ? <CustomItemsPage /> : <UnauthorizedPage />;
       case '/approvals':
         return hasAccess(['manager', 'ceo', 'finance']) ? <ApprovalsPage /> : <UnauthorizedPage />;
       case '/customers':
-        return hasAccess(['sales', 'manager', 'admin', 'presales']) ? <CustomersPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'manager', 'admin', 'solution_consultant']) ? <CustomersPage /> : <UnauthorizedPage />;
       case '/products':
-        return hasAccess(['admin', 'finance', 'engineering', 'presales']) ? <ProductsPage /> : <UnauthorizedPage />;
+        return hasAccess(['admin', 'finance', 'engineering', 'solution_consultant']) ? <ProductsPage /> : <UnauthorizedPage />;
       case '/commissions':
         return hasAccess(['sales', 'manager', 'ceo', 'finance', 'admin']) ? <CommissionsPage /> : <UnauthorizedPage />;
       case '/targets':
@@ -126,9 +127,9 @@ function AppContent() {
       case '/teams':
         return hasAccess(['manager']) ? <TeamsPage /> : <UnauthorizedPage />;
       case '/crm':
-        return hasAccess(['sales', 'manager', 'ceo', 'presales']) ? <EnhancedCRMPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'manager', 'ceo', 'solution_consultant']) ? <EnhancedCRMPage /> : <UnauthorizedPage />;
       case '/crm-classic':
-        return hasAccess(['sales', 'manager', 'ceo', 'presales']) ? <CRMPage /> : <UnauthorizedPage />;
+        return hasAccess(['sales', 'manager', 'ceo', 'solution_consultant']) ? <CRMPage /> : <UnauthorizedPage />;
       case '/settings':
         return hasAccess(['admin']) ? <SettingsPage /> : <UnauthorizedPage />;
       case '/notifications':
@@ -138,11 +139,11 @@ function AppContent() {
       case '/users':
         return hasAccess(['admin']) ? <UsersPage /> : <UnauthorizedPage />;
       case '/purchase-orders':
-        return hasAccess(['finance', 'ceo', 'admin', 'engineering', 'presales']) ? <PurchaseOrdersPage /> : <UnauthorizedPage />;
+        return hasAccess(['finance', 'ceo', 'admin', 'engineering', 'solution_consultant']) ? <PurchaseOrdersPage /> : <UnauthorizedPage />;
       case '/collection':
         return hasAccess(['sales', 'manager', 'finance', 'ceo', 'admin']) ? <CollectionPage /> : <UnauthorizedPage />;
       case '/custom-reports':
-        return hasAccess(['finance', 'ceo', 'admin']) ? <CustomReportsPage /> : <UnauthorizedPage />;
+        return hasAccess(['finance', 'ceo', 'admin', 'solution_consultant']) ? <CustomReportsPage /> : <UnauthorizedPage />;
       case '/profitability':
         return hasAccess(['finance', 'ceo', 'admin']) ? <ProjectProfitabilityPage /> : <UnauthorizedPage />;
 

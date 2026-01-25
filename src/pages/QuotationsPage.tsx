@@ -221,11 +221,10 @@ export default function QuotationsPage() {
               </button>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors backdrop-blur-sm ${
-                  showFilters
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors backdrop-blur-sm ${showFilters
                     ? 'bg-white text-orange-600'
                     : 'bg-white/20 hover:bg-white/30 text-white'
-                }`}
+                  }`}
               >
                 <Filter className="w-4 h-4" />
                 <span className="hidden sm:inline">Filters</span>
@@ -281,22 +280,20 @@ export default function QuotationsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'list'
+            className={`p-2 rounded-lg transition-colors ${viewMode === 'list'
                 ? 'bg-orange-100 text-orange-600'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
             title="List View"
           >
             <List className="w-5 h-5" />
           </button>
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg transition-colors ${
-              viewMode === 'grid'
+            className={`p-2 rounded-lg transition-colors ${viewMode === 'grid'
                 ? 'bg-orange-100 text-orange-600'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
+              }`}
             title="Grid View"
           >
             <Grid className="w-5 h-5" />
@@ -309,7 +306,7 @@ export default function QuotationsPage() {
       </div>
 
       {/* Quick Actions */}
-      {showQuickActions && (profile?.role === 'sales' || profile?.role === 'presales') && (
+      {showQuickActions && (profile?.role === 'sales' || profile?.role === 'solution_consultant') && (
         <QuickActions
           onQuickQuote={handleQuickQuote}
           onUseTemplate={handleUseTemplate}

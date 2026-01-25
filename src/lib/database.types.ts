@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type UserRole = 'sales' | 'engineering' | 'manager' | 'ceo' | 'finance' | 'admin' | 'presales';
+export type UserRole = 'sales' | 'engineering' | 'manager' | 'ceo' | 'finance' | 'admin' | 'solution_consultant';
 
 export type QuotationStatus =
   | 'draft'

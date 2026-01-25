@@ -42,19 +42,19 @@ const navigationItems: NavItem[] = [
     label: 'Dashboard',
     icon: LayoutDashboard,
     path: '/dashboard',
-    roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'presales'],
+    roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'solution_consultant'],
   },
   {
     label: 'Quotations',
     icon: FileText,
     path: '/quotations',
-    roles: ['sales', 'finance', 'ceo', 'manager', 'presales'],
+    roles: ['sales', 'finance', 'ceo', 'manager', 'solution_consultant'],
   },
   {
     label: 'Custom Items',
     icon: Wrench,
     path: '/custom-items',
-    roles: ['engineering', 'presales'],
+    roles: ['engineering', 'solution_consultant'],
   },
   {
     label: 'Approvals',
@@ -66,19 +66,19 @@ const navigationItems: NavItem[] = [
     label: 'Customers',
     icon: Users,
     path: '/customers',
-    roles: ['sales', 'manager', 'admin', 'presales'],
+    roles: ['sales', 'manager', 'admin', 'solution_consultant'],
   },
   {
     label: 'CRM',
     icon: Target,
     path: '/crm',
-    roles: ['sales', 'manager', 'ceo', 'presales'],
+    roles: ['sales', 'manager', 'ceo', 'solution_consultant'],
   },
   {
     label: 'Products',
     icon: Package,
     path: '/products',
-    roles: ['admin', 'finance', 'engineering', 'presales'],
+    roles: ['admin', 'finance', 'engineering', 'solution_consultant'],
   },
   {
     label: 'Commissions',
@@ -90,7 +90,7 @@ const navigationItems: NavItem[] = [
     label: 'Purchase Orders',
     icon: ShoppingCart,
     path: '/purchase-orders',
-    roles: ['finance', 'ceo', 'admin', 'engineering', 'presales'],
+    roles: ['finance', 'ceo', 'admin', 'engineering', 'solution_consultant'],
   },
   {
     label: 'Collection',
@@ -126,7 +126,7 @@ const navigationItems: NavItem[] = [
     label: 'Custom Reports',
     icon: BarChart3,
     path: '/custom-reports',
-    roles: ['finance', 'ceo', 'admin'],
+    roles: ['finance', 'ceo', 'admin', 'solution_consultant'],
   },
   {
     label: 'Users',
