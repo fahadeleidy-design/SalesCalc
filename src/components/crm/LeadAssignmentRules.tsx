@@ -5,7 +5,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Plus, Users, User, AlertCircle, Edit2, Trash2, Eye, EyeOff, PlayCircle, Award } from 'lucide-react';
 import { VisualWorkflow } from '../ui/VisualWorkflow';
-import type { LeadAssignmentRule, AssignmentRuleType } from '../../lib/database.types';
+import type { AssignmentRuleType } from '../../lib/database.types';
 
 interface RuleFormData {
   name: string;
