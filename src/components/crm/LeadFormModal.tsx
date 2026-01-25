@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useSalesTeam } from '../../hooks/useSalesTeam';
-import { X, Building2, Users, MapPin, Target, Briefcase, DollarSign, Calendar, Zap } from 'lucide-react';
+import { X, Building2, Users, MapPin, Target, Briefcase, Calendar, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Lead {
@@ -124,8 +124,8 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
           ...fullData,
           assigned_to: formData.assigned_to || profile?.id,
         };
-        const { error } = await supabase
-          .from('crm_leads')
+        const { error } = await (supabase
+          .from('crm_leads') as any)
           .update(updateData)
           .eq('id', lead.id);
         if (error) throw error;
