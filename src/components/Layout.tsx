@@ -20,6 +20,7 @@ import {
   Languages,
   ShoppingCart,
   TrendingUp,
+  Activity,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -114,6 +115,24 @@ const navigationItems: NavItem[] = [
     label: 'Discovery',
     icon: Target,
     path: '/technical-discovery',
+    roles: ['solution_consultant', 'sales', 'manager'],
+  },
+  {
+    label: 'Configurator',
+    icon: Target,
+    path: '/configurator',
+    roles: ['solution_consultant', 'sales', 'manager'],
+  },
+  {
+    label: 'ROI Calculator',
+    icon: TrendingUp,
+    path: '/roi-calculator',
+    roles: ['solution_consultant', 'sales', 'manager'],
+  },
+  {
+    label: 'Activity Log',
+    icon: Activity,
+    path: '/activity-log',
     roles: ['solution_consultant', 'sales', 'manager'],
   },
   {

@@ -32,6 +32,9 @@ import CustomReportsPage from './pages/CustomReportsPage';
 import ProjectProfitabilityPage from './pages/ProjectProfitabilityPage';
 import DemoTrackerPage from './pages/DemoTrackerPage';
 import TechnicalDiscoveryPage from './pages/TechnicalDiscoveryPage';
+import SolutionConfiguratorPage from './pages/SolutionConfiguratorPage';
+import ROICalculatorPage from './pages/ROICalculatorPage';
+import PresalesActivityLogPage from './pages/PresalesActivityLogPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -150,6 +153,12 @@ function AppContent() {
         return hasAccess(['solution_consultant', 'sales', 'manager']) ? <DemoTrackerPage /> : <UnauthorizedPage />;
       case '/technical-discovery':
         return hasAccess(['solution_consultant', 'sales', 'manager']) ? <TechnicalDiscoveryPage /> : <UnauthorizedPage />;
+      case '/configurator':
+        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <SolutionConfiguratorPage /> : <UnauthorizedPage />;
+      case '/roi-calculator':
+        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <ROICalculatorPage /> : <UnauthorizedPage />;
+      case '/activity-log':
+        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <PresalesActivityLogPage /> : <UnauthorizedPage />;
       case '/profitability':
         return hasAccess(['finance', 'ceo', 'admin']) ? <ProjectProfitabilityPage /> : <UnauthorizedPage />;
 
