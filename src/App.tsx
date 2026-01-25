@@ -31,6 +31,7 @@ import CollectionPage from './pages/CollectionPage';
 import CustomReportsPage from './pages/CustomReportsPage';
 import ProjectProfitabilityPage from './pages/ProjectProfitabilityPage';
 import DemoTrackerPage from './pages/DemoTrackerPage';
+import TechnicalDiscoveryPage from './pages/TechnicalDiscoveryPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -147,6 +148,8 @@ function AppContent() {
         return hasAccess(['finance', 'ceo', 'admin', 'solution_consultant']) ? <CustomReportsPage /> : <UnauthorizedPage />;
       case '/demos':
         return hasAccess(['solution_consultant', 'sales', 'manager']) ? <DemoTrackerPage /> : <UnauthorizedPage />;
+      case '/technical-discovery':
+        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <TechnicalDiscoveryPage /> : <UnauthorizedPage />;
       case '/profitability':
         return hasAccess(['finance', 'ceo', 'admin']) ? <ProjectProfitabilityPage /> : <UnauthorizedPage />;
 
