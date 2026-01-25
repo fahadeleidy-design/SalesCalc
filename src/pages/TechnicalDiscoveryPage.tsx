@@ -162,15 +162,15 @@ export default function TechnicalDiscoveryPage() {
             };
 
             if (editingDiscovery) {
-                const { error } = await supabase
+                const { error } = await (supabase as any)
                     .from('technical_discoveries')
-                    .update(discoveryData as any)
+                    .update(discoveryData)
                     .eq('id', editingDiscovery.id);
                 if (error) throw error;
             } else {
-                const { error } = await supabase
+                const { error } = await (supabase as any)
                     .from('technical_discoveries')
-                    .insert({ ...discoveryData, created_by: profile?.id } as any);
+                    .insert({ ...discoveryData, created_by: profile?.id });
                 if (error) throw error;
             }
 
