@@ -20,8 +20,6 @@ import {
   Search,
   Building2,
   MapPin,
-  Briefcase,
-  ArrowRightCircle,
   MessageSquare,
   FileText,
   Download,
@@ -32,6 +30,8 @@ import {
   Loader2,
   Sparkles,
   RefreshCw,
+  Megaphone,
+  Lightbulb,
 } from 'lucide-react';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import TasksManager from '../components/crm/TasksManager';
@@ -40,9 +40,6 @@ import RevenueIntelligence from '../components/crm/RevenueIntelligence';
 import SalesSequences from '../components/crm/SalesSequences';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '../lib/currencyUtils';
-import LeadConversionModal from '../components/crm/LeadConversionModal';
-import ActivityLogModal from '../components/crm/ActivityLogModal';
-import ActivityTimeline from '../components/crm/ActivityTimeline';
 import QuickActivityLogModal from '../components/crm/QuickActivityLogModal';
 import EmailTemplatesManager from '../components/crm/EmailTemplatesManager';
 import SalesForecastBoard from '../components/crm/SalesForecastBoard';
@@ -825,202 +822,6 @@ function LeadsView() {
   );
 }
 
-function _LeadCard({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }) {
-  const queryClient = useQueryClient();
-  const [showConversion, setShowConversion] = useState(false);
-  const [showActivityLog, setShowActivityLog] = useState(false);
-  const [showTimeline, setShowTimeline] = useState(false);
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('crm_leads').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
-      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
-      toast.success('Lead deleted successfully');
-    },
-    onError: () => {
-      toast.error('Failed to delete lead');
-    },
-  });
-
-  const convertToOpportunityMutation = useMutation({
-    mutationFn: async (leadId: string) => {
-      // @ts-ignore - Supabase types don't include custom function params
-      const { data, error } = await supabase.rpc('convert_lead_to_opportunity', {
-        p_lead_id: leadId,
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
-      queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
-      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast.success('Lead converted to opportunity and customer created successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to convert lead to opportunity');
-    },
-  });
-
-  const statusColors: Record<string, string> = {
-    new: 'bg-blue-100 text-blue-700',
-    contacted: 'bg-purple-100 text-purple-700',
-    qualified: 'bg-green-100 text-green-700',
-    proposal: 'bg-orange-100 text-orange-700',
-    negotiation: 'bg-amber-100 text-amber-700',
-    converted: 'bg-emerald-100 text-emerald-700',
-    lost: 'bg-red-100 text-red-700',
-    unqualified: 'bg-slate-100 text-slate-700',
-  };
-
-  const canConvert = ['qualified', 'proposal', 'negotiation'].includes(lead.lead_status);
-
-  return (
-    <>
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">{lead.company_name}</h3>
-            <p className="text-sm text-slate-600">{lead.contact_name}</p>
-          </div>
-          <div className="flex items-center gap-1">
-            {canConvert && (
-              <>
-                <button
-                  onClick={() => setShowConversion(true)}
-                  className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                  title="Convert to Customer"
-                >
-                  <ArrowRightCircle className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm('Convert this lead to opportunity and create a customer automatically?')) {
-                      convertToOpportunityMutation.mutate(lead.id);
-                    }
-                  }}
-                  disabled={convertToOpportunityMutation.isPending}
-                  className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Transfer to Opportunity"
-                >
-                  <Target className="h-4 w-4" />
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => setShowActivityLog(true)}
-              className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-              title="Log Activity"
-            >
-              <MessageSquare className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setShowTimeline(true)}
-              className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-              title="View Timeline"
-            >
-              <Clock className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => onEdit(lead)}
-              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              title="Edit Lead"
-            >
-              <Edit2 className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => {
-                if (confirm('Delete this lead?')) {
-                  deleteMutation.mutate(lead.id);
-                }
-              }}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title="Delete Lead"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-2 mb-4">
-          {lead.contact_email && (
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <Mail className="h-4 w-4" />
-              <span className="truncate">{lead.contact_email}</span>
-            </div>
-          )}
-          {lead.contact_phone && (
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <Phone className="h-4 w-4" />
-              <span>{lead.contact_phone}</span>
-            </div>
-          )}
-          {lead.industry && (
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <Briefcase className="h-4 w-4" />
-              <span>{lead.industry}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[lead.lead_status]}`}>
-            {lead.lead_status.replace('_', ' ').toUpperCase()}
-          </span>
-          <div className="flex items-center gap-1 text-amber-500">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className={`h-2 w-2 rounded-full ${i < Math.floor(lead.lead_score / 20) ? 'bg-amber-500' : 'bg-slate-200'
-                  }`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {showConversion && (
-        <LeadConversionModal
-          lead={lead}
-          onClose={() => setShowConversion(false)}
-        />
-      )}
-
-      {showActivityLog && (
-        <ActivityLogModal
-          entityType="lead"
-          entityId={lead.id}
-          entityName={lead.company_name}
-          onClose={() => setShowActivityLog(false)}
-        />
-      )}
-
-      {showTimeline && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Activity Timeline</h2>
-                <p className="text-sm text-slate-600 mt-1">{lead.company_name}</p>
-              </div>
-              <button onClick={() => setShowTimeline(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto">
-              <ActivityTimeline entityType="lead" entityId={lead.id} />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
 
 function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }) {
   const { profile } = useAuth();
@@ -1465,15 +1266,6 @@ function OpportunitiesView() {
     return matchesSearch && matchesStage;
   });
 
-  // Group by stage for pipeline view
-  const _stageGroups = {
-    creating_proposition: filteredOpportunities?.filter(o => o.stage === 'creating_proposition') || [],
-    proposition_accepted: filteredOpportunities?.filter(o => o.stage === 'proposition_accepted') || [],
-    going_our_way: filteredOpportunities?.filter(o => o.stage === 'going_our_way') || [],
-    closing: filteredOpportunities?.filter(o => o.stage === 'closing') || [],
-    closed_won: filteredOpportunities?.filter(o => o.stage === 'closed_won') || [],
-    closed_lost: filteredOpportunities?.filter(o => o.stage === 'closed_lost') || [],
-  };
 
   // Export opportunities to Excel
   const handleExport = () => {
@@ -1814,139 +1606,7 @@ function OpportunitiesView() {
   );
 }
 
-function _PipelineColumn({
-  stage,
-  opportunities,
-  onEdit,
-}: {
-  stage: string;
-  opportunities: Opportunity[];
-  onEdit: (opp: Opportunity) => void;
-}) {
-  const stageConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-    creating_proposition: { label: 'Creating Proposition', color: 'text-purple-700', bgColor: 'bg-purple-100' },
-    proposition_accepted: { label: 'Proposition Accepted', color: 'text-blue-700', bgColor: 'bg-blue-100' },
-    going_our_way: { label: 'Going Our Way', color: 'text-green-700', bgColor: 'bg-green-100' },
-    closing: { label: 'Closing', color: 'text-amber-700', bgColor: 'bg-amber-100' },
-    closed_won: { label: 'Closed Won', color: 'text-emerald-700', bgColor: 'bg-emerald-100' },
-    closed_lost: { label: 'Closed Lost', color: 'text-red-700', bgColor: 'bg-red-100' },
-  };
 
-  const config = stageConfig[stage];
-  const totalValue = opportunities.reduce((sum, opp) => sum + Number(opp.amount), 0);
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className={`font-semibold ${config.color}`}>{config.label}</h3>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.color}`}>
-            {opportunities.length}
-          </span>
-        </div>
-        <p className="text-sm text-slate-600">{formatCurrency(totalValue)}</p>
-      </div>
-
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {opportunities.map((opp) => (
-          <OpportunityCard key={opp.id} opportunity={opp} onEdit={onEdit} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function OpportunityCard({
-  opportunity,
-  onEdit,
-}: {
-  opportunity: Opportunity;
-  onEdit: (opp: Opportunity) => void;
-}) {
-  const queryClient = useQueryClient();
-  const [showActivityLog, setShowActivityLog] = useState(false);
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('crm_opportunities').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
-      queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
-      toast.success('Opportunity deleted successfully');
-    },
-    onError: () => {
-      toast.error('Failed to delete opportunity');
-    },
-  });
-
-  const companyName = opportunity.customer?.company_name || opportunity.lead?.company_name || 'Unknown';
-
-  return (
-    <>
-      <div
-        className="bg-slate-50 rounded-lg p-3 hover:bg-slate-100 transition-colors border border-slate-200 group"
-      >
-        <div className="flex items-start justify-between mb-2">
-          <h4
-            className="font-medium text-slate-900 text-sm cursor-pointer flex-1"
-            onClick={() => onEdit(opportunity)}
-          >
-            {opportunity.name}
-          </h4>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowActivityLog(true);
-              }}
-              className="p-1 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
-              title="Log Activity"
-            >
-              <MessageSquare className="h-3 w-3" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (confirm('Delete this opportunity?')) {
-                  deleteMutation.mutate(opportunity.id);
-                }
-              }}
-              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-              title="Delete"
-            >
-              <Trash2 className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-
-        <p className="text-xs text-slate-600 mb-2">{companyName}</p>
-
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-slate-900">{formatCurrency(opportunity.amount)}</span>
-          <span className="text-slate-600">{opportunity.probability}%</span>
-        </div>
-
-        {opportunity.expected_close_date && (
-          <div className="flex items-center gap-1 mt-2 text-xs text-slate-500">
-            <Calendar className="h-3 w-3" />
-            <span>{new Date(opportunity.expected_close_date).toLocaleDateString()}</span>
-          </div>
-        )}
-      </div>
-
-      {showActivityLog && (
-        <ActivityLogModal
-          entityType="opportunity"
-          entityId={opportunity.id}
-          entityName={opportunity.name}
-          onClose={() => setShowActivityLog(false)}
-        />
-      )}
-    </>
-  );
-}
 
 function OpportunityModal({
   opportunity,
