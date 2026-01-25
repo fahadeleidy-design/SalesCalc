@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Search, AlertCircle, Building2, Package, DollarSign, FileText, Info } from 'lucide-react';
+import { X, Save, Plus, Trash2, Search, Building2, Package, FileText, Info, Sparkles, ChevronDown, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
@@ -21,6 +21,7 @@ type QuotationItem = Database['public']['Tables']['quotation_items']['Insert'] &
   base_unit_price?: number;
   unit_cost?: number;
   is_optional?: boolean;
+  showModifications?: boolean;
 };
 
 interface QuotationFormProps {
@@ -409,29 +410,43 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl my-4 max-h-[95vh] overflow-hidden flex flex-col">
-        <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-5 flex items-center justify-between z-10 shadow-md">
-          <div>
-            <h2 className="text-2xl font-bold text-white">
-              {quotationId ? 'Edit Quotation' : 'New Quotation'}
-            </h2>
-            <p className="text-orange-100 text-sm mt-0.5">Fill in the details below to create a quotation</p>
+      <div className="bg-white/90 backdrop-blur-2xl rounded-[32px] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] w-full max-w-7xl my-4 max-h-[92vh] overflow-hidden flex flex-col border border-white/20 animate-in fade-in zoom-in-95 duration-500">
+        {/* Glass Header */}
+        <div className="sticky top-0 bg-white/40 backdrop-blur-xl px-10 py-8 flex items-center justify-between z-20 border-b border-slate-200/50">
+          <div className="flex items-center gap-6">
+            <div className="bg-indigo-600 p-4 rounded-2xl shadow-lg shadow-indigo-600/30">
+              <FileText className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
+                {quotationId ? 'Refine Quotation' : 'Craft New Quotation'}
+              </h2>
+              <p className="text-slate-500 font-medium mt-2 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-500" />
+                Enterprise-grade pricing engine active
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition-all"
+            className="group relative bg-slate-100 hover:bg-red-50 p-3 rounded-2xl transition-all duration-300"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6 text-slate-400 group-hover:text-red-500 transition-colors" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
             {/* Customer & Basic Info Section */}
-            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-orange-500" />
-                Customer & Quotation Details
+            {/* Premium Info Section */}
+            <div className="bg-white rounded-[24px] p-8 border border-slate-200 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -mr-32 -mt-32 transition-colors group-hover:bg-indigo-100/50" />
+
+              <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3 relative">
+                <div className="bg-indigo-100 p-2 rounded-lg">
+                  <Building2 className="w-5 h-5 text-indigo-600" />
+                </div>
+                Customer & Deal Context
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
@@ -468,7 +483,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                         }, 200);
                       }}
                       placeholder="Search or type to add new customer..."
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900"
                     />
                     {showCustomerDropdown && customerSearch && !formData.customer_id && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -543,7 +558,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g., Office Furniture Package"
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900"
                   />
                 </div>
 
@@ -555,7 +570,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                     type="date"
                     value={formData.valid_until}
                     onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900"
                   />
                 </div>
 
@@ -566,7 +581,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   <select
                     value={formData.payment_terms}
                     onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900 appearance-none shadow-sm"
                   >
                     <option value="advance">100% Advance</option>
                     <option value="50_advance_50_delivery">50% Advance, 50% on Delivery</option>
@@ -584,7 +599,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                   <select
                     value={formData.currency_code}
                     onChange={(e) => setFormData({ ...formData, currency_code: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900 appearance-none shadow-sm"
                   >
                     <option value="SAR">Saudi Riyal (SAR)</option>
                     <option value="USD">US Dollar (USD)</option>
@@ -614,7 +629,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                     step="0.1"
                     readOnly={profile?.role === 'sales' || profile?.role === 'manager'}
                     disabled={profile?.role === 'sales' || profile?.role === 'manager'}
-                    className={`w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${profile?.role === 'sales' || profile?.role === 'manager'
+                    className={`w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900 ${profile?.role === 'sales' || profile?.role === 'manager'
                       ? 'bg-slate-100 cursor-not-allowed text-slate-600'
                       : ''
                       }`}
@@ -625,30 +640,30 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
 
             {/* Line Items Section */}
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-              <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-orange-500" />
-                  Line Items
-                  {items.length > 0 && (
-                    <span className="ml-2 bg-orange-100 text-orange-700 px-2.5 py-0.5 rounded-full text-sm font-bold">
-                      {items.length}
-                    </span>
-                  )}
-                </h3>
-                <div className="flex gap-3">
+              <div className="bg-slate-50 border-b border-slate-200 px-8 py-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-600/20">
+                    <Package className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Line Items</h3>
+                    <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">Add products or bespoke solutions</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
                   <button
                     onClick={() => setShowProductSelector(true)}
-                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md"
+                    className="group flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl text-sm font-black transition-all shadow-xl shadow-indigo-600/30 hover:-translate-y-0.5"
                   >
-                    <Plus className="w-4 h-4" />
-                    Add Product
+                    <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
+                    Catalog Select
                   </button>
                   <button
                     onClick={addCustomItem}
-                    className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm hover:shadow-md"
+                    className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl text-sm font-black transition-all shadow-xl shadow-slate-900/30 hover:-translate-y-0.5"
                   >
-                    <Plus className="w-4 h-4" />
-                    Custom Item
+                    <Sparkles className="w-5 h-5 text-indigo-400" />
+                    Custom Spec
                   </button>
                 </div>
               </div>
@@ -663,177 +678,121 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                     </div>
                   ) : (
                     items.map((item, index) => (
-                      <div key={item.tempId || item.id} className="border-2 border-slate-200 rounded-xl p-5 bg-slate-50 hover:border-orange-300 hover:bg-white transition-all">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-700 font-bold text-sm">
+                      <div key={item.tempId || item.id} className="relative group bg-white rounded-[24px] p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+                        <div className="absolute top-0 left-0 w-2 h-full bg-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                        <div className="flex items-start gap-6">
+                          <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 font-black text-lg border border-indigo-100">
                             {index + 1}
                           </div>
                           <div className="flex-1">
-                            <div className="mb-4">
-                              {item.is_custom ? (
-                                <div>
-                                  <div className="text-sm font-medium text-slate-900">
-                                    {item.custom_description}
+                            <div className="flex justify-between items-start mb-6">
+                              <div>
+                                {item.is_custom ? (
+                                  <div>
+                                    <h4 className="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                      {item.custom_description}
+                                    </h4>
+                                    {item.custom_item_status === 'pending' && (
+                                      <div className="flex items-center gap-2 mt-2 px-3 py-1 bg-amber-50 text-amber-700 rounded-full w-fit border border-amber-100">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span className="text-[10px] font-black uppercase tracking-wider">Awaiting Engineering</span>
+                                      </div>
+                                    )}
                                   </div>
-                                  {item.custom_item_status === 'pending' && (
-                                    <div className="flex items-center gap-1 mt-1">
-                                      <AlertCircle className="w-3 h-3 text-amber-600" />
-                                      <span className="text-xs text-amber-600">
-                                        Awaiting Engineering Pricing
-                                      </span>
-                                    </div>
-                                  )}
-                                  {item.customItemRequest && Object.keys(item.customItemRequest.specifications).length > 0 && (
-                                    <div className="text-xs text-slate-500 mt-1">
-                                      Specs: {Object.entries(item.customItemRequest.specifications).map(([k, v]) => `${k}: ${v}`).join(', ')}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div>
-                                  <div className="font-semibold text-slate-900 text-base">
-                                    {item.product?.name}
+                                ) : (
+                                  <div>
+                                    <h4 className="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                      {item.product?.name}
+                                    </h4>
+                                    <div className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">SKU: {item.product?.sku}</div>
                                   </div>
-                                  <div className="text-xs text-slate-500 mt-0.5">SKU: {item.product?.sku}</div>
-                                  {item.product?.description && (
-                                    <div className="text-sm text-slate-600 mt-2 leading-relaxed">
-                                      {item.product.description}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
+                                )}
+                              </div>
+                              <button
+                                onClick={() => removeItem(index)}
+                                className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
                             </div>
 
-                            <div className="grid grid-cols-12 gap-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                                  Quantity
-                                </label>
-                                <label className="flex items-center gap-1.5 cursor-pointer">
+                            <div className="grid grid-cols-12 gap-6 p-6 bg-slate-50/50 rounded-3xl border border-slate-100">
+                              <div className="col-span-12 md:col-span-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Quantity</label>
+                                <div className="flex items-center gap-4">
                                   <input
-                                    type="checkbox"
-                                    checked={item.is_optional}
-                                    onChange={(e) => updateItem(index, 'is_optional', e.target.checked)}
-                                    className="w-3.5 h-3.5 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-black text-slate-900 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
                                   />
-                                  <span className="text-[10px] font-bold text-slate-500 uppercase">Optional</span>
-                                </label>
-                              </div>
-                              <div className="relative">
-                                <input
-                                  type="number"
-                                  value={item.quantity}
-                                  onChange={(e) =>
-                                    updateItem(index, 'quantity', e.target.value)
-                                  }
-                                  min="1"
-                                  step="1"
-                                  className={`w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${item.is_optional ? 'bg-slate-100 italic text-slate-400' : ''}`}
-                                  onBlur={(e) => {
-                                    if (!e.target.value || parseFloat(e.target.value) <= 0) {
-                                      updateItem(index, 'quantity', 1);
-                                    }
-                                  }}
-                                  title="Quantity must be a whole number (integer)"
-                                />
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.is_optional}
+                                      onChange={(e) => updateItem(index, 'is_optional', e.target.checked)}
+                                      className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                    />
+                                    <span className="text-[10px] font-black text-slate-400 uppercase">Optional</span>
+                                  </label>
+                                </div>
                               </div>
 
-                              <div className="col-span-6 md:col-span-4">
-                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                  Unit Price ({formData.currency_code})
-                                </label>
-                                <div className="space-y-1">
-                                  {!item.is_custom && item.base_unit_price && (
-                                    <div className="text-[10px] text-slate-600">
-                                      Base Price: <span className="font-semibold">{formatCurrency(item.base_unit_price || 0, formData.currency_code)}</span>
-                                    </div>
-                                  )}
+                              <div className="col-span-12 md:col-span-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Unit Price</label>
+                                <div className="relative">
+                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">{formData.currency_code}</div>
                                   <input
                                     type="number"
                                     value={item.unit_price}
-                                    onChange={(e) =>
-                                      updateItem(index, 'unit_price', e.target.value)
-                                    }
-                                    min={item.base_unit_price || 0}
-                                    step="0.5"
-                                    className={`w-full px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-1 focus:ring-orange-500 focus:border-orange-500 ${item.is_optional ? 'bg-slate-100 italic text-slate-400' : ''}`}
-                                    disabled={
-                                      ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
-                                      (item.is_custom && item.custom_item_status === 'pending')
-                                    }
+                                    onChange={(e) => updateItem(index, 'unit_price', e.target.value)}
+                                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl font-black text-slate-900 focus:ring-4 focus:ring-indigo-500/10"
                                   />
                                 </div>
                               </div>
 
-                              <div className="col-span-6 md:col-span-3">
-                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                  Unit Cost ({formData.currency_code})
-                                </label>
-                                <div className="space-y-1">
-                                  {item.product?.cost_price && (
-                                    <div className="text-[10px] text-slate-600">
-                                      Default: <span className="font-semibold">{formatCurrency(item.product.cost_price, formData.currency_code)}</span>
-                                    </div>
-                                  )}
+                              <div className="col-span-12 md:col-span-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Item Cost</label>
+                                <div className="relative">
+                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">{formData.currency_code}</div>
                                   <input
                                     type="number"
                                     value={item.unit_cost}
                                     onChange={(e) => updateItem(index, 'unit_cost', e.target.value)}
-                                    className={`w-full px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${profile?.role === 'sales' ? 'bg-slate-50 cursor-not-allowed opacity-75' : ''}`}
-                                    disabled={profile?.role === 'sales'}
-                                    title={profile?.role === 'sales' ? 'Only managers/admin can edit costs' : 'Enter unit cost'}
+                                    readOnly={profile?.role === 'sales'}
+                                    className={`w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl font-black text-slate-900 ${profile?.role === 'sales' ? 'bg-slate-100 opacity-50 cursor-not-allowed' : 'bg-white'}`}
                                   />
                                 </div>
                               </div>
 
-                              <div className="col-span-6 md:col-span-3">
-                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                  Line Total
-                                </label>
-                                <div className="bg-slate-100 border-2 border-slate-300 rounded-lg px-4 py-2.5 text-base font-bold text-slate-900">
-                                  {formatCurrency(item.line_total)}
+                              <div className="col-span-12 md:col-span-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block text-right">Line Total</label>
+                                <div className="text-2xl font-black text-slate-900 text-right tabular-nums">
+                                  {formatCurrency(item.line_total, formData.currency_code)}
                                 </div>
-                              </div>
-
-                              <div className="col-span-6 md:col-span-2 flex items-end">
-                                <button
-                                  onClick={() => removeItem(index)}
-                                  className="w-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 px-4 py-2.5 rounded-lg transition-all border-2 border-red-200 hover:border-red-300 font-medium flex items-center justify-center gap-2"
-                                  title="Remove item"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Remove
-                                </button>
                               </div>
                             </div>
 
                             {!item.is_custom && (
-                              <div className="mt-4 pt-4 border-t-2 border-slate-200">
-                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                  Modifications / Special Requirements
-                                  {item.modifications && item.modifications.trim().length > 0 && (
-                                    <span className="ml-2 inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
-                                      <AlertCircle className="w-3 h-3" />
-                                      Will be sent to Engineering
-                                    </span>
-                                  )}
-                                </label>
-                                <textarea
-                                  value={item.modifications || ''}
-                                  onChange={(e) => {
-                                    const newValue = e.target.value;
-                                    const updatedItems = [...items];
-                                    updatedItems[index] = {
-                                      ...updatedItems[index],
-                                      modifications: newValue,
-                                      needs_engineering_review: newValue.trim().length > 0,
-                                    };
-                                    setItems(updatedItems);
+                              <div className="mt-6">
+                                <button
+                                  onClick={() => {
+                                    const updated = [...items];
+                                    updated[index].showModifications = !updated[index].showModifications;
+                                    setItems(updated);
                                   }}
-                                  rows={3}
-                                  className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
-                                  placeholder="Enter any modifications or special requirements for this item..."
-                                />
+                                  className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:gap-3 transition-all"
+                                >
+                                  {item.modifications ? 'Edit Modifications' : 'Add Custom Requirements'}
+                                  <ChevronDown className={`w-3 h-3 transition-transform ${item.modifications ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {item.modifications && (
+                                  <div className="mt-4 p-5 bg-indigo-50 rounded-2xl border border-indigo-100 text-sm text-indigo-900 font-medium italic border-l-4 border-l-indigo-500">
+                                    {item.modifications}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -845,282 +804,223 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
               </div>
             </div>
 
-            {/* Totals Summary Section */}
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 p-6">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-orange-500" />
-                Quotation Summary
-              </h3>
-              <div className="max-w-md ml-auto space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-slate-300">
-                  <span className="text-slate-700 font-medium">Subtotal:</span>
-                  <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.subtotal)}</span>
-                </div>
-                <div className="flex justify-between items-start py-2 border-b border-slate-300">
-                  <span className="text-slate-700 font-medium mt-2">Discount:</span>
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="number"
-                        value={formData.discount_percentage}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value) || 0;
-                          const maxDiscount = profile?.role === 'sales' ? 5 : 100;
-                          if (value <= maxDiscount) {
-                            setFormData({ ...formData, discount_percentage: value });
-                          }
-                        }}
-                        min="0"
-                        max={profile?.role === 'sales' ? 5 : 100}
-                        step="0.1"
-                        className="w-20 px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                      />
-                      <span className="text-slate-700 font-medium">%</span>
-                      <span className="font-bold text-lg text-red-600">
-                        -{formatCurrency(totals.discountAmount)}
-                      </span>
+            {/* Premium Summary & Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8">
+              <div className="space-y-6">
+                <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-indigo-100 p-2 rounded-lg">
+                      <FileText className="w-5 h-5 text-indigo-600" />
                     </div>
-                    {profile?.role === 'sales' && (
-                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
-                        Max 5% (Manager: 10%, CEO: &gt;10%)
-                      </span>
-                    )}
-                    {formData.discount_percentage > 5 && formData.discount_percentage <= 10 && (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        Requires Manager approval
-                      </span>
-                    )}
-                    {formData.discount_percentage > 10 && (
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        Requires Manager → CEO approval
-                      </span>
-                    )}
+                    <h4 className="text-lg font-black text-slate-900">Quotation Notes</h4>
                   </div>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-slate-300">
-                  <span className="text-slate-700 font-medium">Tax ({formData.tax_percentage}%):</span>
-                  <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.taxAmount, formData.currency_code)}</span>
-                </div>
-
-                {/* Margin Analysis - Manager/CEO/Admin only */}
-                {['manager', 'ceo', 'admin'].includes(profile?.role || '') && (
-                  <div className="bg-slate-50 border-2 border-slate-200 rounded-lg p-4 space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-600 font-medium">Total Cost:</span>
-                      <span className="font-semibold text-slate-900">{formatCurrency(totals.totalCost, formData.currency_code)}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-slate-600 font-medium">Margin Amount:</span>
-                      <span className={`font-semibold ${totals.marginAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(totals.marginAmount, formData.currency_code)}
-                      </span>
-                    </div>
-                    <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
-                      <span className="text-slate-900 font-bold">Margin %:</span>
-                      <div className="flex items-center gap-2">
-                        {totals.marginPercentage < 20 && (
-                          <AlertCircle className="w-4 h-4 text-red-500" />
-                        )}
-                        <span className={`text-lg font-bold ${totals.marginPercentage >= 20 ? 'text-green-600' : 'text-red-600'}`}>
-                          {totals.marginPercentage.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                    {totals.marginPercentage < 20 && (
-                      <div className="text-[10px] text-red-600 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        Warning: Margin is below 20% target
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300 rounded-lg mt-3 p-4 flex justify-between items-center">
-                  <span className="font-bold text-slate-900 text-xl">Grand Total:</span>
-                  <span className="font-black text-3xl text-orange-600">
-                    {formatCurrency(totals.total, formData.currency_code)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Notes Section */}
-            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-orange-500" />
-                Additional Information
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Notes (Customer Visible)</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={4}
-                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
-                    placeholder="Add notes that will be visible to the customer..."
+                    placeholder="External notes for the customer..."
+                    className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900 mb-4"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    Terms & Conditions
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                      Editable
-                    </span>
-                  </label>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="bg-indigo-100 p-2 rounded-lg">
+                      <Info className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <h4 className="text-lg font-black text-slate-900">Terms & Conditions</h4>
+                  </div>
                   <textarea
                     value={formData.terms_and_conditions}
-                    onChange={(e) =>
-                      setFormData({ ...formData, terms_and_conditions: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, terms_and_conditions: e.target.value })}
                     rows={4}
-                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
                     placeholder="Default terms loaded. You can modify as needed."
+                    className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900 mb-4"
                   />
-                  <p className="text-xs text-slate-600 mt-2">
-                    Default terms are pre-filled. Customize for this specific quotation if needed.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    Internal Notes
-                    <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-medium">
-                      Private
-                    </span>
-                  </label>
                   <textarea
                     value={formData.internal_notes}
                     onChange={(e) => setFormData({ ...formData, internal_notes: e.target.value })}
                     rows={4}
-                    className="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder:text-slate-400"
-                    placeholder="Add internal notes (not visible to customer)..."
+                    placeholder="Internal-only notes for your team..."
+                    className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900 italic border-l-4 border-l-indigo-500"
                   />
+                </div>
+              </div>
+
+              <div className="bg-indigo-900 rounded-[32px] p-10 text-white relative overflow-hidden shadow-2xl shadow-indigo-900/40">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-5050 rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none opacity-20" />
+
+                <div className="space-y-6 relative">
+                  <div className="flex justify-between items-center text-indigo-200 font-bold uppercase tracking-widest text-xs">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(totals.subtotal, formData.currency_code)}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <span className="text-indigo-200 font-bold uppercase tracking-widest text-xs">Discounts</span>
+                      <div className="flex items-center bg-white/10 rounded-full px-3 py-1">
+                        <input
+                          type="number"
+                          value={formData.discount_percentage}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value) || 0;
+                            const maxDiscount = profile?.role === 'sales' ? 5 : 100;
+                            if (value <= maxDiscount) {
+                              setFormData({ ...formData, discount_percentage: value });
+                            }
+                          }}
+                          className="w-12 bg-transparent text-center font-black text-white outline-none"
+                        />
+                        <span className="text-xs font-black">%</span>
+                      </div>
+                    </div>
+                    <span className="font-bold text-rose-300">-{formatCurrency(totals.discountAmount, formData.currency_code)}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-indigo-200 font-bold uppercase tracking-widest text-xs">
+                    <span>Tax ({formData.tax_percentage}%)</span>
+                    <span>{formatCurrency(totals.taxAmount, formData.currency_code)}</span>
+                  </div>
+
+                  <div className="pt-8 mt-8 border-t border-white/10 flex justify-between items-end">
+                    <div>
+                      <p className="text-indigo-200 font-black uppercase tracking-[0.2em] text-[10px] mb-2 leading-none">Total Estimated Value</p>
+                      <h3 className="text-5xl font-black tracking-tighter tabular-nums leading-none">
+                        {formatCurrency(totals.total, formData.currency_code)}
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-indigo-200 font-black uppercase tracking-[0.2em] text-[10px] mb-1">Gross Margin</p>
+                      <span className={`text-lg font-black ${totals.marginPercentage >= 30 ? 'text-emerald-400' : 'text-orange-400'}`}>
+                        {totals.marginPercentage.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-gradient-to-r from-slate-50 to-slate-100 border-t-2 border-slate-300 px-6 py-5 flex items-center justify-between shadow-lg">          <div className="text-sm text-slate-600">
-          {items.length > 0 && (
-            <span className="font-medium">
-              {items.length} item{items.length !== 1 ? 's' : ''} • Total: <span className="text-orange-600 font-bold text-lg">{formatCurrency(totals.total, formData.currency_code)}</span>
-            </span>
-          )}
-        </div>
-          <div className="flex items-center gap-3">
+        {/* Floating Glass Footer */}
+        <div className="p-8 bg-white/40 backdrop-blur-xl border-t border-slate-200/50 flex justify-between items-center">
+          <div className="flex items-center gap-3 text-slate-400 text-sm font-medium">
+            <Info className="w-4 h-4" />
+            Shift + S to quick save
+          </div>
+          <div className="flex gap-4">
             <button
               onClick={onClose}
-              className="px-8 py-3 border-2 border-slate-300 rounded-lg font-semibold text-slate-700 hover:bg-white hover:border-slate-400 transition-all shadow-sm"
+              className="px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all active:scale-95"
             >
-              Cancel
+              Discard Changes
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group flex items-center gap-3 px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-600/40 disabled:opacity-50 active:scale-95"
             >
-              <Save className="w-5 h-5" />
-              {saving ? 'Saving...' : 'Save Quotation'}
+              {saving ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
+              ) : (
+                <Save className="w-5 h-5 transition-transform group-hover:-translate-y-0.5" />
+              )}
+              {quotationId ? 'Finalize Updates' : 'Generate Quotation'}
             </button>
           </div>
         </div>
-      </div>
 
-      {showProductSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl m-4 max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Select Product</h3>
-              <button
-                onClick={() => setShowProductSelector(false)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4 border-b border-slate-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  autoFocus
-                />
+        {showProductSelector && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl m-4 max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-slate-900">Select Product</h3>
+                <button
+                  onClick={() => setShowProductSelector(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-2">
-                {filteredProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => addProduct(product)}
-                    className="w-full text-left p-4 border border-slate-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all flex items-start gap-4"
-                  >
-                    <div className="w-16 h-16 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden border border-slate-200 flex items-center justify-center">
-                      {product.image_url ? (
-                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Package className="w-8 h-8 text-slate-300" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="font-semibold text-slate-900 truncate">{product.name}</div>
-                          <div className="text-xs text-slate-500 font-mono">SKU: {product.sku}</div>
-                          {product.category && (
-                            <span className="inline-block mt-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">
-                              {product.category}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-slate-900">
-                            {formatCurrency(product.unit_price)}
-                          </div>
-                          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">
-                            per {product.unit}
-                          </div>
-                        </div>
+              <div className="p-4 border-b border-slate-200">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="Search products..."
+                    className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                <div className="space-y-2">
+                  {filteredProducts.map((product) => (
+                    <button
+                      key={product.id}
+                      onClick={() => addProduct(product)}
+                      className="w-full text-left p-4 border border-slate-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all flex items-start gap-4"
+                    >
+                      <div className="w-16 h-16 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden border border-slate-200 flex items-center justify-center">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-8 h-8 text-slate-300" />
+                        )}
                       </div>
-                      {product.description && (
-                        <div className="text-sm text-slate-600 mt-2 line-clamp-2 leading-snug">
-                          {product.description}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="font-semibold text-slate-900 truncate">{product.name}</div>
+                            <div className="text-xs text-slate-500 font-mono">SKU: {product.sku}</div>
+                            {product.category && (
+                              <span className="inline-block mt-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase tracking-wider">
+                                {product.category}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-slate-900">
+                              {formatCurrency(product.unit_price)}
+                            </div>
+                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">
+                              per {product.unit}
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                        {product.description && (
+                          <div className="text-sm text-slate-600 mt-2 line-clamp-2 leading-snug">
+                            {product.description}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showCustomItemModal && (
-        <CustomItemRequestModal
-          onClose={() => setShowCustomItemModal(false)}
-          onSubmit={handleCustomItemSubmit}
-        />
-      )}
+        {showCustomItemModal && (
+          <CustomItemRequestModal
+            onClose={() => setShowCustomItemModal(false)}
+            onSubmit={handleCustomItemSubmit}
+          />
+        )}
 
-      {showCustomerModal && (
-        <CustomerQuickAddModal
-          onClose={() => setShowCustomerModal(false)}
-          onCustomerAdded={(customerId, customerName) => {
-            setFormData({ ...formData, customer_id: customerId });
-            setCustomerSearch(customerName);
-            setShowCustomerModal(false);
-            loadInitialData();
-          }}
-        />
-      )}
+        {showCustomerModal && (
+          <CustomerQuickAddModal
+            onClose={() => setShowCustomerModal(false)}
+            onCustomerAdded={(customerId, customerName) => {
+              setFormData({ ...formData, customer_id: customerId });
+              setCustomerSearch(customerName);
+              setShowCustomerModal(false);
+              loadInitialData();
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }
