@@ -32,6 +32,9 @@ import {
   RefreshCw,
   Megaphone,
   Lightbulb,
+  LifeBuoy,
+  BookOpen,
+  History,
 } from 'lucide-react';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import TasksManager from '../components/crm/TasksManager';
@@ -59,6 +62,9 @@ import CampaignsView from '../components/crm/CampaignsView';
 import CommunicationHub from '../components/crm/CommunicationHub';
 import NextBestAction from '../components/crm/NextBestAction';
 import AICopywriter from '../components/crm/AICopywriter';
+import ServiceDeskView from '../components/crm/ServiceDeskView';
+import KnowledgeBasePortal from '../components/crm/KnowledgeBasePortal';
+import AuditLogViewer from '../components/crm/AuditLogViewer';
 import { useSalesTeam } from '../hooks/useSalesTeam';
 import {
   exportLeadsToExcel,
@@ -129,7 +135,7 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'contacts' | 'leads' | 'opportunities' | 'activities' | 'campaigns' | 'intelligence' | 'communication' | 'analytics' | 'tasks' | 'pipeline' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals' | 'ai-scoring' | 'ai-forecast'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'contacts' | 'leads' | 'opportunities' | 'activities' | 'campaigns' | 'intelligence' | 'communication' | 'service-desk' | 'knowledge-base' | 'audit-logs' | 'analytics' | 'tasks' | 'pipeline' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals' | 'ai-scoring' | 'ai-forecast'>('overview');
 
   // Fetch CRM stats
   const { data: stats, isLoading: _statsLoading } = useQuery({
@@ -292,7 +298,10 @@ export default function CRMPage() {
             { id: 'pipeline', label: 'Pipeline', icon: Target },
             { id: 'communication', label: 'Comm Hub', icon: MessageSquare },
             { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
+            { id: 'service-desk', label: 'Service Desk', icon: LifeBuoy },
+            { id: 'knowledge-base', label: 'KB Portal', icon: BookOpen },
             { id: 'intelligence', label: 'AI Actions', icon: Lightbulb },
+            { id: 'audit-logs', label: 'Audit Trail', icon: History },
             { id: 'forecast', label: 'Forecast', icon: TrendingUp },
             { id: 'activities', label: 'Activities', icon: Calendar },
             { id: 'analytics', label: 'Analytics', icon: LineChart },
@@ -385,6 +394,16 @@ export default function CRMPage() {
       {activeTab === 'contacts' && <ContactsListView />}
       {activeTab === 'campaigns' && <CampaignsView />}
       {activeTab === 'communication' && <CommunicationHub />}
+      {activeTab === 'service-desk' && <ServiceDeskView />}
+      {activeTab === 'knowledge-base' && <KnowledgeBasePortal />}
+      {activeTab === 'audit-logs' && (
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+          <AuditLogViewer entityType="opportunity" entityId="00000000-0000-0000-0000-000000000000" />
+          <p className="mt-8 text-center text-xs text-slate-400 font-bold uppercase tracking-widest">
+            Showing demo trail (System-wide audit trail coming in Phase 7)
+          </p>
+        </div>
+      )}
       {activeTab === 'intelligence' && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 font-inter">
           <NextBestAction />
