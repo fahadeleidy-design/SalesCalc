@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Search, Building2, Package, FileText, Info, Sparkles, ChevronDown, Clock } from 'lucide-react';
+import { X, Save, Plus, Trash2, Search, Building2, Package, FileText, Info, Sparkles, ChevronDown, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
@@ -782,15 +782,36 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                     updated[index].showModifications = !updated[index].showModifications;
                                     setItems(updated);
                                   }}
-                                  className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:gap-3 transition-all"
+                                  className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest hover:gap-3 transition-all ${item.modifications ? 'text-amber-600' : 'text-indigo-600'}`}
                                 >
                                   {item.modifications ? 'Edit Modifications' : 'Add Custom Requirements'}
-                                  <ChevronDown className={`w-3 h-3 transition-transform ${item.modifications ? 'rotate-180' : ''}`} />
+                                  <ChevronDown className={`w-3 h-3 transition-transform ${item.showModifications ? 'rotate-180' : ''}`} />
                                 </button>
 
-                                {item.modifications && (
-                                  <div className="mt-4 p-5 bg-indigo-50 rounded-2xl border border-indigo-100 text-sm text-indigo-900 font-medium italic border-l-4 border-l-indigo-500">
-                                    {item.modifications}
+                                {item.showModifications && (
+                                  <div className="mt-4 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                                    <textarea
+                                      value={item.modifications || ''}
+                                      onChange={(e) => {
+                                        const newValue = e.target.value;
+                                        const updatedItems = [...items];
+                                        updatedItems[index] = {
+                                          ...updatedItems[index],
+                                          modifications: newValue,
+                                          needs_engineering_review: newValue.trim().length > 0,
+                                        };
+                                        setItems(updatedItems);
+                                      }}
+                                      placeholder="Describe specific modifications or engineering requirements..."
+                                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-900 text-sm"
+                                      rows={3}
+                                    />
+                                    {item.modifications && (
+                                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                                        <AlertCircle className="w-3.5 h-3.5" />
+                                        Will require engineering review
+                                      </p>
+                                    )}
                                   </div>
                                 )}
                               </div>
