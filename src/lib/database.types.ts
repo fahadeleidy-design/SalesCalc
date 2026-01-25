@@ -291,7 +291,11 @@ export interface Database {
           pricing_completed_at: string | null;
           submitted_to_customer_at: string | null;
           version_number: number;
-          parent_version_id: string | null;
+          parent_id: string | null;
+          total_cost: number;
+          margin_percentage: number;
+          currency_code: string;
+          exchange_rate: number;
           loss_reason: string | null;
           created_at: string;
           updated_at: string;
@@ -317,6 +321,12 @@ export interface Database {
           approved_at?: string | null;
           finance_approved_at?: string | null;
           deal_won_at?: string | null;
+          version_number?: number;
+          parent_id?: string | null;
+          total_cost?: number;
+          margin_percentage?: number;
+          currency_code?: string;
+          exchange_rate?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -341,6 +351,12 @@ export interface Database {
           approved_at?: string | null;
           finance_approved_at?: string | null;
           deal_won_at?: string | null;
+          version_number?: number;
+          parent_id?: string | null;
+          total_cost?: number;
+          margin_percentage?: number;
+          currency_code?: string;
+          exchange_rate?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -357,6 +373,8 @@ export interface Database {
           discount_percentage: number;
           discount_amount: number;
           line_total: number;
+          unit_cost: number;
+          is_optional: boolean;
           custom_item_status: CustomItemStatus | null;
           notes: string | null;
           modifications: string | null;
@@ -375,6 +393,8 @@ export interface Database {
           discount_percentage?: number;
           discount_amount?: number;
           line_total: number;
+          unit_cost?: number;
+          is_optional?: boolean;
           custom_item_status?: CustomItemStatus | null;
           notes?: string | null;
           modifications?: string | null;
@@ -393,6 +413,8 @@ export interface Database {
           discount_percentage?: number;
           discount_amount?: number;
           line_total?: number;
+          unit_cost?: number;
+          is_optional?: boolean;
           custom_item_status?: CustomItemStatus | null;
           notes?: string | null;
           modifications?: string | null;
@@ -966,7 +988,24 @@ export interface Database {
       };
     };
     Views: {};
-    Functions: {};
+    Functions: {
+      amend_quotation: {
+        Args: {
+          p_quotation_id: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
+      create_job_order_from_quotation: {
+        Args: {
+          p_quotation_id: string;
+          p_priority: string;
+          p_due_date: string | null;
+          p_production_notes: string | null;
+        };
+        Returns: string;
+      };
+    };
     Enums: {
       user_role: UserRole;
       quotation_status: QuotationStatus;

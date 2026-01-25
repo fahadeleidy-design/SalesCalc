@@ -48,6 +48,7 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
   const [dealOutcomeModal, setDealOutcomeModal] = useState<{
     outcome: 'won' | 'lost';
   } | null>(null);
+  const [allVersions, setAllVersions] = useState<any[]>([]);
 
   useEffect(() => {
     loadQuotation();
@@ -104,6 +105,17 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
         console.error('Items query error:', itemsResult.error);
       }
 
+      // Fetch all versions of this quotation number
+      const { data: versionsData } = await supabase
+        .from('quotations')
+        .select('id, version_number, status, total, currency_code, created_at')
+        .eq('quotation_number', (quotationData as any).quotation_number)
+        .order('version_number', { ascending: false });
+
+      if (versionsData) {
+        setAllVersions(versionsData);
+      }
+
       setQuotation({
         ...(quotationData as any),
         customer: (customerResult.data as any) || {},
@@ -153,6 +165,7 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
         status: quotation.status,
         title: quotation.title || undefined,
         payment_terms: quotation.payment_terms || undefined,
+        currency_code: (quotation as any).currency_code || 'SAR',
       });
 
       // Show success message if popup opened successfully
@@ -166,6 +179,42 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
     } catch (error) {
       console.error('Error exporting PDF:', error);
       toast.error('Failed to export PDF. Please try again.');
+    }
+  };
+
+  const handleAmend = async () => {
+    if (!quotation || !profile) return;
+
+    if (!['approved', 'finance_approved', 'changes_requested', 'rejected', 'deal_lost'].includes(quotation.status)) {
+      toast.error('Amendments are reserved for approved or closed quotations. For drafts, use Edit.');
+      return;
+    }
+
+    if (!window.confirm('This will create a new draft version of this quotation for amendments. Continue?')) {
+      return;
+    }
+
+    try {
+      toast.loading('Creating new version...', { id: 'amend-quotation' });
+
+      const { error } = await (supabase as any).rpc('amend_quotation', {
+        p_quotation_id: quotation.id,
+        p_user_id: profile.id
+      });
+
+      if (error) throw error;
+
+      toast.success('New version created!', { id: 'amend-quotation' });
+
+      // We could navigate or open the new ID, but for now just refresh or notify
+      // Since this is a modal, we might want to close and notify the parent
+      onClose();
+      // Most implementation of this system use a refreshTrigger. 
+      // I'll reload the page if needed or just let the user find it in the list.
+      window.location.reload(); // Simple way to refresh the list and stats
+    } catch (error: any) {
+      console.error('Error amending quotation:', error);
+      toast.error(error.message || 'Failed to create amendment', { id: 'amend-quotation' });
     }
   };
 
@@ -374,8 +423,9 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
     );
   }
 
-  // Calculate totals with defensive checks for NaN values
+  // Calculate totals - exclude optional items from main total
   const subtotal = quotation.quotation_items.reduce((sum, item) => {
+    if (item.is_optional) return sum;
     const lineTotal = Number(item.line_total) || 0;
     return sum + lineTotal;
   }, 0);
@@ -404,6 +454,16 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                   <span className="flex items-center gap-1.5 text-sm font-medium">
                     <Hash className="w-4 h-4" />
                     {quotation.quotation_number}
+                    {(quotation as any).version_number > 1 && (
+                      <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                        V{(quotation as any).version_number}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-orange-200">•</span>
+                  <span className="flex items-center gap-1.5 text-sm text-white/90">
+                    <DollarSign className="w-3.5 h-3.5" />
+                    {(quotation as any).currency_code || 'SAR'}
                   </span>
                   <span className="text-orange-200">•</span>
                   <span className="flex items-center gap-1.5 text-sm">
@@ -462,6 +522,18 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                 >
                   <Trash2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Delete</span>
+                </button>
+              )}
+
+              {/* Amend Button */}
+              {['approved', 'finance_approved', 'deal_won', 'deal_lost', 'changes_requested'].includes(quotation.status) && (
+                <button
+                  onClick={handleAmend}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+                  title="Create a new version for amendments"
+                >
+                  <Hash className="w-4 h-4" />
+                  <span className="hidden sm:inline">Amend</span>
                 </button>
               )}
 
@@ -555,10 +627,44 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                   )}
                   <div className="pt-2 border-t border-green-200">
                     <div className="text-sm text-green-700 mb-1">Total Amount</div>
-                    <div className="text-3xl font-bold text-green-600">{formatCurrency(total)}</div>
+                    <div className="text-3xl font-bold text-green-600">
+                      {formatCurrency(total, (quotation as any).currency_code || 'SAR')}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Profitability Card - Manager/Admin Only */}
+              {['manager', 'ceo', 'admin'].includes(profile?.role || '') && (
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 border border-slate-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="w-5 h-5 text-slate-600" />
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Profitability Analysis</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600">Total Cost:</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatCurrency((quotation as any).total_cost || 0, (quotation as any).currency_code || 'SAR')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600">Margin Amount:</span>
+                      <span className={`font-bold ${(quotation as any).total_cost && total - (quotation as any).total_cost >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(total - ((quotation as any).total_cost || 0), (quotation as any).currency_code || 'SAR')}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-900">Margin Percentage:</span>
+                        <span className={`text-lg font-black ${(quotation as any).margin_percentage >= 20 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(quotation as any).margin_percentage ? Number((quotation as any).margin_percentage).toFixed(1) : '0.0'}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* New Payment Terms Card */}
               {quotation.payment_terms && (
@@ -570,6 +676,38 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                   <p className="text-base font-bold text-orange-900 uppercase">
                     {quotation.payment_terms.replace(/_/g, ' ')}
                   </p>
+                </div>
+              )}
+
+              {/* Version History Card */}
+              {allVersions.length > 1 && (
+                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-6 border border-indigo-200 mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Hash className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wide">Version History</h3>
+                  </div>
+                  <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                    {allVersions.map((v) => (
+                      <div
+                        key={v.id}
+                        className={`flex items-center justify-between p-2 rounded-lg border text-xs transition-all ${v.id === quotationId
+                          ? 'bg-white border-indigo-400 shadow-sm'
+                          : 'bg-indigo-50/50 border-indigo-100 hover:bg-white cursor-pointer'
+                          }`}
+                        onClick={() => v.id !== quotationId && window.location.assign(`/quotations?id=${v.id}`)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-indigo-600">V{v.version_number}</span>
+                          <span className={`${v.id === quotationId ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'} px-1.5 py-0.5 rounded font-bold uppercase`}>
+                            {v.status.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                        <div className="text-indigo-900 font-semibold">
+                          {formatCurrency(v.total, v.currency_code)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -677,7 +815,7 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                       </td>
                       <td className="py-5 px-4 text-right font-medium text-slate-900">
                         {item.unit_price != null && !isNaN(Number(item.unit_price)) ? (
-                          formatCurrency(Number(item.unit_price))
+                          formatCurrency(Number(item.unit_price), (quotation as any).currency_code || 'SAR')
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">
                             <Clock className="w-3 h-3" />
@@ -697,14 +835,14 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                       </td>
                       <td className="py-5 px-6 text-right font-bold text-slate-900 text-lg">
                         {item.line_total != null && !isNaN(Number(item.line_total)) && Number(item.line_total) > 0 ? (
-                          formatCurrency(Number(item.line_total))
+                          formatCurrency(Number(item.line_total), (quotation as any).currency_code || 'SAR')
                         ) : item.unit_price == null || isNaN(Number(item.unit_price)) ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">
                             <Clock className="w-3 h-3" />
                             Awaiting Price
                           </span>
                         ) : (
-                          formatCurrency(0)
+                          formatCurrency(0, (quotation as any).currency_code || 'SAR')
                         )}
                       </td>
                     </tr>
@@ -720,7 +858,7 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
           <div className="max-w-md ml-auto space-y-3">
             <div className="flex justify-between items-center py-2">
               <span className="text-slate-600 font-medium">Subtotal</span>
-              <span className="font-semibold text-slate-900 text-lg">{formatCurrency(subtotal)}</span>
+              <span className="font-semibold text-slate-900 text-lg">{formatCurrency(subtotal, (quotation as any).currency_code || 'SAR')}</span>
             </div>
 
             {quotation.discount_percentage > 0 && (
@@ -729,18 +867,18 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
                   <Tag className="w-4 h-4" />
                   Discount ({quotation.discount_percentage}%)
                 </span>
-                <span className="font-semibold text-red-600 text-lg">-{formatCurrency(discountAmount)}</span>
+                <span className="font-semibold text-red-600 text-lg">-{formatCurrency(discountAmount, (quotation as any).currency_code || 'SAR')}</span>
               </div>
             )}
 
             <div className="flex justify-between items-center py-2 border-t border-slate-200">
               <span className="text-slate-600 font-medium">Tax ({quotation.tax_percentage}%)</span>
-              <span className="font-semibold text-slate-900 text-lg">+{formatCurrency(taxAmount)}</span>
+              <span className="font-semibold text-slate-900 text-lg">+{formatCurrency(taxAmount, (quotation as any).currency_code || 'SAR')}</span>
             </div>
 
             <div className="flex justify-between items-center py-4 border-t-2 border-slate-300">
               <span className="font-bold text-slate-900 text-xl">Total Amount</span>
-              <span className="font-bold text-orange-600 text-3xl">{formatCurrency(total)}</span>
+              <span className="font-bold text-orange-600 text-3xl">{formatCurrency(total, (quotation as any).currency_code || 'SAR')}</span>
             </div>
           </div>
         </div>

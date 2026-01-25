@@ -512,9 +512,16 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
                 return (
                   <tr key={quotation.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="py-3 px-4">
-                      <span className="text-sm font-medium text-slate-900">
-                        {quotation.quotation_number}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-slate-900">
+                          {quotation.quotation_number}
+                        </span>
+                        {quotation.version_number && quotation.version_number > 1 && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            V{quotation.version_number}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="text-sm">

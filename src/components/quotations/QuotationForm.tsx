@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Search, AlertCircle, Building2, Package, DollarSign, FileText, TrendingUp } from 'lucide-react';
+import { X, Save, Plus, Trash2, Search, AlertCircle, Building2, Package, DollarSign, FileText, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Database } from '../../lib/database.types';
@@ -19,6 +19,8 @@ type QuotationItem = Database['public']['Tables']['quotation_items']['Insert'] &
   modifications?: string;
   needs_engineering_review?: boolean;
   base_unit_price?: number;
+  unit_cost?: number;
+  is_optional?: boolean;
 };
 
 interface QuotationFormProps {
@@ -50,6 +52,8 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
     discount_percentage: 0,
     tax_percentage: 15,
     payment_terms: 'net_30',
+    currency_code: 'SAR',
+    exchange_rate: 1.0,
   });
 
   const [items, setItems] = useState<QuotationItem[]>([]);
@@ -112,6 +116,8 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         discount_percentage: quotationData.discount_percentage,
         tax_percentage: quotationData.tax_percentage,
         payment_terms: quotationData.payment_terms || 'net_30',
+        currency_code: quotationData.currency_code || 'SAR',
+        exchange_rate: Number(quotationData.exchange_rate) || 1.0,
       });
 
       // Ensure boolean fields are properly typed and preserve product data
@@ -208,13 +214,19 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
   };
 
   const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + (item.line_total || 0), 0);
+    const activeItems = items.filter(item => !item.is_optional);
+    const subtotal = activeItems.reduce((sum, item) => sum + (item.line_total || 0), 0);
+    const totalCost = activeItems.reduce((sum, item) => sum + ((item.unit_cost || 0) * (item.quantity || 0)), 0);
+
     const discountAmount = (subtotal * formData.discount_percentage) / 100;
     const afterDiscount = subtotal - discountAmount;
     const taxAmount = (afterDiscount * formData.tax_percentage) / 100;
     const total = afterDiscount + taxAmount;
 
-    return { subtotal, discountAmount, taxAmount, total };
+    const marginAmount = afterDiscount - totalCost;
+    const marginPercentage = afterDiscount > 0 ? (marginAmount / afterDiscount) * 100 : 0;
+
+    return { subtotal, discountAmount, taxAmount, total, totalCost, marginAmount, marginPercentage };
   };
 
   const handleSave = async () => {
@@ -253,6 +265,10 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         tax_amount: totals.taxAmount,
         subtotal: totals.subtotal,
         total: totals.total,
+        total_cost: totals.totalCost,
+        margin_percentage: totals.marginPercentage,
+        currency_code: formData.currency_code,
+        exchange_rate: formData.exchange_rate,
         payment_terms: formData.payment_terms,
         status: hasPendingPricing ? ('pending_pricing' as const) : ('draft' as const),
       };
@@ -292,8 +308,10 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
           custom_description: item.custom_description || null,
           quantity: Math.round(item.quantity || 1), // Ensure integer
           unit_price: item.unit_price,
+          unit_cost: item.unit_cost || item.product?.cost_price || 0,
           base_unit_price: item.base_unit_price || item.product?.unit_price || item.unit_price,
           line_total: item.line_total,
+          is_optional: Boolean(item.is_optional),
           custom_item_status: needsEngineering ? 'pending' : null,
           notes: item.notes || null,
           modifications: item.modifications || null,
@@ -560,6 +578,23 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 </div>
 
                 <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Currency
+                  </label>
+                  <select
+                    value={formData.currency_code}
+                    onChange={(e) => setFormData({ ...formData, currency_code: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  >
+                    <option value="SAR">Saudi Riyal (SAR)</option>
+                    <option value="USD">US Dollar (USD)</option>
+                    <option value="EUR">Euro (EUR)</option>
+                    <option value="GBP">British Pound (GBP)</option>
+                    <option value="AED">UAE Dirham (AED)</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
                     Tax Rate (%)
                     {(profile?.role === 'sales' || profile?.role === 'manager') && (
@@ -584,11 +619,6 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                       : ''
                       }`}
                   />
-                  {(profile?.role === 'sales' || profile?.role === 'manager') && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      Tax rate is managed by admin. Contact admin to change.
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
@@ -675,50 +705,47 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             </div>
 
                             <div className="grid grid-cols-12 gap-4">
-                              <div className="col-span-6 md:col-span-3">
-                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                              <div className="flex items-center justify-between mb-2">
+                                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
                                   Quantity
                                 </label>
-                                <div className="relative">
+                                <label className="flex items-center gap-1.5 cursor-pointer">
                                   <input
-                                    type="number"
-                                    value={item.quantity}
-                                    onChange={(e) =>
-                                      updateItem(index, 'quantity', e.target.value)
-                                    }
-                                    min="1"
-                                    step="1"
-                                    className="w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                    onBlur={(e) => {
-                                      if (!e.target.value || parseFloat(e.target.value) <= 0) {
-                                        updateItem(index, 'quantity', 1);
-                                      }
-                                    }}
-                                    title="Quantity must be a whole number (integer)"
+                                    type="checkbox"
+                                    checked={item.is_optional}
+                                    onChange={(e) => updateItem(index, 'is_optional', e.target.checked)}
+                                    className="w-3.5 h-3.5 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
                                   />
-                                  <div className="text-xs text-slate-500 mt-1">Integer only</div>
-                                </div>
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase">Optional</span>
+                                </label>
+                              </div>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={(e) =>
+                                    updateItem(index, 'quantity', e.target.value)
+                                  }
+                                  min="1"
+                                  step="1"
+                                  className={`w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${item.is_optional ? 'bg-slate-100 italic text-slate-400' : ''}`}
+                                  onBlur={(e) => {
+                                    if (!e.target.value || parseFloat(e.target.value) <= 0) {
+                                      updateItem(index, 'quantity', 1);
+                                    }
+                                  }}
+                                  title="Quantity must be a whole number (integer)"
+                                />
                               </div>
 
                               <div className="col-span-6 md:col-span-4">
                                 <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
-                                  Unit Price
+                                  Unit Price ({formData.currency_code})
                                 </label>
                                 <div className="space-y-1">
                                   {!item.is_custom && item.base_unit_price && (
-                                    <div className="text-xs text-slate-600">
-                                      Base: <span className="font-semibold">{formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}</span>
-                                    </div>
-                                  )}
-                                  {(profile?.role === 'sales' || profile?.role === 'manager') && !item.is_custom && (
-                                    <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200">
-                                      <TrendingUp className="w-3 h-3" />
-                                      Can only increase
-                                    </div>
-                                  )}
-                                  {item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager') && (
-                                    <div className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
-                                      Set by Engineering
+                                    <div className="text-[10px] text-slate-600">
+                                      Base Price: <span className="font-semibold">{formatCurrency(item.base_unit_price || 0, formData.currency_code)}</span>
                                     </div>
                                   )}
                                   <input
@@ -727,28 +754,34 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                     onChange={(e) =>
                                       updateItem(index, 'unit_price', e.target.value)
                                     }
-                                    min={item.base_unit_price || item.product?.unit_price || 0}
+                                    min={item.base_unit_price || 0}
                                     step="0.5"
-                                    className={`w-full px-4 py-2.5 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${(
-                                      ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
-                                      (item.is_custom && item.custom_item_status === 'pending')
-                                    )
-                                      ? 'bg-slate-100 cursor-not-allowed text-slate-600'
-                                      : ''
-                                      }`}
+                                    className={`w-full px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-1 focus:ring-orange-500 focus:border-orange-500 ${item.is_optional ? 'bg-slate-100 italic text-slate-400' : ''}`}
                                     disabled={
                                       ((profile?.role === 'sales' || profile?.role === 'manager') && item.custom_item_status === 'priced') ||
                                       (item.is_custom && item.custom_item_status === 'pending')
                                     }
-                                    title={
-                                      !item.is_custom && item.base_unit_price
-                                        ? `Base price: ${formatCurrency(item.base_unit_price || item.product?.unit_price || 0)}. You can increase the price but cannot decrease below this.`
-                                        : item.custom_item_status === 'priced' && (profile?.role === 'sales' || profile?.role === 'manager')
-                                          ? 'This price was set by Engineering and cannot be changed. Contact Engineering for price adjustments.'
-                                          : item.is_custom && item.custom_item_status === 'pending'
-                                            ? 'Waiting for Engineering to set the price'
-                                            : ''
-                                    }
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="col-span-6 md:col-span-3">
+                                <label className="text-xs font-semibold text-slate-700 mb-2 block uppercase tracking-wide">
+                                  Unit Cost ({formData.currency_code})
+                                </label>
+                                <div className="space-y-1">
+                                  {item.product?.cost_price && (
+                                    <div className="text-[10px] text-slate-600">
+                                      Default: <span className="font-semibold">{formatCurrency(item.product.cost_price, formData.currency_code)}</span>
+                                    </div>
+                                  )}
+                                  <input
+                                    type="number"
+                                    value={item.unit_cost}
+                                    onChange={(e) => updateItem(index, 'unit_cost', e.target.value)}
+                                    className={`w-full px-3 py-2 border-2 border-slate-300 rounded-lg text-sm font-medium focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${profile?.role === 'sales' ? 'bg-slate-50 cursor-not-allowed opacity-75' : ''}`}
+                                    disabled={profile?.role === 'sales'}
+                                    title={profile?.role === 'sales' ? 'Only managers/admin can edit costs' : 'Enter unit cost'}
                                   />
                                 </div>
                               </div>
@@ -868,12 +901,46 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-slate-300">
                   <span className="text-slate-700 font-medium">Tax ({formData.tax_percentage}%):</span>
-                  <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.taxAmount)}</span>
+                  <span className="font-bold text-lg text-slate-900">{formatCurrency(totals.taxAmount, formData.currency_code)}</span>
                 </div>
+
+                {/* Margin Analysis - Manager/CEO/Admin only */}
+                {['manager', 'ceo', 'admin'].includes(profile?.role || '') && (
+                  <div className="bg-slate-50 border-2 border-slate-200 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-600 font-medium">Total Cost:</span>
+                      <span className="font-semibold text-slate-900">{formatCurrency(totals.totalCost, formData.currency_code)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-600 font-medium">Margin Amount:</span>
+                      <span className={`font-semibold ${totals.marginAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(totals.marginAmount, formData.currency_code)}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                      <span className="text-slate-900 font-bold">Margin %:</span>
+                      <div className="flex items-center gap-2">
+                        {totals.marginPercentage < 20 && (
+                          <AlertCircle className="w-4 h-4 text-red-500" />
+                        )}
+                        <span className={`text-lg font-bold ${totals.marginPercentage >= 20 ? 'text-green-600' : 'text-red-600'}`}>
+                          {totals.marginPercentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                    {totals.marginPercentage < 20 && (
+                      <div className="text-[10px] text-red-600 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        Warning: Margin is below 20% target
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300 rounded-lg mt-3 p-4 flex justify-between items-center">
                   <span className="font-bold text-slate-900 text-xl">Grand Total:</span>
                   <span className="font-black text-3xl text-orange-600">
-                    {formatCurrency(totals.total)}
+                    {formatCurrency(totals.total, formData.currency_code)}
                   </span>
                 </div>
               </div>
@@ -939,7 +1006,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         <div className="sticky bottom-0 bg-gradient-to-r from-slate-50 to-slate-100 border-t-2 border-slate-300 px-6 py-5 flex items-center justify-between shadow-lg">          <div className="text-sm text-slate-600">
           {items.length > 0 && (
             <span className="font-medium">
-              {items.length} item{items.length !== 1 ? 's' : ''} • Total: <span className="text-orange-600 font-bold text-lg">{formatCurrency(totals.total)}</span>
+              {items.length} item{items.length !== 1 ? 's' : ''} • Total: <span className="text-orange-600 font-bold text-lg">{formatCurrency(totals.total, formData.currency_code)}</span>
             </span>
           )}
         </div>

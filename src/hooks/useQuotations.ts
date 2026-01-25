@@ -1,32 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import type { Database } from '../lib/database.types';
 
-export interface Quotation {
-  id: string;
-  quotation_number: string;
-  customer_id: string;
-  customer_name: string;
-  contact_person: string;
-  email: string;
-  phone: string;
-  items: any[];
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
-  total: number;
-  discount_percentage: number;
-  discount_amount: number;
-  net_total: number;
-  notes: string;
-  status: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  approval_status: string;
-  current_approver: string | null;
-  approval_history: any[];
-}
+export type Quotation = Database['public']['Tables']['quotations']['Row'] & {
+  customer_name?: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  items?: any[];
+  approval_history?: any[];
+  current_approver?: string | null;
+};
 
 /**
  * Fetch all quotations
@@ -115,7 +100,7 @@ export function useCreateQuotation() {
 
   return useMutation({
     mutationFn: async (quotation: Partial<Quotation>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('quotations')
         .insert([quotation])
         .select()
@@ -142,7 +127,7 @@ export function useUpdateQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Quotation> }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('quotations')
         .update(updates)
         .eq('id', id)
@@ -216,7 +201,7 @@ export function useApproveQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, comments }: { id: string; comments?: string }) => {
-      const { data, error } = await supabase.rpc('approve_quotation', {
+      const { data, error } = await (supabase as any).rpc('approve_quotation', {
         quotation_id: id,
         approver_comments: comments || '',
       });
@@ -242,7 +227,7 @@ export function useRejectQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const { data, error } = await supabase.rpc('reject_quotation', {
+      const { data, error } = await (supabase as any).rpc('reject_quotation', {
         quotation_id: id,
         rejection_reason: reason,
       });
@@ -256,6 +241,32 @@ export function useRejectQuotation() {
     },
     onError: (error: Error) => {
       toast.error(`Failed to reject quotation: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Amend a quotation (versioning)
+ */
+export function useAmendQuotation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
+      const { data, error } = await (supabase as any).rpc('amend_quotation', {
+        p_quotation_id: id,
+        p_user_id: userId,
+      });
+
+      if (error) throw error;
+      return data as string; // Returns the new quotation ID
+    },
+    onSuccess: (_newId) => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      toast.success('Quotation amended successfully. Taking you to the new version...');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to amend quotation: ${error.message}`);
     },
   });
 }
