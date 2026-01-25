@@ -136,6 +136,24 @@ const navigationItems: NavItem[] = [
     roles: ['solution_consultant', 'sales', 'manager'],
   },
   {
+    label: 'Scheduling',
+    icon: Users,
+    path: '/scheduling',
+    roles: ['solution_consultant', 'sales', 'manager'],
+  },
+  {
+    label: 'Battlecards',
+    icon: Target,
+    path: '/competitive-intel',
+    roles: ['solution_consultant', 'sales', 'manager'],
+  },
+  {
+    label: 'Presales Analytics',
+    icon: BarChart3,
+    path: '/presales-analytics',
+    roles: ['solution_consultant', 'sales', 'manager', 'ceo'],
+  },
+  {
     label: 'Targets',
     icon: Target,
     path: '/targets',
