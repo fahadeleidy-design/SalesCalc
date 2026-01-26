@@ -97,7 +97,10 @@ export default function EnhancedCRMPage() {
   const queryClient = useQueryClient();
 
   // State Management
-  const [activeTab, setActiveTab] = useState<TabType>('leads');
+  const showLeadsTab = ['sales', 'manager', 'ceo', 'admin'].includes(profile?.role || '');
+  const [activeTab, setActiveTab] = useState<TabType>(
+    showLeadsTab ? 'leads' : 'opportunities'
+  );
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [showOpportunityForm, setShowOpportunityForm] = useState(false);
@@ -576,18 +579,20 @@ export default function EnhancedCRMPage() {
 
         {/* Navigation Tabs */}
         <div className="bg-white rounded-xl border border-slate-200 p-2 mb-6 flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => {
-              setActiveTab('leads');
-              setFilters({ ...filters, search: '', status: 'all' });
-            }}
-            className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${activeTab === 'leads'
-              ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
-              : 'text-slate-600 hover:bg-slate-100'
-              }`}
-          >
-            Leads
-          </button>
+          {showLeadsTab && (
+            <button
+              onClick={() => {
+                setActiveTab('leads');
+                setFilters({ ...filters, search: '', status: 'all' });
+              }}
+              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${activeTab === 'leads'
+                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+                : 'text-slate-600 hover:bg-slate-100'
+                }`}
+            >
+              Leads
+            </button>
+          )}
           <button
             onClick={() => {
               setActiveTab('opportunities');

@@ -187,7 +187,7 @@ const navigationItems: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     path: '/settings',
-    roles: ['admin'],
+    roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'solution_consultant'],
   },
 ];
 

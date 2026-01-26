@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Save, X, Plus, Trash2, Upload, Building2, FileText, Palette, Languages, Lock, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Edit2, Save, X, Plus, Trash2, Building2, FileText, Palette, Languages, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { formatCurrencyCompact } from '../lib/currencyUtils';
 import BrandingSettings from '../components/admin/BrandingSettings';
@@ -23,24 +24,21 @@ interface CommissionTier {
   is_active: boolean;
 }
 
-interface SystemSettings {
-  id: string;
-  company_name: string;
-  company_logo_url: string | null;
-  default_terms_and_conditions: string;
-}
+
 
 export default function SettingsPage() {
+  const { profile } = useAuth();
   const { t, language, setLanguage } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'branding' | 'discount' | 'commission' | 'language' | 'security'>('branding');
+  const isAdmin = profile?.role === 'admin';
+  const [activeTab, setActiveTab] = useState<'branding' | 'discount' | 'commission' | 'language' | 'security'>(
+    isAdmin ? 'branding' : 'language'
+  );
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
   const [commissionTiers, setCommissionTiers] = useState<CommissionTier[]>([]);
-  const [systemSettings, setSystemSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<string | null>(null);
   const [showCommissionForm, setShowCommissionForm] = useState(false);
-  const [editingBranding, setEditingBranding] = useState(false);
   const [newCommission, setNewCommission] = useState({
     tier_name: '',
     min_amount: 0,
@@ -62,19 +60,17 @@ export default function SettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const [discountResult, commissionResult, settingsResult] = await Promise.all([
+      const [discountResult, commissionResult] = await Promise.all([
         supabase.from('discount_matrix').select('*').order('min_quotation_value'),
         supabase
           .from('commission_plans')
           .select('*')
           .is('sales_rep_id', null)
           .order('min_amount'),
-        supabase.from('system_settings').select('*').single(),
       ]);
 
-      if (discountResult.data) setDiscountRules(discountResult.data);
-      if (commissionResult.data) setCommissionTiers(commissionResult.data);
-      if (settingsResult.data) setSystemSettings(settingsResult.data);
+      if (discountResult.data) setDiscountRules(discountResult.data as any);
+      if (commissionResult.data) setCommissionTiers(commissionResult.data as any);
     } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
@@ -86,7 +82,7 @@ export default function SettingsPage() {
     try {
       const { error } = await supabase
         .from('discount_matrix')
-      // @ts-expect-error - Supabase type inference issue
+        // @ts-expect-error - Supabase type inference issue
         .update({
           min_quotation_value: rule.min_quotation_value,
           max_quotation_value: rule.max_quotation_value,
@@ -157,31 +153,7 @@ export default function SettingsPage() {
     }
   };
 
-  const updateSystemSettings = async () => {
-    if (!systemSettings) return;
 
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('system_settings')
-        .update({
-          company_name: systemSettings.company_name,
-          company_logo_url: systemSettings.company_logo_url,
-          default_terms_and_conditions: systemSettings.default_terms_and_conditions,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', systemSettings.id);
-
-      if (error) throw error;
-      setEditingBranding(false);
-      alert('Settings updated successfully!');
-    } catch (error: any) {
-      console.error('Error updating settings:', error);
-      alert('Failed to update settings: ' + error.message);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const formatCurrencyValue = (value: number | null) => {
     if (value === null) return '∞';
@@ -248,57 +220,56 @@ export default function SettingsPage() {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200">
         <div className="border-b border-slate-200">
           <nav className="flex gap-2 px-6" aria-label="Tabs">
-            <button
-              onClick={() => setActiveTab('branding')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'branding'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              <Palette className="w-4 h-4" />
-              Branding & Terms
-            </button>
-            <button
-              onClick={() => setActiveTab('discount')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'discount'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              Discount Matrix
-            </button>
-            <button
-              onClick={() => setActiveTab('commission')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'commission'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              <Building2 className="w-4 h-4" />
-              Commission Tiers
-            </button>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={() => setActiveTab('branding')}
+                  className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'branding'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                    }`}
+                >
+                  <Palette className="w-4 h-4" />
+                  Branding & Terms
+                </button>
+                <button
+                  onClick={() => setActiveTab('discount')}
+                  className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'discount'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                    }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Discount Matrix
+                </button>
+                <button
+                  onClick={() => setActiveTab('commission')}
+                  className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'commission'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                    }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  Commission Tiers
+                </button>
+              </>
+            )}
             <button
               onClick={() => setActiveTab('language')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'language'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'language'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                }`}
             >
               <Languages className="w-4 h-4" />
               {t.settings.language}
             </button>
             <button
               onClick={() => setActiveTab('security')}
-              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'security'
-                  ? 'border-orange-500 text-orange-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
+              className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                }`}
             >
               <Lock className="w-4 h-4" />
               Security
@@ -319,11 +290,10 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setLanguage('en')}
-                    className={`p-4 border-2 rounded-lg transition-all ${
-                      language === 'en'
-                        ? 'border-orange-500 bg-orange-50 text-orange-600'
-                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
-                    }`}
+                    className={`p-4 border-2 rounded-lg transition-all ${language === 'en'
+                      ? 'border-orange-500 bg-orange-50 text-orange-600'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                      }`}
                   >
                     <div className="text-2xl mb-2">🇬🇧</div>
                     <div className="font-medium">{t.settings.english}</div>
@@ -331,11 +301,10 @@ export default function SettingsPage() {
                   </button>
                   <button
                     onClick={() => setLanguage('ar')}
-                    className={`p-4 border-2 rounded-lg transition-all ${
-                      language === 'ar'
-                        ? 'border-orange-500 bg-orange-50 text-orange-600'
-                        : 'border-slate-200 hover:border-slate-300 text-slate-700'
-                    }`}
+                    className={`p-4 border-2 rounded-lg transition-all ${language === 'ar'
+                      ? 'border-orange-500 bg-orange-50 text-orange-600'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                      }`}
                   >
                     <div className="text-2xl mb-2">🇸🇦</div>
                     <div className="font-medium">{t.settings.arabic}</div>
@@ -445,105 +414,105 @@ export default function SettingsPage() {
                   <h3 className="font-semibold text-slate-900">Discount Matrix</h3>
                 </div>
               </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                  Quotation Value Range
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                  Max Discount %
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                  Requires CEO Approval
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {discountRules.map((rule, index) => (
-                <tr key={rule.id} className="border-b border-slate-100">
-                  <td className="py-3 px-4 text-sm text-slate-900">
-                    {formatCurrencyValue(rule.min_quotation_value)} -{' '}
-                    {formatCurrencyValue(rule.max_quotation_value)}
-                  </td>
-                  <td className="py-3 px-4">
-                    {editingDiscount === rule.id ? (
-                      <input
-                        type="number"
-                        value={rule.max_discount_percentage}
-                        onChange={(e) => {
-                          const updated = [...discountRules];
-                          updated[index].max_discount_percentage = parseFloat(e.target.value);
-                          setDiscountRules(updated);
-                        }}
-                        className="w-24 px-2 py-1 border border-slate-300 rounded text-sm"
-                      />
-                    ) : (
-                      <span className="text-sm text-slate-900">
-                        {rule.max_discount_percentage}%
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    {editingDiscount === rule.id ? (
-                      <select
-                        value={rule.requires_ceo_approval ? 'yes' : 'no'}
-                        onChange={(e) => {
-                          const updated = [...discountRules];
-                          updated[index].requires_ceo_approval = e.target.value === 'yes';
-                          setDiscountRules(updated);
-                        }}
-                        className="px-2 py-1 border border-slate-300 rounded text-sm"
-                      >
-                        <option value="no">No</option>
-                        <option value="yes">Yes</option>
-                      </select>
-                    ) : (
-                      <span className="text-sm text-slate-900">
-                        {rule.requires_ceo_approval ? 'Yes' : 'No'}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    {editingDiscount === rule.id ? (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateDiscountRule(rule)}
-                          className="p-1 text-green-600 hover:bg-green-50 rounded"
-                          title="Save"
-                        >
-                          <Save className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingDiscount(null);
-                            loadSettings();
-                          }}
-                          className="p-1 text-slate-600 hover:bg-slate-100 rounded"
-                          title="Cancel"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setEditingDiscount(rule.id)}
-                        className="p-1 text-orange-500 hover:bg-orange-50 rounded"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                        Quotation Value Range
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                        Max Discount %
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                        Requires CEO Approval
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {discountRules.map((rule, index) => (
+                      <tr key={rule.id} className="border-b border-slate-100">
+                        <td className="py-3 px-4 text-sm text-slate-900">
+                          {formatCurrencyValue(rule.min_quotation_value)} -{' '}
+                          {formatCurrencyValue(rule.max_quotation_value)}
+                        </td>
+                        <td className="py-3 px-4">
+                          {editingDiscount === rule.id ? (
+                            <input
+                              type="number"
+                              value={rule.max_discount_percentage}
+                              onChange={(e) => {
+                                const updated = [...discountRules];
+                                updated[index].max_discount_percentage = parseFloat(e.target.value);
+                                setDiscountRules(updated);
+                              }}
+                              className="w-24 px-2 py-1 border border-slate-300 rounded text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm text-slate-900">
+                              {rule.max_discount_percentage}%
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          {editingDiscount === rule.id ? (
+                            <select
+                              value={rule.requires_ceo_approval ? 'yes' : 'no'}
+                              onChange={(e) => {
+                                const updated = [...discountRules];
+                                updated[index].requires_ceo_approval = e.target.value === 'yes';
+                                setDiscountRules(updated);
+                              }}
+                              className="px-2 py-1 border border-slate-300 rounded text-sm"
+                            >
+                              <option value="no">No</option>
+                              <option value="yes">Yes</option>
+                            </select>
+                          ) : (
+                            <span className="text-sm text-slate-900">
+                              {rule.requires_ceo_approval ? 'Yes' : 'No'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          {editingDiscount === rule.id ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => updateDiscountRule(rule)}
+                                className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                title="Save"
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingDiscount(null);
+                                  loadSettings();
+                                }}
+                                className="p-1 text-slate-600 hover:bg-slate-100 rounded"
+                                title="Cancel"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditingDiscount(rule.id)}
+                              className="p-1 text-orange-500 hover:bg-orange-50 rounded"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -556,178 +525,177 @@ export default function SettingsPage() {
                     Configure commission rates based on deal value
                   </p>
                 </div>
-          {!showCommissionForm && (
-            <button
-              onClick={() => setShowCommissionForm(true)}
-              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Tier
-            </button>
-          )}
-        </div>
+                {!showCommissionForm && (
+                  <button
+                    onClick={() => setShowCommissionForm(true)}
+                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Tier
+                  </button>
+                )}
+              </div>
 
-        {showCommissionForm && (
-          <div className="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <h4 className="font-medium text-slate-900 mb-3">Add New Commission Tier</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Tier Name
-                </label>
-                <input
-                  type="text"
-                  value={newCommission.tier_name}
-                  onChange={(e) =>
-                    setNewCommission({ ...newCommission, tier_name: e.target.value })
-                  }
-                  placeholder="e.g., Premium Tier"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Commission %
-                </label>
-                <input
-                  type="number"
-                  value={newCommission.commission_percentage}
-                  onChange={(e) =>
-                    setNewCommission({
-                      ...newCommission,
-                      commission_percentage: parseFloat(e.target.value),
-                    })
-                  }
-                  placeholder="0"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Min Deal Value (SAR)
-                </label>
-                <input
-                  type="number"
-                  value={newCommission.min_amount}
-                  onChange={(e) =>
-                    setNewCommission({
-                      ...newCommission,
-                      min_amount: parseFloat(e.target.value),
-                    })
-                  }
-                  placeholder="0"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Max Deal Value (SAR) - Leave empty for unlimited
-                </label>
-                <input
-                  type="number"
-                  value={newCommission.max_amount || ''}
-                  onChange={(e) =>
-                    setNewCommission({
-                      ...newCommission,
-                      max_amount: e.target.value ? parseFloat(e.target.value) : null,
-                    })
-                  }
-                  placeholder="Unlimited"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-4">
-              <button
-                onClick={addCommissionTier}
-                disabled={saving}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save Tier'}
-              </button>
-              <button
-                onClick={() => {
-                  setShowCommissionForm(false);
-                  setNewCommission({
-                    tier_name: '',
-                    min_amount: 0,
-                    max_amount: null,
-                    commission_percentage: 0,
-                  });
-                }}
-                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
+              {showCommissionForm && (
+                <div className="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <h4 className="font-medium text-slate-900 mb-3">Add New Commission Tier</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Tier Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newCommission.tier_name}
+                        onChange={(e) =>
+                          setNewCommission({ ...newCommission, tier_name: e.target.value })
+                        }
+                        placeholder="e.g., Premium Tier"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Commission %
+                      </label>
+                      <input
+                        type="number"
+                        value={newCommission.commission_percentage}
+                        onChange={(e) =>
+                          setNewCommission({
+                            ...newCommission,
+                            commission_percentage: parseFloat(e.target.value),
+                          })
+                        }
+                        placeholder="0"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Min Deal Value (SAR)
+                      </label>
+                      <input
+                        type="number"
+                        value={newCommission.min_amount}
+                        onChange={(e) =>
+                          setNewCommission({
+                            ...newCommission,
+                            min_amount: parseFloat(e.target.value),
+                          })
+                        }
+                        placeholder="0"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Max Deal Value (SAR) - Leave empty for unlimited
+                      </label>
+                      <input
+                        type="number"
+                        value={newCommission.max_amount || ''}
+                        onChange={(e) =>
+                          setNewCommission({
+                            ...newCommission,
+                            max_amount: e.target.value ? parseFloat(e.target.value) : null,
+                          })
+                        }
+                        placeholder="Unlimited"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-4">
+                    <button
+                      onClick={addCommissionTier}
+                      disabled={saving}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : 'Save Tier'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowCommissionForm(false);
+                        setNewCommission({
+                          tier_name: '',
+                          min_amount: 0,
+                          max_amount: null,
+                          commission_percentage: 0,
+                        });
+                      }}
+                      className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
-        {commissionTiers.length === 0 ? (
-          <div className="text-center py-8 text-slate-500">
-            <p>No commission tiers configured yet.</p>
-            <p className="text-sm mt-1">Add your first tier to get started.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                    Tier Name
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                    Deal Value Range
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                    Commission %
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                    Status
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {commissionTiers.map((tier) => (
-                  <tr key={tier.id} className="border-b border-slate-100">
-                    <td className="py-3 px-4 text-sm font-medium text-slate-900">
-                      {tier.tier_name}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-slate-900">
-                      {formatCurrencyValue(tier.min_amount)} - {formatCurrencyValue(tier.max_amount)}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-slate-900">
-                      {tier.commission_percentage}%
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          tier.is_active
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {tier.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => deleteCommissionTier(tier.id)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              {commissionTiers.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <p>No commission tiers configured yet.</p>
+                  <p className="text-sm mt-1">Add your first tier to get started.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                          Tier Name
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                          Deal Value Range
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                          Commission %
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                          Status
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-700">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {commissionTiers.map((tier) => (
+                        <tr key={tier.id} className="border-b border-slate-100">
+                          <td className="py-3 px-4 text-sm font-medium text-slate-900">
+                            {tier.tier_name}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-slate-900">
+                            {formatCurrencyValue(tier.min_amount)} - {formatCurrencyValue(tier.max_amount)}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-slate-900">
+                            {tier.commission_percentage}%
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${tier.is_active
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-slate-100 text-slate-700'
+                                }`}
+                            >
+                              {tier.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => deleteCommissionTier(tier.id)}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </div>

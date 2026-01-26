@@ -139,7 +139,7 @@ function AppContent() {
       case '/crm-classic':
         return hasAccess(['sales', 'manager', 'ceo', 'solution_consultant']) ? <CRMPage /> : <UnauthorizedPage />;
       case '/settings':
-        return hasAccess(['admin']) ? <SettingsPage /> : <UnauthorizedPage />;
+        return <SettingsPage />;
       case '/notifications':
         return <NotificationsPage />;
       case '/reports':
