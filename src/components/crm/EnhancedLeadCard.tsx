@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Building2,
+
   User,
   Mail,
   Phone,
@@ -38,6 +38,7 @@ interface Lead {
   expected_close_date: string | null;
   notes: string | null;
   created_at: string;
+  priority?: string;
 }
 
 interface EnhancedLeadCardProps {
@@ -74,6 +75,16 @@ export default function EnhancedLeadCard({
     if (score >= 60) return 'text-blue-600 bg-blue-50';
     if (score >= 40) return 'text-yellow-600 bg-yellow-50';
     return 'text-slate-600 bg-slate-50';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    const colors: Record<string, string> = {
+      low: 'bg-slate-100 text-slate-700',
+      medium: 'bg-blue-100 text-blue-700',
+      high: 'bg-orange-100 text-orange-700',
+      urgent: 'bg-red-100 text-red-700',
+    };
+    return colors[priority] || colors.medium;
   };
 
   const getSourceIcon = (source: string) => {
@@ -119,6 +130,11 @@ export default function EnhancedLeadCard({
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
                   {getSourceIcon(lead.lead_source)} {lead.lead_source}
                 </span>
+                {lead.priority && (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(lead.priority)}`}>
+                    {lead.priority.toUpperCase()}
+                  </span>
+                )}
               </div>
             </div>
           </div>

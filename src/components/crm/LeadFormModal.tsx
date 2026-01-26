@@ -27,6 +27,7 @@ interface Lead {
   expected_close_date: string | null;
   notes: string | null;
   assigned_to: string;
+  priority?: string;
   project_details?: string | null;
   budget?: number | null;
   timeline?: string | null;
@@ -67,6 +68,7 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
     expected_close_date: lead?.expected_close_date || '',
     notes: lead?.notes || '',
     assigned_to: lead?.assigned_to || profile?.id || '',
+    priority: lead?.priority || 'medium',
     project_details: lead?.project_details || '',
     budget: lead?.budget || '',
     timeline: lead?.timeline || '',
@@ -96,6 +98,7 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
         estimated_value: formData.estimated_value ? Number(formData.estimated_value) : null,
         expected_close_date: formData.expected_close_date || null,
         notes: formData.notes || null,
+        priority: formData.priority,
       };
 
       // Add stream-specific fields
@@ -644,6 +647,22 @@ export default function LeadFormModal({ lead, onClose }: LeadFormModalProps) {
                     onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Priority
+                  </label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
                 </div>
 
                 {canAssign && teamMembers && teamMembers.length > 0 && (
