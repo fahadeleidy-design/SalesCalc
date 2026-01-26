@@ -1,6 +1,73 @@
 -- Consolidated CRM Fix: Priority Column, Scoring Functions, and Audit Trigger
 
--- 1. Ensure priority column exists in crm_leads
+-- 1. Ensure dependencies exist (Types and Table)
+-- This fixes the error where crm_leads might be missing in some environments
+
+-- Lead status enum
+DO $$ BEGIN
+  CREATE TYPE lead_status AS ENUM (
+    'new',
+    'contacted',
+    'qualified',
+    'proposal',
+    'negotiation',
+    'converted',
+    'lost',
+    'unqualified'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- Lead source enum
+DO $$ BEGIN
+  CREATE TYPE lead_source AS ENUM (
+    'website',
+    'referral',
+    'cold_call',
+    'email_campaign',
+    'social_media',
+    'event',
+    'partner',
+    'direct',
+    'other'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- CRM Leads Table (Safe Creation)
+CREATE TABLE IF NOT EXISTS crm_leads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_name text NOT NULL,
+  contact_name text NOT NULL,
+  contact_email text,
+  contact_phone text,
+  position text,
+  industry text,
+  country text DEFAULT 'Saudi Arabia',
+  city text,
+  address text,
+  website text,
+  lead_source lead_source DEFAULT 'other',
+  lead_status lead_status DEFAULT 'new',
+  lead_score integer DEFAULT 0 CHECK (lead_score >= 0 AND lead_score <= 100),
+  estimated_value numeric(15, 2),
+  expected_close_date date,
+  assigned_to uuid REFERENCES profiles(id) ON DELETE SET NULL,
+  notes text,
+  created_by uuid REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  converted_to_customer_id uuid REFERENCES customers(id) ON DELETE SET NULL,
+  converted_at timestamptz,
+  lost_reason text
+);
+
+-- Enable RLS if we just created it
+ALTER TABLE crm_leads ENABLE ROW LEVEL SECURITY;
+
+-- 2. Ensure priority column exists in crm_leads
 DO $$ 
 BEGIN
   IF NOT EXISTS (
