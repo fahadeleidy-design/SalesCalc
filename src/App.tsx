@@ -153,21 +153,21 @@ function AppContent() {
       case '/custom-reports':
         return hasAccess(['finance', 'ceo', 'admin', 'solution_consultant']) ? <CustomReportsPage /> : <UnauthorizedPage />;
       case '/demos':
-        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <DemoTrackerPage /> : <UnauthorizedPage />;
+        return hasAccess(['solution_consultant', 'manager']) ? <DemoTrackerPage /> : <UnauthorizedPage />;
       case '/technical-discovery':
-        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <TechnicalDiscoveryPage /> : <UnauthorizedPage />;
+        return hasAccess(['solution_consultant', 'manager']) ? <TechnicalDiscoveryPage /> : <UnauthorizedPage />;
       case '/configurator':
-        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <SolutionConfiguratorPage /> : <UnauthorizedPage />;
+        return hasAccess(['solution_consultant', 'manager']) ? <SolutionConfiguratorPage /> : <UnauthorizedPage />;
       case '/roi-calculator':
-        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <ROICalculatorPage /> : <UnauthorizedPage />;
+        return hasAccess(['solution_consultant', 'manager']) ? <ROICalculatorPage /> : <UnauthorizedPage />;
       case '/activity-log':
-        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <PresalesActivityLogPage /> : <UnauthorizedPage />;
+        return hasAccess(['solution_consultant', 'manager']) ? <PresalesActivityLogPage /> : <UnauthorizedPage />;
       case '/scheduling':
-        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <ResourceSchedulingPage /> : <UnauthorizedPage />;
+        return hasAccess(['solution_consultant', 'manager']) ? <ResourceSchedulingPage /> : <UnauthorizedPage />;
       case '/competitive-intel':
-        return hasAccess(['solution_consultant', 'sales', 'manager']) ? <CompetitiveIntelPage /> : <UnauthorizedPage />;
+        return hasAccess(['solution_consultant', 'manager']) ? <CompetitiveIntelPage /> : <UnauthorizedPage />;
       case '/presales-analytics':
-        return hasAccess(['solution_consultant', 'sales', 'manager', 'ceo']) ? <PresalesAnalyticsPage /> : <UnauthorizedPage />;
+        return hasAccess(['solution_consultant', 'manager', 'ceo']) ? <PresalesAnalyticsPage /> : <UnauthorizedPage />;
       case '/profitability':
         return hasAccess(['finance', 'ceo', 'admin']) ? <ProjectProfitabilityPage /> : <UnauthorizedPage />;
 
