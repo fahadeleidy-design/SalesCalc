@@ -2,6 +2,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { TranslationKeys } from '../locales';
 import {
   LayoutDashboard,
   FileText,
@@ -32,7 +33,7 @@ interface LayoutProps {
 }
 
 interface NavItem {
-  label: string;
+  labelKey: keyof TranslationKeys['nav'];
   icon: typeof LayoutDashboard;
   path: string;
   roles: UserRole[];
@@ -40,151 +41,151 @@ interface NavItem {
 
 const navigationItems: NavItem[] = [
   {
-    label: 'Dashboard',
+    labelKey: 'dashboard',
     icon: LayoutDashboard,
     path: '/dashboard',
     roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'solution_consultant'],
   },
   {
-    label: 'Quotations',
+    labelKey: 'quotations',
     icon: FileText,
     path: '/quotations',
     roles: ['sales', 'finance', 'ceo', 'manager', 'solution_consultant'],
   },
   {
-    label: 'Custom Items',
+    labelKey: 'customItems',
     icon: Wrench,
     path: '/custom-items',
     roles: ['engineering', 'solution_consultant'],
   },
   {
-    label: 'Approvals',
+    labelKey: 'approvals',
     icon: CheckCircle,
     path: '/approvals',
     roles: ['manager', 'ceo', 'finance'],
   },
   {
-    label: 'Customers',
+    labelKey: 'customers',
     icon: Users,
     path: '/customers',
     roles: ['sales', 'manager', 'admin', 'solution_consultant'],
   },
   {
-    label: 'CRM',
+    labelKey: 'crm',
     icon: Target,
     path: '/crm',
     roles: ['sales', 'manager', 'ceo', 'solution_consultant'],
   },
   {
-    label: 'Products',
+    labelKey: 'products',
     icon: Package,
     path: '/products',
     roles: ['admin', 'finance', 'engineering', 'solution_consultant'],
   },
   {
-    label: 'Commissions',
+    labelKey: 'commissions',
     icon: DollarSign,
     path: '/commissions',
     roles: ['sales', 'manager', 'ceo', 'finance', 'admin'],
   },
   {
-    label: 'Purchase Orders',
+    labelKey: 'purchaseOrders',
     icon: ShoppingCart,
     path: '/purchase-orders',
     roles: ['finance', 'ceo', 'admin', 'engineering', 'solution_consultant'],
   },
   {
-    label: 'Collection',
+    labelKey: 'collection',
     icon: TrendingUp,
     path: '/collection',
     roles: ['sales', 'manager', 'finance', 'ceo', 'admin'],
   },
   {
-    label: 'Profitability',
+    labelKey: 'profitability',
     icon: TrendingUp,
     path: '/profitability',
     roles: ['finance', 'ceo', 'admin'],
   },
   {
-    label: 'Demos',
+    labelKey: 'demos',
     icon: Target,
     path: '/demos',
     roles: ['solution_consultant', 'manager'],
   },
   {
-    label: 'Discovery',
+    labelKey: 'discovery',
     icon: Target,
     path: '/technical-discovery',
     roles: ['solution_consultant', 'manager'],
   },
   {
-    label: 'Configurator',
+    labelKey: 'configurator',
     icon: Target,
     path: '/configurator',
     roles: ['solution_consultant', 'manager'],
   },
   {
-    label: 'ROI Calculator',
+    labelKey: 'roiCalculator',
     icon: TrendingUp,
     path: '/roi-calculator',
     roles: ['solution_consultant', 'manager'],
   },
   {
-    label: 'Activity Log',
+    labelKey: 'activityLog',
     icon: Activity,
     path: '/activity-log',
     roles: ['solution_consultant', 'manager'],
   },
   {
-    label: 'Scheduling',
+    labelKey: 'scheduling',
     icon: Users,
     path: '/scheduling',
     roles: ['solution_consultant', 'manager'],
   },
   {
-    label: 'Battlecards',
+    labelKey: 'battlecards',
     icon: Target,
     path: '/competitive-intel',
     roles: ['solution_consultant', 'manager'],
   },
   {
-    label: 'Presales Analytics',
+    labelKey: 'presalesAnalytics',
     icon: BarChart3,
     path: '/presales-analytics',
     roles: ['solution_consultant', 'manager', 'ceo'],
   },
   {
-    label: 'Targets',
+    labelKey: 'targets',
     icon: Target,
     path: '/targets',
     roles: ['manager', 'ceo', 'finance'],
   },
   {
-    label: 'Teams',
+    labelKey: 'teams',
     icon: Users,
     path: '/teams',
     roles: ['manager'],
   },
   {
-    label: 'Reports',
+    labelKey: 'reports',
     icon: BarChart3,
     path: '/reports',
     roles: ['admin', 'manager', 'ceo'],
   },
   {
-    label: 'Custom Reports',
+    labelKey: 'customReports',
     icon: BarChart3,
     path: '/custom-reports',
     roles: ['finance', 'ceo', 'admin', 'solution_consultant'],
   },
   {
-    label: 'Users',
+    labelKey: 'users',
     icon: Users,
     path: '/users',
     roles: ['admin'],
   },
   {
-    label: 'Settings',
+    labelKey: 'settings',
     icon: Settings,
     path: '/settings',
     roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'solution_consultant'],
@@ -194,7 +195,7 @@ const navigationItems: NavItem[] = [
 export default function Layout({ children }: LayoutProps) {
   const { profile, signOut } = useAuth();
   const { currentPath, navigate, resetNavigation } = useNavigation();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t, isRTL } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -273,7 +274,7 @@ export default function Layout({ children }: LayoutProps) {
                   }`}
               >
                 <Icon className="w-5 h-5" />
-                <span>{item.label}</span>
+                <span>{t.nav[item.labelKey]}</span>
               </button>
             );
           })}
@@ -295,10 +296,10 @@ export default function Layout({ children }: LayoutProps) {
           </div>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+            className="w-full flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-slate-50 rounded-lg transition-all active:scale-95"
           >
-            <LogOut className="w-4 h-4" />
-            <span className="text-sm">Sign Out</span>
+            <LogOut className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
+            <span className="text-sm">{t.nav.signOut}</span>
           </button>
         </div>
       </aside>
@@ -313,7 +314,7 @@ export default function Layout({ children }: LayoutProps) {
       <div className="lg:pl-64 pt-16 lg:pt-0">
         <header className="bg-white border-b border-slate-200 px-6 py-4 hidden lg:flex items-center justify-between">
           <h2 className="text-xl font-semibold text-slate-900">
-            {filteredNav.find((item) => item.path === currentPath)?.label || 'Dashboard'}
+            {t.nav[filteredNav.find((item) => item.path === currentPath)?.labelKey || 'dashboard']}
           </h2>
           <div className="flex items-center gap-4">
             <GlobalSearch />
@@ -330,7 +331,7 @@ export default function Layout({ children }: LayoutProps) {
             <button
               onClick={() => navigate('/notifications')}
               className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Notifications"
+              title={t.nav.notifications}
             >
               <Bell className="w-5 h-5 text-slate-600" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />

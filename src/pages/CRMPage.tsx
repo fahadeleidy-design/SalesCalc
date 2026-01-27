@@ -3,40 +3,37 @@ import { useAuth } from '../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import {
+  Search,
+  Plus,
   Users,
+  Building2,
   TrendingUp,
   Target,
-  DollarSign,
+  BarChart3,
+  Calendar,
   Phone,
   Mail,
-  Calendar,
-  Plus,
-  BarChart3,
-  CheckCircle,
-  Clock,
-  Edit2,
-  Trash2,
-  X,
-  Search,
-  Building2,
   MapPin,
-  MessageSquare,
-  FileText,
+  Clock,
   Download,
   Upload,
-  LineChart,
-  ClipboardCheck,
-  Zap,
-  Loader2,
-  Sparkles,
+  UserPlus,
   RefreshCw,
-  Megaphone,
-  Lightbulb,
-  LifeBuoy,
+  Sparkles,
+  Loader2,
+  MessageSquare,
+  CheckCircle,
+  FileText,
+  CheckSquare,
+  ClipboardCheck,
   BookOpen,
-  History,
   ShoppingBag,
-  Mic,
+  Lightbulb,
+  DollarSign,
+  CheckCircle,
+  Edit2,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import TasksManager from '../components/crm/TasksManager';
@@ -71,6 +68,7 @@ import ProductCatalogView from '../components/crm/ProductCatalogView';
 import RevOpsDashboard from '../components/crm/RevOpsDashboard';
 import VoiceToCRM from '../components/crm/VoiceToCRM';
 import { useSalesTeam } from '../hooks/useSalesTeam';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
   exportLeadsToExcel,
   exportOpportunitiesToExcel,
@@ -141,7 +139,8 @@ interface Opportunity {
 
 export default function CRMPage() {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'contacts' | 'leads' | 'opportunities' | 'activities' | 'campaigns' | 'intelligence' | 'communication' | 'service-desk' | 'knowledge-base' | 'audit-logs' | 'products' | 'revops' | 'voice' | 'analytics' | 'tasks' | 'pipeline' | 'sequences' | 'forecast' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals' | 'ai-scoring' | 'ai-forecast'>('overview');
+  const { t, isRTL } = useLanguage();
+  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'contacts' | 'leads' | 'opportunities' | 'activities' | 'campaigns' | 'intelligence' | 'communication' | 'service-desk' | 'knowledge-base' | 'audit-logs' | 'products' | 'revops' | 'voice' | 'analytics' | 'tasks' | 'pipeline' | 'sequences' | 'templates' | 'automation' | 'documents' | 'coaching' | 'integrations' | 'partners' | 'competitors' | 'success' | 'referrals' | 'ai-scoring' | 'ai-forecast' | 'revenue-intelligence' | 'forecast'>('overview');
 
   // Fetch CRM stats
   const { data: stats, isLoading: _statsLoading } = useQuery({
@@ -274,60 +273,60 @@ export default function CRMPage() {
     return (
       <div className="flex flex-col items-center justify-center h-96">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
-          <p className="text-slate-600">CRM module is available for sales, managers, and CEO only.</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t.common.accessDenied}</h2>
+          <p className="text-slate-600">{t.common.noAccess}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isRTL ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <Target className="h-7 w-7 text-orange-600" />
-          Customer Relationship Management
+          <Target className={`h-7 w-7 text-orange-600 ${isRTL ? 'ml-1' : ''}`} />
+          {t.crm.title}
         </h1>
-        <p className="text-slate-600 mt-1">Manage leads, opportunities, and customer interactions</p>
+        <p className="text-slate-600 mt-1">{t.crm.subtitle}</p>
       </div>
 
       {/* Tab Navigation */}
       <div className="border-b border-slate-200">
-        <nav className="flex gap-6 overflow-x-auto">
+        <nav className="flex gap-6 overflow-x-auto no-scrollbar">
           {[
-            { id: 'overview', label: 'Overview', icon: BarChart3 },
-            { id: 'accounts', label: 'Accounts', icon: Building2 },
-            { id: 'contacts', label: 'Contacts', icon: Users },
-            { id: 'leads', label: 'Leads', icon: Users },
-            { id: 'opportunities', label: 'Opportunities', icon: TrendingUp },
-            { id: 'pipeline', label: 'Pipeline', icon: Target },
-            { id: 'communication', label: 'Comm Hub', icon: MessageSquare },
-            { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
-            { id: 'service-desk', label: 'Service Desk', icon: LifeBuoy },
-            { id: 'knowledge-base', label: 'KB Portal', icon: BookOpen },
-            { id: 'intelligence', label: 'AI Actions', icon: Lightbulb },
-            { id: 'audit-logs', label: 'Audit Trail', icon: History },
-            { id: 'forecast', label: 'Forecast', icon: TrendingUp },
-            { id: 'revops', label: 'RevOps', icon: BarChart3 },
-            { id: 'products', label: 'Products', icon: ShoppingBag },
-            { id: 'voice', label: 'Voice Notes', icon: Mic },
-            { id: 'activities', label: 'Activities', icon: Calendar },
-            { id: 'analytics', label: 'Analytics', icon: LineChart },
-            { id: 'intelligence', label: 'Revenue Intelligence', icon: TrendingUp },
-            { id: 'sequences', label: 'Sequences', icon: Zap },
-            { id: 'templates', label: 'Email Templates', icon: Mail },
-            { id: 'automation', label: 'Automation', icon: Zap },
-            { id: 'documents', label: 'Documents', icon: FileText },
-            { id: 'coaching', label: 'Coaching', icon: Target },
-            { id: 'integrations', label: 'Integrations', icon: Mail },
-            { id: 'partners', label: 'Partners', icon: Building2 },
-            { id: 'competitors', label: 'Competitors', icon: Target },
-            { id: 'success', label: 'Customer Success', icon: Users },
-            { id: 'referrals', label: 'Referrals', icon: Users },
-            { id: 'ai-scoring', label: '✨ AI Scoring', icon: Sparkles },
-            { id: 'ai-forecast', label: '✨ AI Forecast', icon: Sparkles },
-            { id: 'tasks', label: 'Tasks', icon: ClipboardCheck },
+            { id: 'overview', label: t.crm.tabs.overview, icon: BarChart3 },
+            { id: 'accounts', label: t.crm.tabs.accounts, icon: Building2 },
+            { id: 'contacts', label: t.crm.tabs.contacts, icon: Users },
+            { id: 'leads', label: t.crm.tabs.leads, icon: Users },
+            { id: 'opportunities', label: t.crm.tabs.opportunities, icon: Target },
+            { id: 'pipeline', label: t.crm.tabs.pipeline, icon: GitBranch },
+            { id: 'communication', label: t.crm.tabs.communication, icon: MessageSquare },
+            { id: 'campaigns', label: t.crm.tabs.campaigns, icon: Megaphone },
+            { id: 'service-desk', label: t.crm.tabs.serviceDesk, icon: LifeBuoy },
+            { id: 'knowledge-base', label: t.crm.tabs.knowledgeBase, icon: BookOpen },
+            { id: 'intelligence', label: t.crm.tabs.intelligence, icon: Lightbulb },
+            { id: 'audit-logs', label: t.crm.tabs.auditLogs, icon: History },
+            { id: 'forecast', label: t.crm.tabs.forecast, icon: TrendingUp },
+            { id: 'revops', label: t.crm.tabs.revops, icon: BarChart3 },
+            { id: 'products', label: t.crm.tabs.products, icon: ShoppingBag },
+            { id: 'voice', label: t.crm.tabs.voice, icon: Mic },
+            { id: 'activities', label: t.crm.tabs.activities, icon: Calendar },
+            { id: 'analytics', label: t.crm.tabs.analytics, icon: LineChart },
+            { id: 'revenue-intelligence', label: t.crm.tabs.revenueIntelligence, icon: Brain },
+            { id: 'sequences', label: t.crm.tabs.sequences, icon: Zap },
+            { id: 'templates', label: t.crm.tabs.templates, icon: Mail },
+            { id: 'automation', label: t.crm.tabs.automation, icon: Workflow },
+            { id: 'documents', label: t.crm.tabs.documents, icon: FileText },
+            { id: 'coaching', label: t.crm.tabs.coaching, icon: GraduationCap },
+            { id: 'integrations', label: t.crm.tabs.integrations, icon: Puzzle },
+            { id: 'partners', label: t.crm.tabs.partners, icon: UserPlus },
+            { id: 'competitors', label: t.crm.tabs.competitors, icon: Globe },
+            { id: 'success', label: t.crm.tabs.success, icon: Star },
+            { id: 'referrals', label: t.crm.tabs.referrals, icon: UserPlus },
+            { id: 'ai-scoring', label: t.crm.tabs.aiScoring, icon: Sparkles },
+            { id: 'ai-forecast', label: t.crm.tabs.aiForecast, icon: Sparkles },
+            { id: 'tasks', label: t.crm.tabs.tasks, icon: ClipboardCheck },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
@@ -352,42 +351,42 @@ export default function CRMPage() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <StatsCard
-              title="Total Leads"
+              title={t.crm.stats.totalLeads}
               value={stats?.totalLeads || 0}
               icon={Users}
               iconBg="bg-blue-100"
               iconColor="text-blue-600"
             />
             <StatsCard
-              title="Qualified Leads"
+              title={t.crm.stats.qualifiedLeads}
               value={stats?.qualifiedLeads || 0}
               icon={CheckCircle}
               iconBg="bg-green-100"
               iconColor="text-green-600"
             />
             <StatsCard
-              title="Active Opportunities"
+              title={t.crm.stats.activeOpportunities}
               value={stats?.totalOpportunities || 0}
               icon={TrendingUp}
               iconBg="bg-purple-100"
               iconColor="text-purple-600"
             />
             <StatsCard
-              title="Pipeline Value"
+              title={t.crm.stats.pipelineValue}
               value={formatCurrency(stats?.pipelineValue || 0)}
               icon={DollarSign}
               iconBg="bg-orange-100"
               iconColor="text-orange-600"
             />
             <StatsCard
-              title="Won Opportunities"
+              title={t.crm.stats.wonOpportunities}
               value={stats?.wonOpportunities || 0}
               icon={Target}
               iconBg="bg-emerald-100"
               iconColor="text-emerald-600"
             />
             <StatsCard
-              title="Activities This Week"
+              title={t.crm.stats.activitiesThisWeek}
               value={stats?.activitiesThisWeek || 0}
               icon={Clock}
               iconBg="bg-amber-100"
@@ -395,7 +394,7 @@ export default function CRMPage() {
             />
           </div>
 
-          <CRMOverview />
+          <CRMOverview t={t} />
         </>
       )}
 
@@ -433,7 +432,7 @@ export default function CRMPage() {
       {activeTab === 'forecast' && <SalesForecastBoard />}
       {activeTab === 'activities' && <ActivitiesView />}
       {activeTab === 'analytics' && <CRMAnalyticsDashboard />}
-      {activeTab === 'intelligence' && <RevenueIntelligence />}
+      {activeTab === 'revenue-intelligence' && <RevenueIntelligence />}
       {activeTab === 'sequences' && <SalesSequences />}
       {activeTab === 'templates' && <EmailTemplatesManager />}
       {activeTab === 'automation' && <WorkflowAutomation />}
@@ -467,8 +466,8 @@ function StatsCard({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <div className="flex items-center justify-between mb-3">
-        <div className={`p-3 rounded-lg ${iconBg}`}>
-          <Icon className={`h-6 w-6 ${iconColor}`} />
+        <div className={`p - 3 rounded - lg ${iconBg} `}>
+          <Icon className={`h - 6 w - 6 ${iconColor} `} />
         </div>
       </div>
       <h3 className="text-sm font-medium text-slate-600 mb-1">{title}</h3>
@@ -477,22 +476,22 @@ function StatsCard({
   );
 }
 
-function CRMOverview() {
+function CRMOverview({ t }: { t: any }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Recent Leads</h3>
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">{t.crm.overview.recentLeads}</h3>
         <div className="text-center py-8 text-slate-500">
-          <Users className="mx-auto h-12 w-12 text-slate-300 mb-2" />
-          <p>Switch to Leads tab to manage leads</p>
+          <Users className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+          <p>{t.crm.overview.switchToLeads}</p>
         </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Pipeline Status</h3>
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">{t.crm.overview.pipelineStatus}</h3>
         <div className="text-center py-8 text-slate-500">
-          <TrendingUp className="mx-auto h-12 w-12 text-slate-300 mb-2" />
-          <p>Switch to Opportunities tab to view pipeline</p>
+          <TrendingUp className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+          <p>{t.crm.overview.switchToOpps}</p>
         </div>
       </div>
     </div>
@@ -501,6 +500,7 @@ function CRMOverview() {
 
 function LeadsView() {
   const { profile } = useAuth();
+  const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -517,8 +517,8 @@ function LeadsView() {
       const { data, error } = await supabase
         .from('crm_leads')
         .select(`
-          *,
-          assigned_user:profiles!crm_leads_assigned_to_fkey(id, full_name, email)
+  *,
+  assigned_user: profiles!crm_leads_assigned_to_fkey(id, full_name, email)
         `)
         .order('created_at', { ascending: false });
 
@@ -547,7 +547,7 @@ function LeadsView() {
     }
     try {
       const exportData = filteredLeads || leads;
-      exportLeadsToExcel(exportData, `crm_leads_export_${new Date().toISOString().split('T')[0]}`);
+      exportLeadsToExcel(exportData, `crm_leads_export_${new Date().toISOString().split('T')[0]} `);
       toast.success(`Exported ${exportData.length} leads successfully`);
     } catch (error) {
       toast.error('Failed to export leads');
@@ -570,7 +570,7 @@ function LeadsView() {
 
       if (result.errors.length > 0) {
         const errorMessage = result.errors.slice(0, 3).join('\n');
-        toast.error(`Import completed with errors:\n${errorMessage}${result.errors.length > 3 ? `\n...and ${result.errors.length - 3} more errors` : ''}`);
+        toast.error(`Import completed with errors: \n${errorMessage}${result.errors.length > 3 ? `\n...and ${result.errors.length - 3} more errors` : ''} `);
         console.error('Import errors:', result.errors);
       }
 
@@ -593,10 +593,10 @@ function LeadsView() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search leads by company, contact, or email..."
+              placeholder={t.crm.leads.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className={`w-full ${isRTL ? 'pl-4 pr-10' : 'pl-10 pr-4'} py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500`}
             />
           </div>
           <select
@@ -604,15 +604,15 @@ function LeadsView() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
-            <option value="all">All Status</option>
-            <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="qualified">Qualified</option>
-            <option value="proposal">Proposal</option>
-            <option value="negotiation">Negotiation</option>
-            <option value="converted">Converted</option>
-            <option value="lost">Lost</option>
-            <option value="unqualified">Unqualified</option>
+            <option value="all">{t.crm.leads.status.all}</option>
+            <option value="new">{t.crm.leads.status.new}</option>
+            <option value="contacted">{t.crm.leads.status.contacted}</option>
+            <option value="qualified">{t.crm.leads.status.qualified}</option>
+            <option value="proposal">{t.crm.leads.status.proposal}</option>
+            <option value="negotiation">{t.crm.leads.status.negotiation}</option>
+            <option value="converted">{t.crm.leads.status.converted}</option>
+            <option value="lost">{t.crm.leads.status.lost}</option>
+            <option value="unqualified">{t.crm.leads.status.unqualified}</option>
           </select>
           <div className="flex gap-2">
             {/* Only managers, CEO, and admins can import/export */}
@@ -621,18 +621,18 @@ function LeadsView() {
                 <button
                   onClick={handleExport}
                   className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-                  title="Export leads to Excel"
+                  title={t.crm.leads.exportLeads}
                 >
                   <Download className="h-5 w-5" />
-                  Export
+                  {t.common.export}
                 </button>
                 <button
                   onClick={() => setShowImportModal(true)}
                   className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-                  title="Import leads from Excel"
+                  title={t.crm.leads.importLeads}
                 >
                   <Upload className="h-5 w-5" />
-                  Import
+                  {t.common.import}
                 </button>
               </>
             )}
@@ -641,7 +641,7 @@ function LeadsView() {
               className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
             >
               <Plus className="h-5 w-5" />
-              Add Lead
+              {t.crm.leads.addLead}
             </button>
           </div>
         </div>
@@ -656,19 +656,19 @@ function LeadsView() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
           <Users className="mx-auto h-16 w-16 text-slate-300 mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">
-            {searchTerm || statusFilter !== 'all' ? 'No Leads Found' : 'No Leads Yet'}
+            {searchTerm || statusFilter !== 'all' ? t.crm.leads.noLeadsFound : t.crm.leads.noLeadsYet}
           </h3>
           <p className="text-slate-600 mb-4">
             {searchTerm || statusFilter !== 'all'
-              ? 'Try adjusting your search or filters'
-              : 'Start by adding your first lead to track potential customers'}
+              ? t.crm.leads.tryAdjusting
+              : t.crm.leads.startAdding}
           </p>
           <button
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
           >
             <Plus className="h-5 w-5" />
-            Add First Lead
+            {t.crm.leads.addFirstLead}
           </button>
         </div>
       ) : (
@@ -677,13 +677,13 @@ function LeadsView() {
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Company</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Contact</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Source</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Score</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Est. Value</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Actions</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.leads.table.company}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.leads.table.contact}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.leads.table.status}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.leads.table.source}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.leads.table.score}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.leads.table.estValue}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.leads.table.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -707,14 +707,14 @@ function LeadsView() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${lead.lead_status === 'qualified'
+                      <span className={`inline - flex items - center px - 2.5 py - 0.5 rounded - full text - xs font - medium ${lead.lead_status === 'qualified'
                         ? 'bg-green-100 text-green-800'
                         : lead.lead_status === 'new'
                           ? 'bg-blue-100 text-blue-800'
                           : lead.lead_status === 'contacted'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-slate-100 text-slate-800'
-                        }`}>
+                        } `}>
                         {lead.lead_status}
                       </span>
                     </td>
@@ -724,7 +724,7 @@ function LeadsView() {
                         <div className="flex-1 bg-slate-200 rounded-full h-2 max-w-[60px]">
                           <div
                             className="bg-orange-500 h-2 rounded-full"
-                            style={{ width: `${lead.lead_score}%` }}
+                            style={{ width: `${lead.lead_score}% ` }}
                           />
                         </div>
                         <span className="text-sm font-medium text-slate-900">{lead.lead_score}</span>
@@ -738,21 +738,21 @@ function LeadsView() {
                         <button
                           onClick={() => setEditingLead(lead)}
                           className="p-1.5 text-slate-600 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
-                          title="Edit"
+                          title={t.common.edit}
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm('Are you sure you want to delete this lead?')) {
+                            if (confirm(t.messages.confirmDelete)) {
                               supabase.from('crm_leads').delete().eq('id', lead.id).then(() => {
-                                toast.success('Lead deleted');
+                                toast.success(t.messages.deleteSuccess);
                                 queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
                               });
                             }
                           }}
                           className="p-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                          title="Delete"
+                          title={t.common.delete}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -782,26 +782,25 @@ function LeadsView() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-900">Import Leads</h2>
+              <h2 className="text-xl font-bold text-slate-900">{t.crm.leads.importModal.title}</h2>
               <button
                 onClick={() => {
                   setShowImportModal(false);
                   setImportFile(null);
                 }}
-                className="text-slate-400 hover:text-slate-600"
+                className={`text - slate - 400 hover: text - slate - 600 ${isRTL ? 'mr-auto' : 'ml-auto'} `}
               >
                 <X className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 text-start" dir={isRTL ? 'rtl' : 'ltr'}>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">Import Instructions</h3>
-                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                  <li>Download the template to see required format</li>
-                  <li>Fill in your lead data (Company Name and Contact Name are required)</li>
-                  <li>Save as Excel (.xlsx) or CSV file</li>
-                  <li>Upload the file below</li>
+                <h3 className="font-medium text-blue-900 mb-2">{t.crm.leads.importModal.instructionsTitle}</h3>
+                <ul className={`text - sm text - blue - 800 space - y - 1 list - disc ${isRTL ? 'pr-5' : 'pl-5'} `}>
+                  {t.crm.leads.importModal.instructions.map((inst: string, i: number) => (
+                    <li key={i}>{inst}</li>
+                  ))}
                 </ul>
               </div>
 
@@ -810,7 +809,7 @@ function LeadsView() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors"
               >
                 <Download className="h-5 w-5" />
-                Download Template
+                {t.crm.leads.importModal.downloadTemplate}
               </button>
 
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6">
@@ -822,7 +821,7 @@ function LeadsView() {
                 />
                 {importFile && (
                   <p className="mt-2 text-sm text-slate-600">
-                    Selected: {importFile.name}
+                    {isRTL ? 'تم اختيار: ' : 'Selected: '} {importFile.name}
                   </p>
                 )}
               </div>
@@ -833,7 +832,7 @@ function LeadsView() {
                   disabled={!importFile || importing}
                   className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {importing ? 'Importing...' : 'Import Leads'}
+                  {importing ? t.crm.leads.importModal.importing : t.crm.leads.importModal.title}
                 </button>
                 <button
                   onClick={() => {
@@ -842,7 +841,7 @@ function LeadsView() {
                   }}
                   className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  Cancel
+                  {t.crm.leads.importModal.cancel}
                 </button>
               </div>
             </div>
@@ -856,6 +855,7 @@ function LeadsView() {
 
 function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }) {
   const { profile } = useAuth();
+  const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const { data: teamMembers } = useSalesTeam();
   const canAssign = ['manager', 'ceo', 'admin'].includes(profile?.role || '');
@@ -895,11 +895,11 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
       queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
       queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast.success('Lead converted to opportunity and customer created successfully');
+      toast.success(t.crm.leads.messages.convertSuccess);
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to convert lead to opportunity');
+      toast.error(error.message || t.crm.leads.messages.convertError);
     },
   });
 
@@ -939,11 +939,11 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-leads'] });
       queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
-      toast.success(lead ? 'Lead updated successfully' : 'Lead created successfully');
+      toast.success(lead ? t.messages.updateSuccess : t.messages.createSuccess);
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to save lead');
+      toast.error(error.message || t.crm.leads.messages.saveError);
     },
   });
 
@@ -952,7 +952,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
         <div className="flex items-center justify-between p-6 border-b border-slate-200">
           <h2 className="text-xl font-bold text-slate-900">
-            {lead ? 'Edit Lead' : 'Add New Lead'}
+            {lead ? t.common.edit : t.crm.leads.addLead}
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="h-6 w-6" />
@@ -961,155 +961,155 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
 
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Company Information */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <div className={isRTL ? 'text-right font-arabic' : 'text-left'}>
+            <h3 className={`text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Building2 className="h-4 w-4" />
-              Company Information
+              {t.crm.leads.form.sections.company}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Company Name *
+                  {t.crm.leads.form.fields.companyName} *
                 </label>
                 <input
                   type="text"
                   value={formData.company_name}
                   onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Industry</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.leads.form.fields.industry}</label>
                 <input
                   type="text"
                   value={formData.industry}
                   onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="e.g., Technology, Manufacturing"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                  placeholder={t.crm.leads.form.placeholders.industry}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Website</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.leads.form.fields.website}</label>
                 <input
                   type="url"
                   value={formData.website}
                   onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="https://example.com"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                  placeholder={t.crm.leads.form.placeholders.website}
                 />
               </div>
             </div>
           </div>
 
           {/* Contact Information */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <div className={isRTL ? 'text-right font-arabic' : 'text-left'}>
+            <h3 className={`text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Users className="h-4 w-4" />
-              Contact Information
+              {t.crm.leads.form.sections.contact}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Contact Name *
+                  {t.crm.leads.form.fields.contactName} *
                 </label>
                 <input
                   type="text"
                   value={formData.contact_name}
                   onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Position</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.leads.form.fields.position}</label>
                 <input
                   type="text"
                   value={formData.position}
                   onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="e.g., CEO, Purchasing Manager"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                  placeholder={t.crm.leads.form.placeholders.position}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Email *
+                  {t.crm.leads.form.fields.email} *
                 </label>
                 <input
                   type="email"
                   value={formData.contact_email}
                   onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.leads.form.fields.phone}</label>
                 <input
                   type="tel"
                   value={formData.contact_phone}
                   onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
               </div>
             </div>
           </div>
 
           {/* Location */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <div className={isRTL ? 'text-right font-arabic' : 'text-left'}>
+            <h3 className={`text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <MapPin className="h-4 w-4" />
-              Location
+              {t.crm.leads.form.sections.location}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Country</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.leads.form.fields.country}</label>
                 <input
                   type="text"
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.leads.form.fields.city}</label>
                 <input
                   type="text"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.leads.form.fields.address}</label>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
               </div>
             </div>
           </div>
 
           {/* Lead Details */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <div className={isRTL ? 'text-right font-arabic' : 'text-left'}>
+            <h3 className={`text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Target className="h-4 w-4" />
-              Lead Details
+              {t.crm.leads.form.sections.status}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Lead Source *
+                  {t.crm.leads.form.fields.source} *
                 </label>
                 <select
                   value={formData.lead_source}
                   onChange={(e) => setFormData({ ...formData, lead_source: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                   required
                 >
-                  <option value="">Select Source</option>
+                  <option value="">{t.common.select}</option>
                   <option value="website">Website</option>
                   <option value="referral">Referral</option>
                   <option value="cold_call">Cold Call</option>
@@ -1125,79 +1125,76 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
               {canAssign && teamMembers && teamMembers.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Assign To *
+                    {t.crm.leads.form.fields.assignedTo} *
                   </label>
                   <select
                     value={formData.assigned_to}
                     onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                     required
                   >
-                    <option value="">Select Team Member</option>
+                    <option value="">{t.common.select}</option>
                     {teamMembers.map((member) => (
                       <option key={member.id} value={member.id}>
                         {member.full_name} ({member.role})
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Assign this lead to a sales team member
-                  </p>
                 </div>
               )}
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Expected Close Date
+                  {t.crm.leads.form.fields.expectedClose}
                 </label>
                 <input
                   type="date"
                   value={formData.expected_close_date}
                   onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Priority
+                  {t.crm.leads.form.fields.priority}
                 </label>
                 <select
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                 >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="urgent">Urgent</option>
+                  <option value="low">{t.common.low}</option>
+                  <option value="medium">{t.common.medium}</option>
+                  <option value="high">{t.common.high}</option>
+                  <option value="urgent">{t.common.urgent}</option>
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.leads.form.fields.notes}</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Additional information about this lead..."
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                  placeholder={t.crm.leads.form.placeholders.notes}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 p-6 border-t border-slate-200">
+        <div className={`flex items-center gap-3 p-6 border-t border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <button
             onClick={() => saveMutation.mutate()}
             disabled={!formData.company_name || !formData.contact_name || !formData.contact_email || saveMutation.isPending}
             className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {saveMutation.isPending ? 'Saving...' : lead ? 'Update Lead' : 'Create Lead'}
+            {saveMutation.isPending ? t.common.saving : lead ? t.common.update : t.common.create}
           </button>
           {lead && ['qualified', 'proposal', 'negotiation'].includes(lead.lead_status) && (
             <button
               onClick={() => {
-                if (confirm('Convert this lead to opportunity and create a customer automatically?')) {
+                if (confirm(t.crm.opportunities.convertConfirm)) {
                   convertToOpportunityMutation.mutate(lead.id);
                 }
               }}
@@ -1205,14 +1202,14 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               <Target className="h-4 w-4" />
-              {convertToOpportunityMutation.isPending ? 'Converting...' : 'Transfer to Opportunity'}
+              {convertToOpportunityMutation.isPending ? t.crm.opportunities.converting : t.crm.opportunities.transferToOpportunity}
             </button>
           )}
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
         </div>
       </div>
@@ -1222,6 +1219,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
 
 function OpportunitiesView() {
   const { profile } = useAuth();
+  const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
@@ -1238,9 +1236,9 @@ function OpportunitiesView() {
       let query = supabase
         .from('crm_opportunities')
         .select(`
-          *,
-          customer:customers(company_name),
-          lead:crm_leads(company_name)
+  *,
+  customer: customers(company_name),
+    lead: crm_leads(company_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -1322,7 +1320,7 @@ function OpportunitiesView() {
     }
     try {
       const exportData = filteredOpportunities || opportunities;
-      exportOpportunitiesToExcel(exportData, `crm_opportunities_export_${new Date().toISOString().split('T')[0]}`);
+      exportOpportunitiesToExcel(exportData, `crm_opportunities_export_${new Date().toISOString().split('T')[0]} `);
       toast.success(`Exported ${exportData.length} opportunities successfully`);
     } catch (error) {
       toast.error('Failed to export opportunities');
@@ -1345,7 +1343,7 @@ function OpportunitiesView() {
 
       if (result.errors.length > 0) {
         const errorMessage = result.errors.slice(0, 3).join('\n');
-        toast.error(`Import completed with errors:\n${errorMessage}${result.errors.length > 3 ? `\n...and ${result.errors.length - 3} more errors` : ''}`);
+        toast.error(`Import completed with errors: \n${errorMessage}${result.errors.length > 3 ? `\n...and ${result.errors.length - 3} more errors` : ''} `);
         console.error('Import errors:', result.errors);
       }
 
@@ -1368,10 +1366,10 @@ function OpportunitiesView() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search opportunities by name or company..."
+              placeholder={t.crm.opportunities.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              className={`w-full ${isRTL ? 'pl-4 pr-10' : 'pl-10 pr-4'} py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
             />
           </div>
           <select
@@ -1379,13 +1377,13 @@ function OpportunitiesView() {
             onChange={(e) => setStageFilter(e.target.value)}
             className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
           >
-            <option value="all">All Stages</option>
-            <option value="creating_proposition">Creating Proposition (35%)</option>
-            <option value="proposition_accepted">Proposition Accepted (65%)</option>
-            <option value="going_our_way">Going Our Way (80%)</option>
-            <option value="closing">Closing (90%)</option>
-            <option value="closed_won">Closed Won (100%)</option>
-            <option value="closed_lost">Closed Lost (0%)</option>
+            <option value="all">{t.crm.opportunities.stages.all}</option>
+            <option value="creating_proposition">{t.crm.opportunities.stages.proposition}</option>
+            <option value="proposition_accepted">{t.crm.opportunities.stages.accepted}</option>
+            <option value="going_our_way">{t.crm.opportunities.stages.ourWay}</option>
+            <option value="closing">{t.crm.opportunities.stages.closing}</option>
+            <option value="closed_won">{t.crm.opportunities.stages.won}</option>
+            <option value="closed_lost">{t.crm.opportunities.stages.lost}</option>
           </select>
           <div className="flex gap-2">
             {/* Only managers, CEO, and admins can import/export */}
@@ -1394,18 +1392,18 @@ function OpportunitiesView() {
                 <button
                   onClick={handleExport}
                   className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-                  title="Export opportunities to Excel"
+                  title={t.crm.opportunities.exportOpportunities}
                 >
                   <Download className="h-5 w-5" />
-                  Export
+                  {t.common.export}
                 </button>
                 <button
                   onClick={() => setShowImportModal(true)}
                   className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-                  title="Import opportunities from Excel"
+                  title={t.crm.opportunities.importOpportunities}
                 >
                   <Upload className="h-5 w-5" />
-                  Import
+                  {t.common.import}
                 </button>
               </>
             )}
@@ -1414,7 +1412,7 @@ function OpportunitiesView() {
               className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors whitespace-nowrap"
             >
               <Plus className="h-5 w-5" />
-              Add Opportunity
+              {t.crm.opportunities.addOpportunity}
             </button>
           </div>
         </div>
@@ -1429,12 +1427,14 @@ function OpportunitiesView() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
           <TrendingUp className="mx-auto h-16 w-16 text-slate-300 mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">
-            {searchTerm || stageFilter !== 'all' ? 'No Opportunities Found' : 'No Opportunities Yet'}
+            {searchTerm || stageFilter !== 'all'
+              ? t.crm.opportunities.noOpportunitiesFound
+              : t.crm.opportunities.noOpportunitiesYet}
           </h3>
           <p className="text-slate-600 mb-4">
             {searchTerm || stageFilter !== 'all'
-              ? 'Try adjusting your search or filters'
-              : 'Start by adding your first opportunity to track potential deals'}
+              ? t.crm.leads.tryAdjusting
+              : t.crm.opportunities.addFirstOpportunity}
           </p>
           <button
             onClick={() => setShowAddModal(true)}
@@ -1450,13 +1450,13 @@ function OpportunitiesView() {
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Opportunity</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Customer/Lead</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Stage</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Amount</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Probability</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Expected Close</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">Actions</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.opportunities.table.name}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.opportunities.table.company}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.opportunities.table.stage}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.opportunities.table.value}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.opportunities.table.probability}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.opportunities.table.closeDate}</th>
+                  <th className={`px-4 py-3 ${isRTL ? 'text-right' : 'text-left'} text-xs font-medium text-slate-600 uppercase tracking-wider`}>{t.crm.opportunities.table.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -1520,7 +1520,7 @@ function OpportunitiesView() {
                         <div className="flex-1 bg-slate-200 rounded-full h-2 max-w-[60px]">
                           <div
                             className="bg-orange-500 h-2 rounded-full"
-                            style={{ width: `${opp.probability}%` }}
+                            style={{ width: `${opp.probability}% ` }}
                           />
                         </div>
                         <span className="text-sm font-medium text-slate-900">{opp.probability}%</span>
@@ -1582,7 +1582,7 @@ function OpportunitiesView() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full">
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-slate-900">Import Opportunities</h2>
+              <h2 className="text-xl font-bold text-slate-900">{t.crm.opportunities.importModal.title}</h2>
               <button
                 onClick={() => {
                   setShowImportModal(false);
@@ -1596,12 +1596,12 @@ function OpportunitiesView() {
 
             <div className="p-6 space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">Import Instructions</h3>
+                <h3 className="font-medium text-blue-900 mb-2">{t.crm.opportunities.importModal.instructionsTitle}</h3>
                 <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                  <li>Download the template to see required format</li>
-                  <li>Fill in your opportunity data (Name and Amount are required)</li>
-                  <li>Save as Excel (.xlsx) or CSV file</li>
-                  <li>Upload the file below</li>
+                  <li>{t.crm.opportunities.importModal.instructions[0]}</li>
+                  <li>{t.crm.opportunities.importModal.instructions[1]}</li>
+                  <li>{t.crm.opportunities.importModal.instructions[2]}</li>
+                  <li>{t.crm.opportunities.importModal.instructions[3]}</li>
                 </ul>
               </div>
 
@@ -1610,7 +1610,7 @@ function OpportunitiesView() {
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors"
               >
                 <Download className="h-5 w-5" />
-                Download Template
+                {t.crm.opportunities.importModal.downloadTemplate}
               </button>
 
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6">
@@ -1633,7 +1633,7 @@ function OpportunitiesView() {
                   disabled={!importFile || importing}
                   className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {importing ? 'Importing...' : 'Import Opportunities'}
+                  {importing ? t.crm.opportunities.importModal.importing : t.common.import}
                 </button>
                 <button
                   onClick={() => {
@@ -1642,7 +1642,7 @@ function OpportunitiesView() {
                   }}
                   className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
               </div>
             </div>
@@ -1667,6 +1667,7 @@ function OpportunityModal({
   onClose: () => void;
 }) {
   const { profile } = useAuth();
+  const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const { data: teamMembers } = useSalesTeam();
   const canAssign = ['manager', 'ceo', 'admin'].includes(profile?.role || '');
@@ -1698,7 +1699,7 @@ function OpportunityModal({
       setRecapData(summary);
       setShowRecap(true);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to generate recap');
+      toast.error(error.message || t.messages.error);
     } finally {
       setIsSummarizing(false);
     }
@@ -1751,10 +1752,10 @@ function OpportunityModal({
         customer_type: 'direct_sales',
         payment_terms: 'net_30',
       });
-      toast.success('Customer created successfully');
+      toast.success(t.messages.createSuccess);
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to create customer');
+      toast.error(error.message || t.messages.error);
     },
   });
 
@@ -1846,21 +1847,21 @@ function OpportunityModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crm-opportunities'] });
       queryClient.invalidateQueries({ queryKey: ['crm-stats'] });
-      toast.success(opportunity ? 'Opportunity updated successfully' : 'Opportunity created successfully');
+      toast.success(opportunity ? t.messages.updateSuccess : t.messages.createSuccess);
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to save opportunity');
+      toast.error(error.message || t.messages.error);
     },
   });
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
-          <div className="flex items-center gap-3">
+        <div className={`flex items-center justify-between p-6 border-b border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <h2 className="text-xl font-bold text-slate-900">
-              {opportunity ? 'Edit Opportunity' : 'Add New Opportunity'}
+              {opportunity ? t.common.edit : t.crm.opportunities.addOpportunity}
             </h2>
             {opportunity && (
               <button
@@ -1874,7 +1875,7 @@ function OpportunityModal({
                 ) : (
                   <Sparkles className="h-3 w-3" />
                 )}
-                {isSummarizing ? 'Thinking...' : '✨ AI Recap'}
+                {isSummarizing ? t.common.loading : t.common.aiScoring}
               </button>
             )}
           </div>
@@ -1922,22 +1923,22 @@ function OpportunityModal({
 
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Basic Information */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <div className={isRTL ? 'text-right font-arabic' : 'text-left'}>
+            <h3 className={`text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Target className="h-4 w-4" />
-              Opportunity Details
+              {t.crm.opportunities.form.sections.basic}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Opportunity Name *
+                  {t.crm.opportunities.form.fields.name} *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="e.g., Q4 Equipment Sale"
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                  placeholder={t.crm.opportunities.form.fields.name}
                   required
                 />
               </div>
@@ -1945,13 +1946,13 @@ function OpportunityModal({
               {!showNewCustomerForm ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t.nav.customers}</label>
                     <select
                       value={formData.customer_id}
                       onChange={(e) => setFormData({ ...formData, customer_id: e.target.value, lead_id: '' })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                     >
-                      <option value="">Select Customer</option>
+                      <option value="">{t.common.select}</option>
                       {customers.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.company_name}
@@ -1961,20 +1962,20 @@ function OpportunityModal({
                     <button
                       type="button"
                       onClick={() => setShowNewCustomerForm(true)}
-                      className="mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                      className={`mt-2 text-sm text-orange-600 hover:text-orange-700 font-medium block ${isRTL ? 'text-right w-full' : ''}`}
                     >
-                      + Create New Customer
+                      + {t.common.create} {t.nav.customers}
                     </button>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Or Lead</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.tabs.leads}</label>
                     <select
                       value={formData.lead_id}
                       onChange={(e) => setFormData({ ...formData, lead_id: e.target.value, customer_id: '' })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
                     >
-                      <option value="">Select Lead</option>
+                      <option value="">{t.common.select}</option>
                       {leads.map((l) => (
                         <option key={l.id} value={l.id}>
                           {l.company_name}
@@ -2189,154 +2190,158 @@ function OpportunityModal({
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Stage *</label>
-                <select
-                  value={formData.stage}
-                  onChange={(e) => {
-                    const stage = e.target.value;
-                    const stageProbabilities: Record<string, number> = {
-                      prospecting: 20,
-                      qualification: 40,
-                      needs_analysis: 50,
-                      proposal: 65,
-                      negotiation: 80,
-                      closed_won: 100,
-                      closed_lost: 0,
-                    };
-                    setFormData({
-                      ...formData,
-                      stage,
-                      probability: stageProbabilities[stage] !== undefined ? stageProbabilities[stage] : formData.probability
-                    });
-                  }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                >
-                  <option value="creating_proposition">Creating Proposition (35%)</option>
-                  <option value="proposition_accepted">Proposition Accepted (65%)</option>
-                  <option value="going_our_way">Going Our Way (80%)</option>
-                  <option value="closing">Closing (90%)</option>
-                  <option value="closed_won">Closed Won (100%)</option>
-                  <option value="closed_lost">Closed Lost (0%)</option>
-                </select>
-              </div>
+              {/* Deal Details */}
+              <div className={isRTL ? 'text-right font-arabic' : 'text-left'}>
+                <h3 className={`text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <Upload className="h-4 w-4" />
+                  {t.crm.opportunities.form.sections.details}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.opportunities.form.fields.stage} *</label>
+                    <select
+                      value={formData.stage}
+                      onChange={(e) => {
+                        const stage = e.target.value;
+                        const stageProbabilities: Record<string, number> = {
+                          prospecting: 20,
+                          qualification: 40,
+                          needs_analysis: 50,
+                          proposal: 65,
+                          negotiation: 80,
+                          closed_won: 100,
+                          closed_lost: 0,
+                        };
+                        setFormData({
+                          ...formData,
+                          stage,
+                          probability: stageProbabilities[stage] !== undefined ? stageProbabilities[stage] : formData.probability
+                        });
+                      }}
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                    >
+                      <option value="creating_proposition">{t.crm.opportunities.stages.proposition}</option>
+                      <option value="proposition_accepted">{t.crm.opportunities.stages.accepted}</option>
+                      <option value="going_our_way">{t.crm.opportunities.stages.ourWay}</option>
+                      <option value="closing">{t.crm.opportunities.stages.closing}</option>
+                      <option value="closed_won">{t.crm.opportunities.stages.won}</option>
+                      <option value="closed_lost">{t.crm.opportunities.stages.lost}</option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Amount (SAR) *
-                </label>
-                <input
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  required
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      {t.crm.opportunities.form.fields.value} (SAR) *
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                      required
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Probability (%)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.probability}
-                    onChange={(e) => setFormData({ ...formData, probability: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    readOnly
-                  />
-                  <span className="text-sm text-slate-500 whitespace-nowrap">Auto-set by stage</span>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      {t.crm.opportunities.form.fields.probability}
+                    </label>
+                    <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.probability}
+                        onChange={(e) => setFormData({ ...formData, probability: Number(e.target.value) })}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                        readOnly
+                      />
+                      <span className="text-sm text-slate-500 whitespace-nowrap">{isRTL ? 'تلقائي' : 'Auto'}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      {t.crm.opportunities.form.fields.closeDate}
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.expected_close_date}
+                      onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                    />
+                  </div>
+
+                  {canAssign && teamMembers && teamMembers.length > 0 && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        {t.crm.leads.form.fields.assignedTo} *
+                      </label>
+                      <select
+                        value={formData.assigned_to}
+                        onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                        className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                        required
+                      >
+                        <option value="">{t.common.select}</option>
+                        {teamMembers.map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {member.full_name} ({member.role})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      placeholder="Brief description of the opportunity..."
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.opportunities.form.fields.nextStep}</label>
+                    <input
+                      type="text"
+                      value={formData.next_step}
+                      onChange={(e) => setFormData({ ...formData, next_step: e.target.value })}
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">{t.crm.opportunities.form.fields.notes}</label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      rows={3}
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${isRTL ? 'text-right' : 'text-left'}`}
+                    />
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Expected Close Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.expected_close_date}
-                  onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-
-              {canAssign && teamMembers && teamMembers.length > 0 && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Assign To *
-                  </label>
-                  <select
-                    value={formData.assigned_to}
-                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    required
-                  >
-                    <option value="">Select Team Member</option>
-                    {teamMembers.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.full_name} ({member.role})
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Assign this opportunity to a sales team member
-                  </p>
-                </div>
-              )}
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Brief description of the opportunity..."
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Next Step</label>
-                <input
-                  type="text"
-                  value={formData.next_step}
-                  onChange={(e) => setFormData({ ...formData, next_step: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="e.g., Schedule demo, Send proposal"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                  placeholder="Additional notes or context..."
-                />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 p-6 border-t border-slate-200">
+        <div className={`flex items-center gap-3 p-6 border-t border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <button
             onClick={() => saveMutation.mutate()}
             disabled={!formData.name || !formData.amount || saveMutation.isPending}
             className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {saveMutation.isPending ? 'Saving...' : opportunity ? 'Update Opportunity' : 'Create Opportunity'}
+            {saveMutation.isPending ? t.common.saving : opportunity ? t.common.update : t.common.create}
           </button>
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
         </div>
       </div>
@@ -2358,10 +2363,10 @@ function ActivitiesView() {
         .from('crm_activities')
         .select(`
           *,
-          lead:crm_leads(company_name),
-          opportunity:crm_opportunities(name),
-          customer:customers(company_name),
-          assigned_user:profiles!crm_activities_assigned_to_fkey(full_name)
+          lead: crm_leads(company_name),
+          opportunity: crm_opportunities(name),
+          customer: customers(company_name),
+          assigned_user: profiles!crm_activities_assigned_to_fkey(full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(50);
