@@ -109,6 +109,7 @@ interface Lead {
   notes: string | null;
   created_at: string;
   assigned_to: string;
+  priority?: string;
 }
 
 interface Opportunity {
@@ -877,6 +878,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
     expected_close_date: lead?.expected_close_date || '',
     notes: lead?.notes || '',
     assigned_to: lead?.assigned_to || profile?.id || '',
+    priority: (lead as any)?.priority || 'medium',
   });
 
   const convertToOpportunityMutation = useMutation({
@@ -1154,6 +1156,21 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
                   onChange={(e) => setFormData({ ...formData, expected_close_date: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Priority
+                </label>
+                <select
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
