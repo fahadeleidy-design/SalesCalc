@@ -58,6 +58,21 @@ import {
     Cell,
     AreaChart,
     Area,
+    RadarChart,
+    PolarGrid,
+    PolarAngleAxis,
+    PolarRadiusAxis,
+    Radar,
+    ScatterChart,
+    Scatter,
+    ZAxis,
+    Treemap,
+    RadialBarChart,
+    RadialBar,
+    FunnelChart,
+    Funnel,
+    LabelList,
+    ComposedChart,
 } from 'recharts';
 
 // =============================================================================
@@ -211,8 +226,8 @@ export default function CustomReportsPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                        <BarChart3 className="h-6 w-6 text-purple-600" />
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                        <BarChart3 className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">Custom Reports</h1>
@@ -221,7 +236,7 @@ export default function CustomReportsPage() {
                 </div>
                 <button
                     onClick={handleCreateNew}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                     <Plus className="h-5 w-5" />
                     Create Report
@@ -233,7 +248,7 @@ export default function CustomReportsPage() {
                 <button
                     onClick={() => setActiveTab('my_reports')}
                     className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'my_reports'
-                        ? 'border-purple-600 text-purple-600'
+                        ? 'border-blue-600 text-blue-600'
                         : 'border-transparent text-slate-600 hover:text-slate-900'
                         }`}
                 >
@@ -242,7 +257,7 @@ export default function CustomReportsPage() {
                 <button
                     onClick={() => setActiveTab('templates')}
                     className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'templates'
-                        ? 'border-purple-600 text-purple-600'
+                        ? 'border-blue-600 text-blue-600'
                         : 'border-transparent text-slate-600 hover:text-slate-900'
                         }`}
                 >
@@ -260,7 +275,7 @@ export default function CustomReportsPage() {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search reports..."
-                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                     </div>
 
@@ -282,7 +297,7 @@ export default function CustomReportsPage() {
                             <p className="text-slate-600 mb-4">Create your first custom report to get started</p>
                             <button
                                 onClick={handleCreateNew}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                             >
                                 <Plus className="h-5 w-5" />
                                 Create Report
@@ -309,11 +324,11 @@ export default function CustomReportsPage() {
                     {REPORT_TEMPLATES.map((template, index) => (
                         <div
                             key={index}
-                            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-purple-300 hover:shadow-md transition-all"
+                            className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all"
                         >
                             <div className="flex items-start justify-between mb-3">
-                                <div className="p-2 bg-purple-100 rounded-lg">
-                                    <BarChart3 className="h-5 w-5 text-purple-600" />
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                    <BarChart3 className="h-5 w-5 text-blue-600" />
                                 </div>
                             </div>
                             <h3 className="font-semibold text-slate-900 mb-1">{template.name}</h3>
@@ -321,7 +336,7 @@ export default function CustomReportsPage() {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleUseTemplate(template)}
-                                    className="flex-1 px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                                    className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
                                 >
                                     Use Template
                                 </button>
@@ -354,7 +369,7 @@ function ReportCard({
     const [showMenu, setShowMenu] = useState(false);
 
     return (
-        <div className="bg-white rounded-lg p-6 border border-slate-200 hover:border-purple-300 hover:shadow-md transition-all">
+        <div className="bg-white rounded-lg p-6 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
             <div className="flex items-start justify-between mb-3">
                 <button
                     onClick={onToggleFavorite}
@@ -598,7 +613,7 @@ function ReportBuilder({
                     <button
                         onClick={handleSave}
                         disabled={saving || !name.trim()}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
                         <CheckCircle className="h-5 w-5" />
                         {saving ? 'Saving...' : 'Save Report'}
@@ -620,7 +635,7 @@ function ReportBuilder({
                     {/* Data Source */}
                     <div className="bg-white rounded-lg p-6 border border-slate-200">
                         <div className="flex items-center gap-2 mb-4">
-                            <Database className="h-5 w-5 text-purple-600" />
+                            <Database className="h-5 w-5 text-blue-600" />
                             <h2 className="font-semibold text-slate-900">Data Source</h2>
                         </div>
                         <div className="grid grid-cols-1 gap-2">
@@ -634,11 +649,11 @@ function ReportBuilder({
                                         setSelectedMetrics(prev => prev.filter(m => METRICS_BY_SOURCE[opt.value].includes(m)));
                                     }}
                                     className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${dataSource === opt.value
-                                        ? 'border-purple-500 bg-purple-50 text-purple-700 ring-2 ring-purple-500/10'
+                                        ? 'border-blue-500 bg-purple-50 text-blue-700 ring-2 ring-blue-500/10'
                                         : 'border-slate-200 hover:border-slate-300 text-slate-600 hover:bg-slate-50'
                                         }`}
                                 >
-                                    <opt.icon className={`h-5 w-5 ${dataSource === opt.value ? 'text-purple-600' : 'text-slate-400'}`} />
+                                    <opt.icon className={`h-5 w-5 ${dataSource === opt.value ? 'text-blue-600' : 'text-slate-400'}`} />
                                     <span className="font-medium">{opt.label}</span>
                                 </button>
                             ))}
@@ -648,7 +663,7 @@ function ReportBuilder({
                     {/* Report Details */}
                     <div className="bg-white rounded-lg p-6 border border-slate-200">
                         <div className="flex items-center gap-2 mb-4">
-                            <FileSpreadsheet className="h-5 w-5 text-purple-600" />
+                            <FileSpreadsheet className="h-5 w-5 text-blue-600" />
                             <h2 className="font-semibold text-slate-900">Report Details</h2>
                         </div>
                         <div className="space-y-4">
@@ -661,7 +676,7 @@ function ReportBuilder({
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="My Report"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <div>
@@ -673,7 +688,7 @@ function ReportBuilder({
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Report description..."
                                     rows={2}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                         </div>
@@ -685,7 +700,7 @@ function ReportBuilder({
                         <select
                             value={timePeriod}
                             onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                             {TIME_PERIOD_OPTIONS.map(opt => (
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -708,7 +723,7 @@ function ReportBuilder({
                                         type="checkbox"
                                         checked={selectedDimensions.includes(dim)}
                                         onChange={() => toggleDimension(dim)}
-                                        className="h-4 w-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                                        className="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                                     />
                                     <span className="text-sm text-slate-700">
                                         {AVAILABLE_DIMENSIONS[dim].label}
@@ -733,7 +748,7 @@ function ReportBuilder({
                                         type="checkbox"
                                         checked={selectedMetrics.includes(metric)}
                                         onChange={() => toggleMetric(metric)}
-                                        className="h-4 w-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
+                                        className="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                                     />
                                     <span className="text-sm text-slate-700">
                                         {AVAILABLE_METRICS[metric].label}
@@ -747,21 +762,31 @@ function ReportBuilder({
                     <div className="bg-white rounded-lg p-6 border border-slate-200">
                         <h2 className="font-semibold text-slate-900 mb-4">Visualization</h2>
                         <div className="grid grid-cols-3 gap-2">
-                            {(['bar', 'line', 'pie', 'area', 'stacked_bar', 'grid'] as ChartType[]).map(type => (
+                            {([
+                                { type: 'bar', label: 'Bar' },
+                                { type: 'line', label: 'Line' },
+                                { type: 'pie', label: 'Pie' },
+                                { type: 'area', label: 'Area' },
+                                { type: 'stacked_bar', label: 'Stacked' },
+                                { type: 'grid', label: 'Table' },
+                                { type: 'heatmap', label: 'Heatmap' },
+                                { type: 'radar', label: 'Radar' },
+                                { type: 'scatter', label: 'Scatter' },
+                                { type: 'funnel', label: 'Funnel' },
+                                { type: 'treemap', label: 'Treemap' },
+                                { type: 'radial_bar', label: 'Radial' },
+                                { type: 'doughnut', label: 'Doughnut' },
+                                { type: 'composed', label: 'Combined' },
+                            ] as { type: ChartType; label: string }[]).map(({ type, label }) => (
                                 <button
                                     key={type}
                                     onClick={() => setChartType(type)}
-                                    className={`p-3 rounded-lg border text-sm font-medium transition-colors ${chartType === type
-                                        ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                    className={`p-2.5 rounded-lg border text-xs font-medium transition-colors ${chartType === type
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
                                         : 'border-slate-200 hover:border-slate-300 text-slate-600'
                                         }`}
                                 >
-                                    {type === 'bar' && 'Bar'}
-                                    {type === 'line' && 'Line'}
-                                    {type === 'pie' && 'Pie'}
-                                    {type === 'area' && 'Area'}
-                                    {type === 'stacked_bar' && 'Stack'}
-                                    {type === 'grid' && 'Grid'}
+                                    {label}
                                 </button>
                             ))}
                         </div>
@@ -844,7 +869,6 @@ function ReportVisualization({
     const primaryDimension = dimensions[0];
     const labelKey = `${primaryDimension}_label`;
 
-    // Format number for display
     const formatValue = (value: number, metric: MetricType): string => {
         const format = AVAILABLE_METRICS[metric].format;
         if (format === 'currency') {
@@ -861,7 +885,6 @@ function ReportVisualization({
         return new Intl.NumberFormat('en-US').format(Math.round(value));
     };
 
-    // Prepare chart data
     const chartData = data.map(row => ({
         name: row[labelKey] || row[primaryDimension] || 'Unknown',
         ...metrics.reduce((acc, metric) => {
@@ -870,7 +893,8 @@ function ReportVisualization({
         }, {} as Record<string, number>),
     }));
 
-    // Grid view
+    const maxValue = Math.max(...chartData.flatMap(d => metrics.map(m => d[m] || 0)));
+
     if (chartType === 'grid') {
         return (
             <div className="overflow-x-auto">
@@ -906,7 +930,362 @@ function ReportVisualization({
         );
     }
 
-    // Charts
+    if (chartType === 'heatmap') {
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm text-slate-600">
+                    <span>Low</span>
+                    <div className="flex-1 mx-4 h-4 rounded bg-gradient-to-r from-blue-100 via-blue-300 via-blue-500 to-blue-700" />
+                    <span>High</span>
+                </div>
+                <div className="grid gap-2" style={{ gridTemplateColumns: `auto repeat(${metrics.length}, 1fr)` }}>
+                    <div className="font-semibold text-slate-700 p-2"></div>
+                    {metrics.map(metric => (
+                        <div key={metric} className="font-semibold text-slate-700 p-2 text-center text-sm truncate">
+                            {AVAILABLE_METRICS[metric].label}
+                        </div>
+                    ))}
+                    {chartData.map((row, rowIndex) => (
+                        <>
+                            <div key={`label-${rowIndex}`} className="p-2 text-sm text-slate-700 truncate">
+                                {row.name}
+                            </div>
+                            {metrics.map((metric, colIndex) => {
+                                const value = row[metric] || 0;
+                                const intensity = maxValue > 0 ? value / maxValue : 0;
+                                const bgColor = `rgba(59, 130, 246, ${0.1 + intensity * 0.8})`;
+                                const textColor = intensity > 0.5 ? 'white' : '#1e293b';
+                                return (
+                                    <div
+                                        key={`cell-${rowIndex}-${colIndex}`}
+                                        className="p-3 rounded text-center text-sm font-medium transition-all hover:ring-2 hover:ring-blue-400"
+                                        style={{ backgroundColor: bgColor, color: textColor }}
+                                        title={`${row.name}: ${formatValue(value, metric)}`}
+                                    >
+                                        {formatValue(value, metric)}
+                                    </div>
+                                );
+                            })}
+                        </>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (chartType === 'radar') {
+        return (
+            <div className="h-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={chartData}>
+                        <PolarGrid stroke="#E2E8F0" />
+                        <PolarAngleAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748B' }} />
+                        <PolarRadiusAxis tick={{ fontSize: 10, fill: '#94A3B8' }} />
+                        {metrics.map((metric, i) => (
+                            <Radar
+                                key={metric}
+                                name={AVAILABLE_METRICS[metric].label}
+                                dataKey={metric}
+                                stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                                fill={CHART_COLORS[i % CHART_COLORS.length]}
+                                fillOpacity={0.3}
+                                strokeWidth={2}
+                            />
+                        ))}
+                        <Legend />
+                        <Tooltip formatter={(value: number, name: string) => [
+                            formatValue(value, name as MetricType),
+                            AVAILABLE_METRICS[name as MetricType]?.label || name
+                        ]} />
+                    </RadarChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    }
+
+    if (chartType === 'scatter') {
+        const metric1 = metrics[0];
+        const metric2 = metrics[1] || metrics[0];
+        return (
+            <div className="h-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis
+                            type="number"
+                            dataKey={metric1}
+                            name={AVAILABLE_METRICS[metric1].label}
+                            tick={{ fontSize: 12 }}
+                            label={{ value: AVAILABLE_METRICS[metric1].label, position: 'bottom', offset: 0 }}
+                        />
+                        <YAxis
+                            type="number"
+                            dataKey={metric2}
+                            name={AVAILABLE_METRICS[metric2].label}
+                            tick={{ fontSize: 12 }}
+                            label={{ value: AVAILABLE_METRICS[metric2].label, angle: -90, position: 'insideLeft' }}
+                        />
+                        <ZAxis range={[100, 500]} />
+                        <Tooltip
+                            cursor={{ strokeDasharray: '3 3' }}
+                            formatter={(value: number, name: string) => [
+                                formatValue(value, name as MetricType),
+                                AVAILABLE_METRICS[name as MetricType]?.label || name
+                            ]}
+                            labelFormatter={(_, payload) => payload[0]?.payload?.name || ''}
+                        />
+                        <Legend />
+                        <Scatter
+                            name="Data Points"
+                            data={chartData}
+                            fill={CHART_COLORS[0]}
+                        >
+                            {chartData.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                            ))}
+                        </Scatter>
+                    </ScatterChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    }
+
+    if (chartType === 'funnel') {
+        const funnelData = chartData
+            .map((item, index) => ({
+                ...item,
+                value: item[metrics[0]] || 0,
+                fill: CHART_COLORS[index % CHART_COLORS.length],
+            }))
+            .sort((a, b) => b.value - a.value);
+
+        return (
+            <div className="h-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <FunnelChart>
+                        <Tooltip formatter={(value: number) => formatValue(value, metrics[0])} />
+                        <Funnel
+                            dataKey="value"
+                            data={funnelData}
+                            isAnimationActive
+                        >
+                            <LabelList
+                                position="center"
+                                fill="#fff"
+                                stroke="none"
+                                dataKey="name"
+                                fontSize={12}
+                            />
+                        </Funnel>
+                    </FunnelChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    }
+
+    if (chartType === 'treemap') {
+        const treemapData = chartData.map((item, index) => ({
+            name: item.name,
+            size: item[metrics[0]] || 0,
+            fill: CHART_COLORS[index % CHART_COLORS.length],
+        }));
+
+        return (
+            <div className="h-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <Treemap
+                        data={treemapData}
+                        dataKey="size"
+                        aspectRatio={4 / 3}
+                        stroke="#fff"
+                        fill="#3B82F6"
+                        content={({ x, y, width, height, name, value, fill }) => {
+                            const displayName = String(name || '');
+                            const displayValue = formatValue(Number(value) || 0, metrics[0]);
+                            const showLabel = width > 60 && height > 40;
+                            return (
+                                <g>
+                                    <rect
+                                        x={x}
+                                        y={y}
+                                        width={width}
+                                        height={height}
+                                        fill={fill}
+                                        stroke="#fff"
+                                        strokeWidth={2}
+                                        rx={4}
+                                        className="transition-opacity hover:opacity-80"
+                                    />
+                                    {showLabel && (
+                                        <>
+                                            <text
+                                                x={x + width / 2}
+                                                y={y + height / 2 - 8}
+                                                textAnchor="middle"
+                                                fill="#fff"
+                                                fontSize={12}
+                                                fontWeight={600}
+                                            >
+                                                {displayName.length > 15 ? displayName.slice(0, 15) + '...' : displayName}
+                                            </text>
+                                            <text
+                                                x={x + width / 2}
+                                                y={y + height / 2 + 10}
+                                                textAnchor="middle"
+                                                fill="#fff"
+                                                fontSize={11}
+                                                opacity={0.9}
+                                            >
+                                                {displayValue}
+                                            </text>
+                                        </>
+                                    )}
+                                </g>
+                            );
+                        }}
+                    />
+                </ResponsiveContainer>
+            </div>
+        );
+    }
+
+    if (chartType === 'radial_bar') {
+        const radialData = chartData.map((item, index) => ({
+            ...item,
+            value: item[metrics[0]] || 0,
+            fill: CHART_COLORS[index % CHART_COLORS.length],
+        }));
+
+        return (
+            <div className="h-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <RadialBarChart
+                        cx="50%"
+                        cy="50%"
+                        innerRadius="20%"
+                        outerRadius="90%"
+                        barSize={20}
+                        data={radialData}
+                        startAngle={180}
+                        endAngle={0}
+                    >
+                        <RadialBar
+                            background
+                            dataKey="value"
+                            cornerRadius={10}
+                            label={{ position: 'insideStart', fill: '#fff', fontSize: 11 }}
+                        />
+                        <Legend
+                            iconSize={10}
+                            layout="vertical"
+                            verticalAlign="middle"
+                            align="right"
+                            formatter={(value, entry) => {
+                                const item = radialData.find(d => d.name === value);
+                                return `${value}: ${item ? formatValue(item.value, metrics[0]) : ''}`;
+                            }}
+                        />
+                        <Tooltip formatter={(value: number) => formatValue(value, metrics[0])} />
+                    </RadialBarChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    }
+
+    if (chartType === 'doughnut') {
+        return (
+            <div className="h-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={chartData}
+                            dataKey={metrics[0]}
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={80}
+                            outerRadius={150}
+                            paddingAngle={2}
+                            label={(props) => {
+                                const percent = ((props.value / chartData.reduce((sum, d) => sum + (d[metrics[0]] || 0), 0)) * 100).toFixed(1);
+                                return `${percent}%`;
+                            }}
+                            labelLine={{ stroke: '#94A3B8', strokeWidth: 1 }}
+                        >
+                            {chartData.map((_, i) => (
+                                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => formatValue(value, metrics[0])} />
+                        <Legend />
+                        <text
+                            x="50%"
+                            y="50%"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            className="fill-slate-700"
+                        >
+                            <tspan x="50%" dy="-0.5em" fontSize={14} fontWeight={600}>
+                                Total
+                            </tspan>
+                            <tspan x="50%" dy="1.5em" fontSize={16} fontWeight={700}>
+                                {formatValue(chartData.reduce((sum, d) => sum + (d[metrics[0]] || 0), 0), metrics[0])}
+                            </tspan>
+                        </text>
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    }
+
+    if (chartType === 'composed') {
+        return (
+            <div className="h-[500px]">
+                <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                        <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+                        <Tooltip
+                            formatter={(value: number, name: string) => [
+                                formatValue(value, name as MetricType),
+                                AVAILABLE_METRICS[name as MetricType]?.label || name
+                            ]}
+                        />
+                        <Legend />
+                        {metrics.map((metric, i) => {
+                            if (i === 0) {
+                                return (
+                                    <Bar
+                                        key={metric}
+                                        yAxisId="left"
+                                        dataKey={metric}
+                                        name={AVAILABLE_METRICS[metric].label}
+                                        fill={CHART_COLORS[i % CHART_COLORS.length]}
+                                        barSize={40}
+                                    />
+                                );
+                            }
+                            return (
+                                <Line
+                                    key={metric}
+                                    yAxisId="right"
+                                    type="monotone"
+                                    dataKey={metric}
+                                    name={AVAILABLE_METRICS[metric].label}
+                                    stroke={CHART_COLORS[i % CHART_COLORS.length]}
+                                    strokeWidth={3}
+                                    dot={{ fill: CHART_COLORS[i % CHART_COLORS.length], r: 4 }}
+                                />
+                            );
+                        })}
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </div>
+        );
+    }
+
     return (
         <div className="h-[500px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -928,6 +1307,7 @@ function ReportVisualization({
                                 dataKey={metric}
                                 name={AVAILABLE_METRICS[metric].label}
                                 fill={CHART_COLORS[i % CHART_COLORS.length]}
+                                radius={[4, 4, 0, 0]}
                             />
                         ))}
                     </BarChart>
@@ -951,11 +1331,21 @@ function ReportVisualization({
                                 name={AVAILABLE_METRICS[metric].label}
                                 stroke={CHART_COLORS[i % CHART_COLORS.length]}
                                 strokeWidth={2}
+                                dot={{ fill: CHART_COLORS[i % CHART_COLORS.length], r: 4 }}
+                                activeDot={{ r: 6 }}
                             />
                         ))}
                     </LineChart>
                 ) : chartType === 'area' ? (
                     <AreaChart data={chartData}>
+                        <defs>
+                            {metrics.map((metric, i) => (
+                                <linearGradient key={metric} id={`gradient-${metric}`} x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor={CHART_COLORS[i % CHART_COLORS.length]} stopOpacity={0.4} />
+                                    <stop offset="95%" stopColor={CHART_COLORS[i % CHART_COLORS.length]} stopOpacity={0.05} />
+                                </linearGradient>
+                            ))}
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                         <YAxis tick={{ fontSize: 12 }} />
@@ -972,9 +1362,9 @@ function ReportVisualization({
                                 type="monotone"
                                 dataKey={metric}
                                 name={AVAILABLE_METRICS[metric].label}
-                                fill={CHART_COLORS[i % CHART_COLORS.length]}
+                                fill={`url(#gradient-${metric})`}
                                 stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                                fillOpacity={0.3}
+                                strokeWidth={2}
                             />
                         ))}
                     </AreaChart>
@@ -997,9 +1387,7 @@ function ReportVisualization({
                                 <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip
-                            formatter={(value) => formatValue(Number(value), metrics[0])}
-                        />
+                        <Tooltip formatter={(value) => formatValue(Number(value), metrics[0])} />
                         <Legend />
                     </PieChart>
                 ) : (
@@ -1007,7 +1395,12 @@ function ReportVisualization({
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                         <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                         <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip />
+                        <Tooltip
+                            formatter={(value: number, name: string) => [
+                                formatValue(value, name as MetricType),
+                                AVAILABLE_METRICS[name as MetricType]?.label || name
+                            ]}
+                        />
                         <Legend />
                         {metrics.map((metric, i) => (
                             <Bar

@@ -48,7 +48,15 @@ export type ChartType =
     | 'line'
     | 'pie'
     | 'area'
-    | 'stacked_bar';
+    | 'stacked_bar'
+    | 'heatmap'
+    | 'radar'
+    | 'scatter'
+    | 'funnel'
+    | 'treemap'
+    | 'radial_bar'
+    | 'doughnut'
+    | 'composed';
 
 export type FilterOperator =
     | 'equals'
