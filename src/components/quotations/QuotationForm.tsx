@@ -6,6 +6,7 @@ import type { Database } from '../../lib/database.types';
 import CustomItemRequestModal, { type CustomItemData } from './CustomItemRequestModal';
 import CustomerQuickAddModal from '../customers/CustomerQuickAddModal';
 import { formatCurrency } from '../../lib/currencyUtils';
+import toast from 'react-hot-toast';
 import {
   validateTaxRate,
 } from '../../lib/validation';
@@ -248,6 +249,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
     setSaving(true);
     try {
       const totals = calculateTotals();
+      const loadingToast = toast.loading('Saving quotation...');
 
       // Check if any items need pricing from engineering
       const hasPendingPricing = items.some(
@@ -375,20 +377,17 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         }
       }
 
+      toast.dismiss(loadingToast);
+
       if (hasPendingPricing) {
-        alert(
-          'Quotation saved successfully!\n\n' +
-          'Status: PENDING PRICING\n' +
-          'This quotation contains custom items or modifications that require engineering pricing. ' +
-          'The Engineering team has been notified and will provide pricing soon.'
-        );
+        toast.success('Quotation saved! Pending engineering pricing.');
       } else {
-        alert('Quotation saved successfully!');
+        toast.success(quotationId ? 'Quotation updated successfully!' : 'Quotation created successfully!');
       }
       onSave();
     } catch (error: any) {
       console.error('Error saving quotation:', error);
-      alert('Failed to save quotation: ' + error.message);
+      toast.error('Failed to save quotation: ' + (error.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }

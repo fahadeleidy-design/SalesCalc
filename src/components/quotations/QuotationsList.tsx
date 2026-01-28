@@ -121,12 +121,11 @@ export default function QuotationsList({ onEdit, onView, onDuplicate, refreshTri
         .eq('id', quotationId);
 
       if (error) throw error;
-
-      alert('Quotation deleted successfully');
+      toast.success('Quotation deleted successfully');
       loadQuotations();
     } catch (error: any) {
       console.error('Error deleting quotation:', error);
-      alert('Failed to delete quotation: ' + error.message);
+      toast.error('Failed to delete quotation: ' + error.message);
     } finally {
       setDeleting(null);
     }
