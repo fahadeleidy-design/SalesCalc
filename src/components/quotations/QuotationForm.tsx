@@ -710,6 +710,11 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                       {item.product?.name}
                                     </h4>
                                     <div className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest">SKU: {item.product?.sku}</div>
+                                    {item.product?.description && (
+                                      <div className="text-sm text-slate-500 mt-2 line-clamp-3 leading-snug font-medium italic">
+                                        {item.product.description}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -722,7 +727,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                             </div>
 
                             <div className="grid grid-cols-12 gap-6 p-6 bg-slate-50/50 rounded-3xl border border-slate-100">
-                              <div className="col-span-12 md:col-span-3">
+                              <div className="col-span-12 md:col-span-4">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Quantity</label>
                                 <div className="flex items-center gap-4">
                                   <input
@@ -743,7 +748,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                 </div>
                               </div>
 
-                              <div className="col-span-12 md:col-span-3">
+                              <div className="col-span-12 md:col-span-4">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Unit Price</label>
                                 <div className="relative">
                                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">{formData.currency_code}</div>
@@ -756,21 +761,7 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
                                 </div>
                               </div>
 
-                              <div className="col-span-12 md:col-span-3">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Item Cost</label>
-                                <div className="relative">
-                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">{formData.currency_code}</div>
-                                  <input
-                                    type="number"
-                                    value={item.unit_cost}
-                                    onChange={(e) => updateItem(index, 'unit_cost', e.target.value)}
-                                    readOnly={profile?.role === 'sales'}
-                                    className={`w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl font-black text-slate-900 ${profile?.role === 'sales' ? 'bg-slate-100 opacity-50 cursor-not-allowed' : 'bg-white'}`}
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="col-span-12 md:col-span-3">
+                              <div className="col-span-12 md:col-span-4">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block text-right">Line Total</label>
                                 <div className="text-2xl font-black text-slate-900 text-right tabular-nums">
                                   {formatCurrency(item.line_total, formData.currency_code)}
@@ -1070,5 +1061,6 @@ export default function QuotationForm({ quotationId, onClose, onSave }: Quotatio
         )}
       </div>
     </div>
+
   );
 }
