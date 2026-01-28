@@ -226,41 +226,64 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 px-4 py-3 flex items-center justify-between shadow-md">
+      <header className="fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            aria-label="Toggle menu"
+          >
+            <Menu className="w-6 h-6 text-slate-700" />
+          </button>
           <img src="/logo.svg" alt="Special Offices" className="h-8" />
+          <h2 className="text-lg font-semibold text-slate-900 hidden sm:block">
+            {t.nav[filteredNav.find((item) => item.path === currentPath)?.labelKey || 'dashboard']}
+          </h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="hidden sm:block">
+            <GlobalSearch />
+          </div>
           <button
             onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
             className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
             title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
           >
             <Languages className="w-4 h-4 text-slate-600" />
-            <span className="text-xs font-medium text-slate-700">
+            <span className="text-xs sm:text-sm font-medium text-slate-700">
               {language === 'en' ? 'EN' : 'ع'}
             </span>
           </button>
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            onClick={() => navigate('/notifications')}
+            className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            title={t.nav.notifications}
           >
-            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <Bell className="w-5 h-5 text-slate-600" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
           </button>
         </div>
-      </div>
+      </header>
 
       <aside
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-slate-200 z-40 transform transition-transform duration-200 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:translate-x-0`}
+        className={`fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-slate-200 z-[60] transform transition-transform duration-200 ease-in-out ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
-        <div className="p-6 border-b border-slate-200">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Special Offices" className="h-12 w-auto" />
+            <img src="/logo.svg" alt="Special Offices" className="h-10 w-auto" />
           </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5 text-slate-600" />
+          </button>
         </div>
 
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-180px)]">
           {filteredNav.map((item) => {
             const Icon = item.icon;
             const isActive = currentPath === item.path;
@@ -306,40 +329,13 @@ export default function Layout({ children }: LayoutProps) {
 
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-[55]"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      <div className="lg:pl-64 pt-16 lg:pt-0">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 hidden lg:flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-900">
-            {t.nav[filteredNav.find((item) => item.path === currentPath)?.labelKey || 'dashboard']}
-          </h2>
-          <div className="flex items-center gap-4">
-            <GlobalSearch />
-            <button
-              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
-              title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
-            >
-              <Languages className="w-5 h-5 text-slate-600" />
-              <span className="text-sm font-medium text-slate-700">
-                {language === 'en' ? 'EN' : 'العربية'}
-              </span>
-            </button>
-            <button
-              onClick={() => navigate('/notifications')}
-              className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              title={t.nav.notifications}
-            >
-              <Bell className="w-5 h-5 text-slate-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
-          </div>
-        </header>
-
-        <main className="p-6 pb-32">{children}</main>
+      <div className="pt-16">
+        <main className="p-4 sm:p-6 pb-32">{children}</main>
       </div>
 
       {/* Keyboard Shortcuts Helper */}
