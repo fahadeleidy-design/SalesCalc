@@ -711,6 +711,46 @@ export default function EnhancedCRMPage() {
               />
             </div>
 
+            {/* Filtered Count Display */}
+            {!isLoading && (
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-600">
+                    Showing{' '}
+                    <span className="font-semibold text-slate-900">
+                      {activeTab === 'leads' ? filteredLeads.length : filteredOpportunities.length}
+                    </span>{' '}
+                    {activeTab === 'leads'
+                      ? filteredLeads.length === 1 ? 'lead' : 'leads'
+                      : filteredOpportunities.length === 1 ? 'opportunity' : 'opportunities'
+                    }
+                  </span>
+                  {(filters.search ||
+                    filters.status !== 'all' ||
+                    filters.source !== 'all' ||
+                    filters.assignedTo !== 'all' ||
+                    filters.salesStream !== 'all' ||
+                    filters.industry !== 'all' ||
+                    filters.dateFrom ||
+                    filters.dateTo ||
+                    filters.valueMin ||
+                    filters.valueMax) && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Filtered
+                    </span>
+                  )}
+                </div>
+                {(activeTab === 'leads' ? leads : opportunities) && (
+                  <span className="text-xs text-slate-500">
+                    Total: {activeTab === 'leads'
+                      ? (leads?.filter(l => l.lead_status !== 'converted').length || 0)
+                      : (opportunities?.length || 0)
+                    }
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Content Area */}
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -647,6 +647,31 @@ function LeadsView() {
         </div>
       </div>
 
+      {/* Filtered Count Display */}
+      {!isLoading && filteredLeads && filteredLeads.length > 0 && (
+        <div className="mb-4 flex items-center justify-between bg-white rounded-lg border border-slate-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-600">
+              {t.common?.showing || 'Showing'}{' '}
+              <span className="font-semibold text-slate-900">
+                {filteredLeads.length}
+              </span>{' '}
+              {filteredLeads.length === 1 ? (t.crm?.leads?.lead || 'lead') : (t.crm?.leads?.leads || 'leads')}
+            </span>
+            {(searchTerm || statusFilter !== 'all') && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {t.common?.filtered || 'Filtered'}
+              </span>
+            )}
+          </div>
+          {leads && (
+            <span className="text-xs text-slate-500">
+              {t.common?.total || 'Total'}: {leads.length}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Leads List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -1417,6 +1442,31 @@ function OpportunitiesView() {
           </div>
         </div>
       </div>
+
+      {/* Filtered Count Display */}
+      {!isLoading && filteredOpportunities && filteredOpportunities.length > 0 && (
+        <div className="mb-4 flex items-center justify-between bg-white rounded-lg border border-slate-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-600">
+              {t.common?.showing || 'Showing'}{' '}
+              <span className="font-semibold text-slate-900">
+                {filteredOpportunities.length}
+              </span>{' '}
+              {filteredOpportunities.length === 1 ? (t.crm?.opportunities?.opportunity || 'opportunity') : (t.crm?.opportunities?.opportunities || 'opportunities')}
+            </span>
+            {(searchTerm || stageFilter !== 'all') && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {t.common?.filtered || 'Filtered'}
+              </span>
+            )}
+          </div>
+          {opportunities && (
+            <span className="text-xs text-slate-500">
+              {t.common?.total || 'Total'}: {opportunities.length}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Pipeline View */}
       {isLoading ? (
