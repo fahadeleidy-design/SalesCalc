@@ -39,10 +39,12 @@ interface Lead {
   notes: string | null;
   created_at: string;
   priority?: string;
+  assigned_to: string;
 }
 
 interface EnhancedLeadCardProps {
   lead: Lead;
+  users?: { id: string; full_name: string }[];
   onEdit: (lead: Lead) => void;
   onDelete: (id: string) => void;
   onConvert: (lead: Lead) => void;
@@ -51,12 +53,18 @@ interface EnhancedLeadCardProps {
 
 export default function EnhancedLeadCard({
   lead,
+  users,
   onEdit,
   onDelete,
   onConvert,
   onLogActivity,
 }: EnhancedLeadCardProps) {
   const [showMenu, setShowMenu] = useState(false);
+
+  const getAssignedUserName = () => {
+    const user = users?.find((u) => u.id === lead.assigned_to);
+    return user?.full_name || 'Unassigned';
+  };
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -203,6 +211,14 @@ export default function EnhancedLeadCard({
 
         {/* Contact Info */}
         <div className="space-y-2 mb-4">
+          {/* Assigned Sales Rep */}
+          <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg">
+              <User className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="font-medium truncate">{getAssignedUserName()}</span>
+            </div>
+          </div>
+
           {lead.contact_email && (
             <a
               href={`mailto:${lead.contact_email}`}

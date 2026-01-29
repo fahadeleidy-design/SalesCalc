@@ -809,6 +809,7 @@ export default function EnhancedCRMPage() {
                     <EnhancedLeadCard
                       key={lead.id}
                       lead={lead as any}
+                      users={users}
                       onEdit={(lead: any) => {
                         setSelectedLead(lead);
                         setShowLeadForm(true);

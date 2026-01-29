@@ -234,10 +234,13 @@ export default function EnhancedOpportunityCard({
 
         {/* Meta Information */}
         <div className="space-y-2 mb-4">
+          {/* Assigned Sales Rep */}
           {opportunity.profiles && (
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <User className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate">{opportunity.profiles.full_name}</span>
+            <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg">
+                <User className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="font-medium truncate">{opportunity.profiles.full_name}</span>
+              </div>
             </div>
           )}
 
