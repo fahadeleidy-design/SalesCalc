@@ -29,13 +29,24 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
 
   const convertMutation = useMutation({
     mutationFn: async () => {
+      // Validate lead ID before attempting conversion
+      if (!lead?.id) {
+        throw new Error('Lead ID is missing. Please refresh and try again.');
+      }
+
+      console.log('Converting lead with ID:', lead.id);
+
       // Use the database function to convert lead to opportunity and customer
       const { data: opportunityId, error } = await supabase.rpc('convert_lead_to_opportunity', {
         p_lead_id: lead.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Conversion error:', error);
+        throw error;
+      }
 
+      console.log('Conversion successful. Opportunity ID:', opportunityId);
       return { opportunityId };
     },
     onSuccess: () => {
@@ -47,7 +58,9 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to convert lead');
+      console.error('Full conversion error:', error);
+      const errorMessage = error.message || 'Failed to convert lead';
+      toast.error(errorMessage);
     },
   });
 
@@ -125,6 +138,11 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
                 Activity log will be created for tracking
               </li>
             </ul>
+            {!lead?.id && (
+              <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded text-xs text-red-800">
+                Warning: Lead ID is missing
+              </div>
+            )}
           </div>
         </div>
 
