@@ -35,6 +35,15 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
       }
 
       console.log('Converting lead with ID:', lead.id);
+      console.log('Lead details:', {
+        company_name: lead.company_name,
+        contact_name: lead.contact_name,
+        id: lead.id
+      });
+
+      // Get current session info for debugging
+      const { data: session } = await supabase.auth.getSession();
+      console.log('Current user session:', session?.session?.user?.id);
 
       // Use the database function to convert lead to opportunity and customer
       const { data: opportunityId, error } = await supabase.rpc('convert_lead_to_opportunity', {
@@ -43,6 +52,12 @@ export default function LeadConversionModal({ lead, onClose }: LeadConversionMod
 
       if (error) {
         console.error('Conversion error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
