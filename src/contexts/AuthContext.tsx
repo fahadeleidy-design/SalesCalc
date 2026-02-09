@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserRole } from '../lib/database.types';
@@ -47,113 +47,155 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const signInInProgress = useRef(false);
 
-  const fetchProfile = async (userId: string): Promise<Profile | null> => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
+  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      if (data && (data as any).force_password_change === true) {
+        setShowPasswordChange(true);
+      }
+
+      return data as Profile | null;
+    } catch (err) {
+      console.error('Exception fetching profile:', err);
       return null;
     }
+  }, []);
 
-    if (data && (data as any).force_password_change === true) {
-      setShowPasswordChange(true);
-    }
-
-    return data as Profile | null;
-  };
-
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       const profileData = await fetchProfile(user.id);
       setProfile(profileData);
     }
-  };
+  }, [user, fetchProfile]);
 
-  const handlePasswordChanged = async () => {
+  const handlePasswordChanged = useCallback(async () => {
     setShowPasswordChange(false);
-    await refreshProfile();
-  };
+    if (user) {
+      const profileData = await fetchProfile(user.id);
+      setProfile(profileData);
+    }
+  }, [user, fetchProfile]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    let mounted = true;
 
-      if (session?.user) {
-        fetchProfile(session.user.id).then(setProfile).finally(() => setLoading(false));
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!mounted) return;
+
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id).then((p) => {
+          if (mounted) {
+            setProfile(p);
+            setLoading(false);
+          }
+        });
       } else {
         setLoading(false);
       }
-    }).catch((error) => {
-      console.error('Error getting session:', error);
-      setLoading(false);
+    }).catch(() => {
+      if (mounted) setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      (async () => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!mounted) return;
+      if (signInInProgress.current) return;
 
-        if (session?.user) {
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
-        } else {
-          setProfile(null);
-          setShowPasswordChange(false);
-        }
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
 
+      if (newSession?.user) {
+        fetchProfile(newSession.user.id).then((p) => {
+          if (mounted) {
+            setProfile(p);
+            setLoading(false);
+          }
+        });
+      } else {
+        setProfile(null);
+        setShowPasswordChange(false);
         setLoading(false);
-      })();
+      }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile]);
 
-  const signIn = async (email: string, password: string): Promise<{ error: any }> => {
+  const signIn = useCallback(async (email: string, password: string): Promise<{ error: any }> => {
+    signInInProgress.current = true;
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-      if (error) return { error };
-
-      if (data.user) {
-        const profileData = await fetchProfile(data.user.id);
-
-        if (profileData && profileData.account_status === 'pending') {
-          await supabase.auth.signOut();
-          return {
-            error: new Error('Your account is pending admin approval. Please wait for an administrator to approve your account.')
-          };
-        }
-
-        if (profileData && profileData.account_status === 'rejected') {
-          await supabase.auth.signOut();
-          return {
-            error: new Error('Your account request was rejected. Please contact an administrator for more information.')
-          };
-        }
-
-        setUser(data.user);
-        setSession(data.session);
-        setProfile(profileData);
+      if (error) {
+        signInInProgress.current = false;
+        return { error };
       }
+
+      if (!data.user || !data.session) {
+        signInInProgress.current = false;
+        return { error: new Error('Sign in failed. Please try again.') };
+      }
+
+      const profileData = await fetchProfile(data.user.id);
+
+      if (!profileData) {
+        await supabase.auth.signOut();
+        signInInProgress.current = false;
+        return { error: new Error('Account profile not found. Please contact an administrator.') };
+      }
+
+      if (profileData.account_status === 'pending') {
+        await supabase.auth.signOut();
+        signInInProgress.current = false;
+        return {
+          error: new Error('Your account is pending admin approval. Please wait for an administrator to approve your account.')
+        };
+      }
+
+      if (profileData.account_status === 'rejected') {
+        await supabase.auth.signOut();
+        signInInProgress.current = false;
+        return {
+          error: new Error('Your account request was rejected. Please contact an administrator for more information.')
+        };
+      }
+
+      setSession(data.session);
+      setUser(data.user);
+      setProfile(profileData);
+      setLoading(false);
+      signInInProgress.current = false;
 
       return { error: null };
     } catch (err) {
+      signInInProgress.current = false;
       return { error: err };
     }
-  };
+  }, [fetchProfile]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
     setSession(null);
-  };
+  }, []);
 
   const value = {
     user,
