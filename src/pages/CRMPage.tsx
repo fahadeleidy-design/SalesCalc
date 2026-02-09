@@ -30,10 +30,7 @@ import {
   ShoppingBag,
   Lightbulb,
   DollarSign,
-  CheckCircle,
   Edit2,
-  Loader2,
-  RefreshCw,
 } from 'lucide-react';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import TasksManager from '../components/crm/TasksManager';

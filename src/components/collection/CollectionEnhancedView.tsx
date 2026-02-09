@@ -40,19 +40,19 @@ export default function CollectionEnhancedView() {
 
   // Calculate aging buckets
   const agingBuckets = {
-    current: agingReport?.filter(r => r.aging_bucket === 'current') || [],
-    '1-30': agingReport?.filter(r => r.aging_bucket === '1-30') || [],
-    '31-60': agingReport?.filter(r => r.aging_bucket === '31-60') || [],
-    '61-90': agingReport?.filter(r => r.aging_bucket === '61-90') || [],
-    '90+': agingReport?.filter(r => r.aging_bucket === '90+') || [],
+    current: agingReport?.filter((r: any) => r.aging_bucket === 'current') || [],
+    '1-30': agingReport?.filter((r: any) => r.aging_bucket === '1-30') || [],
+    '31-60': agingReport?.filter((r: any) => r.aging_bucket === '31-60') || [],
+    '61-90': agingReport?.filter((r: any) => r.aging_bucket === '61-90') || [],
+    '90+': agingReport?.filter((r: any) => r.aging_bucket === '90+') || [],
   };
 
   const agingTotals = {
-    current: agingBuckets.current.reduce((sum, r) => sum + Number(r.outstanding_amount), 0),
-    '1-30': agingBuckets['1-30'].reduce((sum, r) => sum + Number(r.outstanding_amount), 0),
-    '31-60': agingBuckets['31-60'].reduce((sum, r) => sum + Number(r.outstanding_amount), 0),
-    '61-90': agingBuckets['61-90'].reduce((sum, r) => sum + Number(r.outstanding_amount), 0),
-    '90+': agingBuckets['90+'].reduce((sum, r) => sum + Number(r.outstanding_amount), 0),
+    current: agingBuckets.current.reduce((sum: number, r: any) => sum + Number(r.outstanding_amount), 0),
+    '1-30': agingBuckets['1-30'].reduce((sum: number, r: any) => sum + Number(r.outstanding_amount), 0),
+    '31-60': agingBuckets['31-60'].reduce((sum: number, r: any) => sum + Number(r.outstanding_amount), 0),
+    '61-90': agingBuckets['61-90'].reduce((sum: number, r: any) => sum + Number(r.outstanding_amount), 0),
+    '90+': agingBuckets['90+'].reduce((sum: number, r: any) => sum + Number(r.outstanding_amount), 0),
   };
 
   return (

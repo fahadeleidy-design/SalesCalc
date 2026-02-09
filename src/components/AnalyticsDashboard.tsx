@@ -43,10 +43,10 @@ export function AnalyticsDashboard() {
   // Calculate metrics
   const metrics = useMemo(() => {
     const total = filteredQuotations.length;
-    const totalValue = filteredQuotations.reduce((sum, q) => sum + q.net_total, 0);
-    const approved = filteredQuotations.filter(q => q.approval_status === 'approved').length;
-    const rejected = filteredQuotations.filter(q => q.approval_status === 'rejected').length;
-    const pending = filteredQuotations.filter(q => q.approval_status === 'pending').length;
+    const totalValue = filteredQuotations.reduce((sum, q) => sum + (q.total || 0), 0);
+    const approved = filteredQuotations.filter(q => q.status === 'approved' || q.status === 'finance_approved' || q.status === 'deal_won').length;
+    const rejected = filteredQuotations.filter(q => q.status === 'rejected' || q.status === 'rejected_by_finance').length;
+    const pending = filteredQuotations.filter(q => q.status === 'pending_manager' || q.status === 'pending_ceo' || q.status === 'pending_finance').length;
     const avgValue = total > 0 ? totalValue / total : 0;
     const winRate = total > 0 ? (approved / total) * 100 : 0;
 

@@ -44,7 +44,7 @@ export function ExportButton({ type, data, label = 'Export', variant = 'primary'
 
         case 'quotations':
           if (format === 'pdf') {
-            toast.info('PDF export for quotations list coming soon!');
+            toast('PDF export for quotations list coming soon!');
           } else {
             exportQuotationsToExcel(data);
             toast.success('Excel file downloaded', { icon: '📊' });

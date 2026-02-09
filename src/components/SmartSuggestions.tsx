@@ -23,7 +23,7 @@ export function SmartSuggestions({ quotation }: SmartSuggestionsProps) {
 
   useEffect(() => {
     analyzeQuotationData();
-  }, [quotation.id, quotation.net_total, quotation.items.length, quotation.discount_percentage]);
+  }, [quotation.id, quotation.total, quotation.items?.length, quotation.discount_percentage]);
 
   const analyzeQuotationData = async () => {
     setIsLoading(true);
