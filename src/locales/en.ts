@@ -70,6 +70,13 @@ export const en = {
     notifications: 'Notifications',
     settings: 'Settings',
     signOut: 'Sign Out',
+    projects: 'Projects',
+    projectTasks: 'Project Tasks',
+    purchasingOrders: 'Purchasing Orders',
+    procurementRequests: 'Procurement Requests',
+    billOfMaterials: 'Bill of Materials',
+    suppliers: 'Suppliers',
+    goodsReceiving: 'Goods Receiving',
   },
   auth: {
     email: 'Email',
@@ -99,6 +106,9 @@ export const en = {
     engineering: 'Engineering Team',
     finance: 'Finance Team',
     ceo: 'Chief Executive Officer',
+    solution_consultant: 'Solution Consultant',
+    project_manager: 'Project Manager',
+    purchasing: 'Purchasing',
   },
   dashboard: {
     welcome: 'Welcome back',

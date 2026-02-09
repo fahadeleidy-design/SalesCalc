@@ -13,6 +13,8 @@ const roleColors: Record<UserRole, string> = {
   ceo: 'bg-red-100 text-red-700',
   finance: 'bg-green-100 text-green-700',
   admin: 'bg-slate-100 text-slate-700',
+  project_manager: 'bg-blue-100 text-blue-700',
+  purchasing: 'bg-cyan-100 text-cyan-700',
 };
 
 export default function UsersPage() {
@@ -242,8 +244,8 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
-        {(['sales', 'engineering', 'solution_consultant', 'manager', 'ceo', 'finance', 'admin'] as UserRole[]).map(
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-4">
+        {(['sales', 'engineering', 'solution_consultant', 'manager', 'ceo', 'finance', 'admin', 'project_manager', 'purchasing'] as UserRole[]).map(
           (role) => (
             <div key={role} className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -253,7 +255,7 @@ export default function UsersPage() {
                 </span>
               </div>
               <h3 className="text-xs font-medium text-slate-600 capitalize">
-                {role === 'solution_consultant' ? 'Solution Consultant' : role}
+                {role === 'solution_consultant' ? 'Solution Consultant' : role === 'project_manager' ? 'Project Manager' : role}
               </h3>
             </div>
           )
@@ -430,6 +432,8 @@ export default function UsersPage() {
                   <option value="ceo">CEO</option>
                   <option value="finance">Finance</option>
                   <option value="admin">Admin</option>
+                  <option value="project_manager">Project Manager</option>
+                  <option value="purchasing">Purchasing</option>
                 </select>
               </div>
 

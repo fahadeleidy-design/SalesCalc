@@ -34,10 +34,19 @@ import DemoTrackerPage from './pages/DemoTrackerPage';
 import TechnicalDiscoveryPage from './pages/TechnicalDiscoveryPage';
 import SolutionConfiguratorPage from './pages/SolutionConfiguratorPage';
 import ROICalculatorPage from './pages/ROICalculatorPage';
-import ConsultantActivityLogPage from './pages/ConsultantActivityLogPage';
+import PresalesActivityLogPage from './pages/PresalesActivityLogPage';
 import ResourceSchedulingPage from './pages/ResourceSchedulingPage';
 import CompetitiveIntelPage from './pages/CompetitiveIntelPage';
-import ConsultantAnalyticsPage from './pages/ConsultantAnalyticsPage';
+import PresalesAnalyticsPage from './pages/PresalesAnalyticsPage';
+import ProjectManagerDashboard from './pages/ProjectManagerDashboard';
+import ProjectsOverviewPage from './pages/ProjectsOverviewPage';
+import ProjectTasksPage from './pages/ProjectTasksPage';
+import PurchasingDashboard from './pages/PurchasingDashboard';
+import PurchasingOrdersPage from './pages/PurchasingOrdersPage';
+import ProcurementRequestsPage from './pages/ProcurementRequestsPage';
+import BillOfMaterialsPage from './pages/BillOfMaterialsPage';
+import SuppliersPage from './pages/SuppliersPage';
+import GoodsReceivingPage from './pages/GoodsReceivingPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -95,6 +104,10 @@ function AppContent() {
         return <CEODashboard />;
       case 'admin':
         return <AdminDashboard />;
+      case 'project_manager':
+        return <ProjectManagerDashboard />;
+      case 'purchasing':
+        return <PurchasingDashboard />;
       default:
         return <SalesDashboard />;
     }
@@ -170,6 +183,20 @@ function AppContent() {
         return hasAccess(['solution_consultant', 'manager', 'ceo']) ? <PresalesAnalyticsPage /> : <UnauthorizedPage />;
       case '/profitability':
         return hasAccess(['finance', 'ceo', 'admin']) ? <ProjectProfitabilityPage /> : <UnauthorizedPage />;
+      case '/projects':
+        return hasAccess(['project_manager']) ? <ProjectsOverviewPage /> : <UnauthorizedPage />;
+      case '/project-tasks':
+        return hasAccess(['project_manager']) ? <ProjectTasksPage /> : <UnauthorizedPage />;
+      case '/purchasing-orders':
+        return hasAccess(['purchasing']) ? <PurchasingOrdersPage /> : <UnauthorizedPage />;
+      case '/procurement-requests':
+        return hasAccess(['purchasing']) ? <ProcurementRequestsPage /> : <UnauthorizedPage />;
+      case '/bom':
+        return hasAccess(['purchasing']) ? <BillOfMaterialsPage /> : <UnauthorizedPage />;
+      case '/suppliers':
+        return hasAccess(['purchasing']) ? <SuppliersPage /> : <UnauthorizedPage />;
+      case '/goods-receiving':
+        return hasAccess(['purchasing']) ? <GoodsReceivingPage /> : <UnauthorizedPage />;
 
       default:
         return getDashboardForRole();

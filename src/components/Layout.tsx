@@ -22,6 +22,11 @@ import {
   ShoppingCart,
   TrendingUp,
   Activity,
+  Briefcase,
+  ListTodo,
+  ClipboardList,
+  Layers,
+  PackageCheck,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -44,7 +49,7 @@ const navigationItems: NavItem[] = [
     labelKey: 'dashboard',
     icon: LayoutDashboard,
     path: '/dashboard',
-    roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'solution_consultant'],
+    roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'solution_consultant', 'project_manager', 'purchasing'],
   },
   {
     labelKey: 'quotations',
@@ -188,7 +193,49 @@ const navigationItems: NavItem[] = [
     labelKey: 'settings',
     icon: Settings,
     path: '/settings',
-    roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'solution_consultant'],
+    roles: ['sales', 'engineering', 'manager', 'ceo', 'finance', 'admin', 'solution_consultant', 'project_manager', 'purchasing'],
+  },
+  {
+    labelKey: 'projects',
+    icon: Briefcase,
+    path: '/projects',
+    roles: ['project_manager'],
+  },
+  {
+    labelKey: 'projectTasks',
+    icon: ListTodo,
+    path: '/project-tasks',
+    roles: ['project_manager'],
+  },
+  {
+    labelKey: 'purchasingOrders',
+    icon: ShoppingCart,
+    path: '/purchasing-orders',
+    roles: ['purchasing'],
+  },
+  {
+    labelKey: 'procurementRequests',
+    icon: ClipboardList,
+    path: '/procurement-requests',
+    roles: ['purchasing'],
+  },
+  {
+    labelKey: 'billOfMaterials',
+    icon: Layers,
+    path: '/bom',
+    roles: ['purchasing'],
+  },
+  {
+    labelKey: 'suppliers',
+    icon: Users,
+    path: '/suppliers',
+    roles: ['purchasing'],
+  },
+  {
+    labelKey: 'goodsReceiving',
+    icon: PackageCheck,
+    path: '/goods-receiving',
+    roles: ['purchasing'],
   },
 ];
 
