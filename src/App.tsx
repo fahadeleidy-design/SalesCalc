@@ -34,10 +34,10 @@ import DemoTrackerPage from './pages/DemoTrackerPage';
 import TechnicalDiscoveryPage from './pages/TechnicalDiscoveryPage';
 import SolutionConfiguratorPage from './pages/SolutionConfiguratorPage';
 import ROICalculatorPage from './pages/ROICalculatorPage';
-import PresalesActivityLogPage from './pages/PresalesActivityLogPage';
+import ConsultantActivityLogPage from './pages/ConsultantActivityLogPage';
 import ResourceSchedulingPage from './pages/ResourceSchedulingPage';
 import CompetitiveIntelPage from './pages/CompetitiveIntelPage';
-import PresalesAnalyticsPage from './pages/PresalesAnalyticsPage';
+import ConsultantAnalyticsPage from './pages/ConsultantAnalyticsPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
