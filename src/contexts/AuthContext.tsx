@@ -114,31 +114,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const signIn = async (email: string, password: string): Promise<{ error: any }> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) return { error };
+      if (error) return { error };
 
-    // Check if user's account is approved
-    if (data.user) {
-      const profileData = await fetchProfile(data.user.id);
+      if (data.user) {
+        const profileData = await fetchProfile(data.user.id);
 
-      if (profileData && profileData.account_status === 'pending') {
-        await supabase.auth.signOut();
-        return {
-          error: new Error('Your account is pending admin approval. Please wait for an administrator to approve your account.')
-        };
+        if (profileData && profileData.account_status === 'pending') {
+          await supabase.auth.signOut();
+          return {
+            error: new Error('Your account is pending admin approval. Please wait for an administrator to approve your account.')
+          };
+        }
+
+        if (profileData && profileData.account_status === 'rejected') {
+          await supabase.auth.signOut();
+          return {
+            error: new Error('Your account request was rejected. Please contact an administrator for more information.')
+          };
+        }
+
+        setUser(data.user);
+        setSession(data.session);
+        setProfile(profileData);
       }
 
-      if (profileData && profileData.account_status === 'rejected') {
-        await supabase.auth.signOut();
-        return {
-          error: new Error('Your account request was rejected. Please contact an administrator for more information.')
-        };
-      }
+      return { error: null };
+    } catch (err) {
+      return { error: err };
     }
-
-    return { error: null };
   };
 
   const signOut = async () => {

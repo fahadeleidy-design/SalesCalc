@@ -27,19 +27,24 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    try {
+      const { error } = await signIn(email, password);
 
-    if (error) {
-      if (error.message.includes('Email not confirmed')) {
-        setError('Please check your email and confirm your account before logging in.');
-      } else if (error.message.includes('Invalid login credentials')) {
-        setError('Invalid email or password. Please try again.');
-      } else {
-        setError(error.message);
+      if (error) {
+        const msg = error.message || String(error);
+        if (msg.includes('Email not confirmed')) {
+          setError('Please check your email and confirm your account before logging in.');
+        } else if (msg.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please try again.');
+        } else {
+          setError(msg);
+        }
       }
+    } catch (err: any) {
+      setError(err?.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
