@@ -56,6 +56,8 @@ export default function ShipmentReturnsPanel() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showNewForm, setShowNewForm] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState<ShipmentReturn | null>(null);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [resolveForm, setResolveForm] = useState({ resolution: 'replacement', notes: '' });
   const [items, setItems] = useState<{ product_name: string; quantity_returned: number; condition: string }[]>([]);
   const [form, setForm] = useState({
     shipment_id: '', reason: '', return_type: 'full', customer_name: '', notes: '',
@@ -261,9 +263,45 @@ export default function ShipmentReturnsPanel() {
                   {selectedReturn.status === 'approved' && <button onClick={() => handleStatusUpdate(selectedReturn, 'in_transit')} className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Mark In Transit</button>}
                   {selectedReturn.status === 'in_transit' && <button onClick={() => handleStatusUpdate(selectedReturn, 'received')} className="flex-1 px-3 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700">Mark Received</button>}
                   {selectedReturn.status === 'received' && <button onClick={() => handleStatusUpdate(selectedReturn, 'inspected')} className="flex-1 px-3 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700">Mark Inspected</button>}
-                  {selectedReturn.status === 'inspected' && <button onClick={() => handleResolve(selectedReturn, 'replaced', '')} className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Resolve</button>}
+                  {selectedReturn.status === 'inspected' && <button onClick={() => { setResolveForm({ resolution: 'replacement', notes: '' }); setShowResolveModal(true); }} className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Resolve</button>}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResolveModal && selectedReturn && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] p-4" onClick={() => setShowResolveModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900">Resolve Return</h2>
+              <button onClick={() => setShowResolveModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Resolution Type</label>
+                <select value={resolveForm.resolution} onChange={e => setResolveForm({ ...resolveForm, resolution: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                  <option value="replacement">Replacement</option>
+                  <option value="refund">Refund</option>
+                  <option value="credit_note">Credit Note</option>
+                  <option value="repair">Repair</option>
+                  <option value="no_action">No Action Required</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Resolution Notes</label>
+                <textarea rows={3} value={resolveForm.notes} onChange={e => setResolveForm({ ...resolveForm, notes: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none" placeholder="Details about the resolution..." />
+              </div>
+              <div className="flex gap-3 pt-3 border-t border-slate-200">
+                <button onClick={() => setShowResolveModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onClick={() => {
+                  handleResolve(selectedReturn, resolveForm.resolution, resolveForm.notes);
+                  setShowResolveModal(false);
+                }} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Confirm Resolution</button>
+              </div>
             </div>
           </div>
         </div>

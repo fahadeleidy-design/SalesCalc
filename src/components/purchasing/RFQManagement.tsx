@@ -31,7 +31,7 @@ interface RFQSupplier {
   supplier_id: string;
   supplier?: {
     id: string;
-    name: string;
+    supplier_name: string;
     email: string;
   };
 }
@@ -49,7 +49,7 @@ interface RFQResponse {
 
 interface Supplier {
   id: string;
-  name: string;
+  supplier_name: string;
   email: string;
 }
 
@@ -103,8 +103,8 @@ export function RFQManagement() {
   const loadSuppliers = async () => {
     const { data, error } = await supabase
       .from('suppliers')
-      .select('id, name, email')
-      .order('name');
+      .select('id, supplier_name, email')
+      .order('supplier_name');
 
     if (error) {
       console.error('Error loading suppliers:', error);
@@ -626,7 +626,7 @@ function CreateRFQModal({
                     onChange={() => toggleSupplier(supplier.id)}
                     className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-slate-700">{supplier.name}</span>
+                  <span className="text-sm text-slate-700">{supplier.supplier_name}</span>
                 </label>
               ))}
             </div>
@@ -772,7 +772,7 @@ function RecordResponseModal({
           <div>
             <h3 className="text-lg font-semibold text-slate-900">Record Supplier Response</h3>
             {supplier && (
-              <p className="text-sm text-slate-600 mt-1">{supplier.name}</p>
+              <p className="text-sm text-slate-600 mt-1">{supplier.supplier_name}</p>
             )}
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -996,7 +996,7 @@ function RFQDetailView({
                   {suppliers.map(s => (
                     <div key={s.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                       <div>
-                        <div className="font-medium text-slate-900">{s.supplier.name}</div>
+                        <div className="font-medium text-slate-900">{s.supplier.supplier_name}</div>
                         <div className="text-sm text-slate-600">{s.supplier.email}</div>
                       </div>
                     </div>
@@ -1030,7 +1030,7 @@ function RFQDetailView({
                 return (
                   <div key={supplier.id} className="border border-slate-300 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="font-semibold text-slate-900">{supplier.supplier.name}</div>
+                      <div className="font-semibold text-slate-900">{supplier.supplier.supplier_name}</div>
                       {supplierResponses.length > 0 && (
                         <Badge variant="success">Responded</Badge>
                       )}
@@ -1107,7 +1107,7 @@ function RFQDetailView({
                       return (
                         <tr key={supplier.id}>
                           <td className="px-4 py-4">
-                            <div className="text-sm font-medium text-slate-900">{supplier.supplier.name}</div>
+                            <div className="text-sm font-medium text-slate-900">{supplier.supplier.supplier_name}</div>
                           </td>
                           <td className="px-4 py-4 text-right">
                             {hasResponded ? (

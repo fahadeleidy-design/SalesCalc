@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, X, Save, Calendar, Clock } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 interface ResourceAllocationProps {
   jobOrderId: string;
@@ -59,7 +59,7 @@ export default function ResourceAllocation({ jobOrderId }: ResourceAllocationPro
             full_name
           )
         `)
-        .eq('project_id', jobOrderId);
+        .eq('job_order_id', jobOrderId);
 
       if (error) throw error;
 
@@ -101,7 +101,7 @@ export default function ResourceAllocation({ jobOrderId }: ResourceAllocationPro
       const { error } = await supabase
         .from('project_resource_allocations')
         .insert({
-          project_id: jobOrderId,
+          job_order_id: jobOrderId,
           user_id: formData.user_id,
           role: formData.role,
           allocated_hours_per_week: formData.allocated_hours_per_week,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Truck, Plus, X, Save, Edit3, DollarSign, MapPin, Clock, Package, TrendingUp, Search
+  Truck, Plus, X, Save, Edit3, DollarSign, MapPin, Clock, Package, TrendingUp, Search, Download, Trash2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,19 +21,20 @@ interface Carrier {
   notes: string | null;
 }
 
-interface FreightRate {
+interface CarrierRate {
   id: string;
   carrier_id: string;
+  rate_name: string;
   service_type: string;
-  origin_zone: string | null;
-  destination_zone: string | null;
+  zone: string | null;
   min_weight_kg: number;
   max_weight_kg: number;
-  rate_per_kg: number;
-  flat_rate: number;
+  base_rate: number;
+  per_kg_rate: number;
   currency: string;
-  valid_from: string;
-  valid_until: string | null;
+  effective_from: string;
+  effective_to: string | null;
+  is_active: boolean;
   carrier?: { carrier_name: string };
 }
 
@@ -50,9 +51,10 @@ const serviceTypes = [
 
 export default function TransportationManagement() {
   const { profile } = useAuth();
+  const canManage = ['admin', 'ceo', 'purchasing'].includes(profile?.role || '');
   const [activeTab, setActiveTab] = useState<'carriers' | 'rates'>('carriers');
   const [carriers, setCarriers] = useState<Carrier[]>([]);
-  const [rates, setRates] = useState<FreightRate[]>([]);
+  const [rates, setRates] = useState<CarrierRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCarrierForm, setShowCarrierForm] = useState(false);
@@ -69,17 +71,19 @@ export default function TransportationManagement() {
     rating: 5,
     notes: '',
   });
+  const [confirmDeleteCarrierId, setConfirmDeleteCarrierId] = useState<string | null>(null);
+  const [confirmDeleteRateId, setConfirmDeleteRateId] = useState<string | null>(null);
   const [rateForm, setRateForm] = useState({
     carrier_id: '',
+    rate_name: '',
     service_type: 'Standard Ground',
-    origin_zone: '',
-    destination_zone: '',
+    zone: '',
     min_weight_kg: 0,
     max_weight_kg: 1000,
-    rate_per_kg: 0,
-    flat_rate: 0,
-    valid_from: new Date().toISOString().split('T')[0],
-    valid_until: '',
+    per_kg_rate: 0,
+    base_rate: 0,
+    effective_from: new Date().toISOString().split('T')[0],
+    effective_to: '',
   });
 
   const loadData = useCallback(async () => {
@@ -87,9 +91,9 @@ export default function TransportationManagement() {
       const [carriersRes, ratesRes] = await Promise.all([
         supabase.from('carriers').select('*').order('carrier_name'),
         supabase
-          .from('freight_rates')
+          .from('carrier_rates')
           .select('*, carrier:carriers(carrier_name)')
-          .order('valid_from', { ascending: false }),
+          .order('effective_from', { ascending: false }),
       ]);
 
       setCarriers(carriersRes.data || []);
@@ -151,25 +155,24 @@ export default function TransportationManagement() {
     try {
       const payload = {
         carrier_id: rateForm.carrier_id,
+        rate_name: rateForm.rate_name || rateForm.service_type,
         service_type: rateForm.service_type,
-        origin_zone: rateForm.origin_zone || null,
-        destination_zone: rateForm.destination_zone || null,
+        zone: rateForm.zone || null,
         min_weight_kg: rateForm.min_weight_kg,
         max_weight_kg: rateForm.max_weight_kg,
-        rate_per_kg: rateForm.rate_per_kg,
-        flat_rate: rateForm.flat_rate,
+        per_kg_rate: rateForm.per_kg_rate,
+        base_rate: rateForm.base_rate,
         currency: 'SAR',
-        valid_from: rateForm.valid_from,
-        valid_until: rateForm.valid_until || null,
-        created_by: profile?.id,
+        effective_from: rateForm.effective_from,
+        effective_to: rateForm.effective_to || null,
       };
 
       if (editingRateId) {
-        const { error } = await supabase.from('freight_rates').update(payload).eq('id', editingRateId);
+        const { error } = await supabase.from('carrier_rates').update(payload).eq('id', editingRateId);
         if (error) throw error;
         toast.success('Rate updated');
       } else {
-        const { error } = await supabase.from('freight_rates').insert(payload);
+        const { error } = await supabase.from('carrier_rates').insert(payload);
         if (error) throw error;
         toast.success('Rate created');
       }
@@ -177,9 +180,9 @@ export default function TransportationManagement() {
       setShowRateForm(false);
       setEditingRateId(null);
       setRateForm({
-        carrier_id: '', service_type: 'Standard Ground', origin_zone: '', destination_zone: '',
-        min_weight_kg: 0, max_weight_kg: 1000, rate_per_kg: 0, flat_rate: 0,
-        valid_from: new Date().toISOString().split('T')[0], valid_until: '',
+        carrier_id: '', rate_name: '', service_type: 'Standard Ground', zone: '',
+        min_weight_kg: 0, max_weight_kg: 1000, per_kg_rate: 0, base_rate: 0,
+        effective_from: new Date().toISOString().split('T')[0], effective_to: '',
       });
       loadData();
     } catch (err: any) {
@@ -202,21 +205,67 @@ export default function TransportationManagement() {
     setShowCarrierForm(true);
   };
 
-  const handleEditRate = (rate: FreightRate) => {
+  const handleEditRate = (rate: CarrierRate) => {
     setEditingRateId(rate.id);
     setRateForm({
       carrier_id: rate.carrier_id,
+      rate_name: rate.rate_name || '',
       service_type: rate.service_type,
-      origin_zone: rate.origin_zone || '',
-      destination_zone: rate.destination_zone || '',
+      zone: rate.zone || '',
       min_weight_kg: rate.min_weight_kg,
       max_weight_kg: rate.max_weight_kg,
-      rate_per_kg: rate.rate_per_kg,
-      flat_rate: rate.flat_rate,
-      valid_from: rate.valid_from,
-      valid_until: rate.valid_until || '',
+      per_kg_rate: rate.per_kg_rate,
+      base_rate: rate.base_rate,
+      effective_from: rate.effective_from,
+      effective_to: rate.effective_to || '',
     });
     setShowRateForm(true);
+  };
+
+  const handleDeleteCarrier = async (id: string) => {
+    try {
+      const { error } = await supabase.from('carriers').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Carrier deleted');
+      setConfirmDeleteCarrierId(null);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete carrier');
+    }
+  };
+
+  const handleDeleteRate = async (id: string) => {
+    try {
+      const { error } = await supabase.from('carrier_rates').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Rate deleted');
+      setConfirmDeleteRateId(null);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete rate');
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Carrier Name', 'Rate Name', 'Service Type', 'Zone', 'Base Rate', 'Per Kg Rate', 'Effective From', 'Effective To'];
+    const rows = filteredRates.map(r => [
+      r.carrier?.carrier_name || '',
+      r.rate_name || '',
+      r.service_type,
+      r.zone || '',
+      r.base_rate,
+      r.per_kg_rate,
+      r.effective_from,
+      r.effective_to || '',
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `freight-rates-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const toggleServiceType = (service: string) => {
@@ -240,7 +289,7 @@ export default function TransportationManagement() {
     totalCarriers: carriers.filter(c => c.is_active).length,
     totalRates: rates.length,
     avgRating: carriers.length > 0 ? (carriers.reduce((sum, c) => sum + (c.rating || 0), 0) / carriers.length).toFixed(1) : '0',
-    activeRates: rates.filter(r => !r.valid_until || new Date(r.valid_until) >= new Date()).length,
+    activeRates: rates.filter(r => !r.effective_to || new Date(r.effective_to) >= new Date()).length,
   };
 
   if (loading) {
@@ -283,19 +332,27 @@ export default function TransportationManagement() {
           />
         </div>
         {activeTab === 'carriers' ? (
-          <button
+          canManage && <button
             onClick={() => { setShowCarrierForm(true); setEditingCarrierId(null); setCarrierForm({ carrier_name: '', carrier_code: '', contact_person: '', contact_phone: '', contact_email: '', service_types: [], rating: 5, notes: '' }); }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" /> New Carrier
           </button>
         ) : (
-          <button
-            onClick={() => { setShowRateForm(true); setEditingRateId(null); setRateForm({ carrier_id: '', service_type: 'Standard Ground', origin_zone: '', destination_zone: '', min_weight_kg: 0, max_weight_kg: 1000, rate_per_kg: 0, flat_rate: 0, valid_from: new Date().toISOString().split('T')[0], valid_until: '' }); }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-          >
-            <Plus className="w-4 h-4" /> New Rate
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50"
+            >
+              <Download className="w-4 h-4" /> Export CSV
+            </button>
+            {canManage && <button
+              onClick={() => { setShowRateForm(true); setEditingRateId(null); setRateForm({ carrier_id: '', rate_name: '', service_type: 'Standard Ground', zone: '', min_weight_kg: 0, max_weight_kg: 1000, per_kg_rate: 0, base_rate: 0, effective_from: new Date().toISOString().split('T')[0], effective_to: '' }); }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" /> New Rate
+            </button>}
+          </div>
         )}
       </div>
 
@@ -336,12 +393,37 @@ export default function TransportationManagement() {
                 ))}
               </div>
 
-              <button
-                onClick={() => handleEditCarrier(carrier)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              >
-                <Edit3 className="w-3 h-3" /> Edit
-              </button>
+              {canManage && <div className="flex gap-2">
+                <button
+                  onClick={() => handleEditCarrier(carrier)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  <Edit3 className="w-3 h-3" /> Edit
+                </button>
+                {confirmDeleteCarrierId === carrier.id ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleDeleteCarrier(carrier.id)}
+                      className="px-3 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteCarrierId(null)}
+                      className="px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteCarrierId(carrier.id)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" /> Delete
+                  </button>
+                )}
+              </div>}
             </div>
           ))}
         </div>
@@ -354,7 +436,7 @@ export default function TransportationManagement() {
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="px-4 py-3 text-left font-medium text-slate-600">Carrier</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-600">Service</th>
-                <th className="px-4 py-3 text-left font-medium text-slate-600">Route</th>
+                <th className="px-4 py-3 text-left font-medium text-slate-600">Zone</th>
                 <th className="px-4 py-3 text-left font-medium text-slate-600">Weight Range (kg)</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-600">Rate/kg</th>
                 <th className="px-4 py-3 text-right font-medium text-slate-600">Flat Rate</th>
@@ -370,18 +452,43 @@ export default function TransportationManagement() {
                   <td className="px-4 py-3 font-medium text-slate-900">{rate.carrier?.carrier_name}</td>
                   <td className="px-4 py-3 text-slate-600">{rate.service_type}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">
-                    {rate.origin_zone && rate.destination_zone ? `${rate.origin_zone} → ${rate.destination_zone}` : 'Any'}
+                    {rate.zone || 'Any'}
                   </td>
                   <td className="px-4 py-3 text-slate-600">{rate.min_weight_kg} - {rate.max_weight_kg}</td>
-                  <td className="px-4 py-3 text-right font-medium text-emerald-600">{formatCurrency(rate.rate_per_kg)}</td>
-                  <td className="px-4 py-3 text-right font-medium text-blue-600">{formatCurrency(rate.flat_rate)}</td>
+                  <td className="px-4 py-3 text-right font-medium text-emerald-600">{formatCurrency(rate.per_kg_rate)}</td>
+                  <td className="px-4 py-3 text-right font-medium text-blue-600">{formatCurrency(rate.base_rate)}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
-                    {rate.valid_until ? format(new Date(rate.valid_until), 'MMM d, yyyy') : 'No expiry'}
+                    {rate.effective_to ? format(new Date(rate.effective_to), 'MMM d, yyyy') : 'No expiry'}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button onClick={() => handleEditRate(rate)} className="p-1 text-slate-400 hover:text-blue-600">
-                      <Edit3 className="w-4 h-4" />
-                    </button>
+                    {canManage && <div className="flex items-center justify-center gap-1">
+                      <button onClick={() => handleEditRate(rate)} className="p-1 text-slate-400 hover:text-blue-600">
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      {confirmDeleteRateId === rate.id ? (
+                        <>
+                          <button
+                            onClick={() => handleDeleteRate(rate.id)}
+                            className="px-2 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-colors"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteRateId(null)}
+                            className="px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteRateId(rate.id)}
+                          className="p-1 text-slate-400 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>}
                   </td>
                 </tr>
               ))}
@@ -539,12 +646,12 @@ function RateFormModal({ form, setForm, carriers, serviceTypes, editing, onSave,
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Origin Zone</label>
-              <input value={form.origin_zone} onChange={e => setForm({ ...form, origin_zone: e.target.value })} placeholder="e.g., Riyadh" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Rate Name</label>
+              <input value={form.rate_name} onChange={e => setForm({ ...form, rate_name: e.target.value })} placeholder="e.g., Riyadh Standard" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Destination Zone</label>
-              <input value={form.destination_zone} onChange={e => setForm({ ...form, destination_zone: e.target.value })} placeholder="e.g., Jeddah" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Zone</label>
+              <input value={form.zone} onChange={e => setForm({ ...form, zone: e.target.value })} placeholder="e.g., Central Region" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
           </div>
 
@@ -562,22 +669,22 @@ function RateFormModal({ form, setForm, carriers, serviceTypes, editing, onSave,
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Rate per kg (SAR)</label>
-              <input type="number" min={0} step={0.01} value={form.rate_per_kg} onChange={e => setForm({ ...form, rate_per_kg: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              <input type="number" min={0} step={0.01} value={form.per_kg_rate} onChange={e => setForm({ ...form, per_kg_rate: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Flat Rate (SAR)</label>
-              <input type="number" min={0} step={0.01} value={form.flat_rate} onChange={e => setForm({ ...form, flat_rate: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Base Rate (SAR)</label>
+              <input type="number" min={0} step={0.01} value={form.base_rate} onChange={e => setForm({ ...form, base_rate: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Valid From</label>
-              <input type="date" value={form.valid_from} onChange={e => setForm({ ...form, valid_from: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Effective From</label>
+              <input type="date" value={form.effective_from} onChange={e => setForm({ ...form, effective_from: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Valid Until</label>
-              <input type="date" value={form.valid_until} onChange={e => setForm({ ...form, valid_until: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Effective To</label>
+              <input type="date" value={form.effective_to} onChange={e => setForm({ ...form, effective_to: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
           </div>
         </div>

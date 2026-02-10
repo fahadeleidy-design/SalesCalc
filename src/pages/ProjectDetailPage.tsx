@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Milestone, ListTodo, Clock, FileText, StickyNote, CheckCircle, Plus, X, Save, Trash2, Package, DollarSign, AlertTriangle, Shield } from 'lucide-react';
+import { ArrowLeft, Milestone, ListTodo, Clock, FileText, StickyNote, CheckCircle, Plus, X, Save, Trash2, Package, DollarSign, AlertTriangle, Shield, Users, GitPullRequest, Wrench } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -7,8 +7,11 @@ import { formatCurrency } from '../lib/currencyUtils';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import ProjectRisksPanel from '../components/projects/ProjectRisksPanel';
+import ResourceAllocation from '../components/projects/ResourceAllocation';
+import ProjectChangeRequests from '../components/projects/ProjectChangeRequests';
+import EquipmentAllocationsPanel from '../components/production/EquipmentAllocationsPanel';
 
-type TabKey = 'overview' | 'milestones' | 'tasks' | 'timeline' | 'notes' | 'risks';
+type TabKey = 'overview' | 'milestones' | 'tasks' | 'timeline' | 'notes' | 'risks' | 'team' | 'changes' | 'equipment';
 
 const statusColors: Record<string, string> = {
   in_progress: 'bg-blue-100 text-blue-700',
@@ -170,6 +173,9 @@ export default function ProjectDetailPage({ projectId }: { projectId: string }) 
     { key: 'timeline', label: 'Timeline', icon: Clock },
     { key: 'notes', label: 'Notes', icon: StickyNote },
     { key: 'risks', label: 'Risks', icon: Shield },
+    { key: 'team', label: 'Team', icon: Users },
+    { key: 'changes', label: 'Changes', icon: GitPullRequest },
+    { key: 'equipment', label: 'Equipment', icon: Wrench },
   ];
 
   return (
@@ -361,6 +367,18 @@ export default function ProjectDetailPage({ projectId }: { projectId: string }) 
 
       {activeTab === 'risks' && (
         <ProjectRisksPanel jobOrderId={projectId} profiles={profiles} />
+      )}
+
+      {activeTab === 'team' && (
+        <ResourceAllocation jobOrderId={projectId} />
+      )}
+
+      {activeTab === 'changes' && (
+        <ProjectChangeRequests jobOrderId={projectId} />
+      )}
+
+      {activeTab === 'equipment' && (
+        <EquipmentAllocationsPanel jobOrderId={projectId} />
       )}
     </div>
   );

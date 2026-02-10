@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, X, Save, Check, ClipboardList, Package, AlertTriangle, TrendingUp, Search, Eye
+  Plus, X, Save, Check, ClipboardList, Package, AlertTriangle, TrendingUp, Search, Eye,
+  Download, Edit3, Trash2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -43,6 +44,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 
 export default function CycleCountingPanel() {
   const { profile } = useAuth();
+  const canManage = ['admin', 'purchasing', 'project_manager'].includes(profile?.role || '');
   const [sessions, setSessions] = useState<CycleCountSession[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -54,6 +56,8 @@ export default function CycleCountingPanel() {
   const [showCountForm, setShowCountForm] = useState(false);
   const [newForm, setNewForm] = useState({ location_id: '', scheduled_date: '', notes: '' });
   const [countData, setCountData] = useState<Record<string, number>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -106,6 +110,25 @@ export default function CycleCountingPanel() {
       return;
     }
     try {
+      if (editingId) {
+        const { error: updErr } = await supabase
+          .from('cycle_count_sessions')
+          .update({
+            location_id: newForm.location_id || null,
+            scheduled_date: newForm.scheduled_date,
+            notes: newForm.notes || null,
+          })
+          .eq('id', editingId);
+
+        if (updErr) throw updErr;
+        toast.success('Cycle count session updated');
+        setShowNewForm(false);
+        setNewForm({ location_id: '', scheduled_date: '', notes: '' });
+        setEditingId(null);
+        loadData();
+        return;
+      }
+
       const { data: session, error: sessErr } = await supabase
         .from('cycle_count_sessions')
         .insert({
@@ -159,6 +182,56 @@ export default function CycleCountingPanel() {
     } catch (err: any) {
       toast.error(err.message || 'Failed to create session');
     }
+  };
+
+  const handleEditSession = (session: CycleCountSession) => {
+    setEditingId(session.id);
+    setNewForm({
+      location_id: session.location_id || '',
+      scheduled_date: session.scheduled_date?.split('T')[0] || '',
+      notes: session.notes || '',
+    });
+    setShowNewForm(true);
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      await supabase.from('cycle_count_items').delete().eq('cycle_count_session_id', sessionId);
+      const { error } = await supabase.from('cycle_count_sessions').delete().eq('id', sessionId);
+      if (error) throw error;
+      toast.success('Session deleted');
+      setDeletingId(null);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete session');
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Session #', 'Location', 'Status', 'Scheduled Date', 'Items', 'Total Variance', 'Counted By', 'Notes'];
+    const rows = filteredSessions.map(s => {
+      const totalVariance = (s.items || []).reduce((sum, i) => sum + Math.abs(i.variance || 0), 0);
+      return [
+        s.session_number,
+        s.location?.location_code || 'All Locations',
+        statusConfig[s.status]?.label || s.status,
+        s.scheduled_date ? format(new Date(s.scheduled_date), 'yyyy-MM-dd') : '',
+        String(s.items?.length || 0),
+        String(totalVariance),
+        s.counted_by?.full_name || '',
+        (s.notes || '').replace(/"/g, '""'),
+      ];
+    });
+
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cycle-counts-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV exported');
   };
 
   const handleStartCount = async (sessionId: string) => {
@@ -278,12 +351,20 @@ export default function CycleCountingPanel() {
             {Object.entries(statusConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
         </div>
-        <button
-          onClick={() => { setShowNewForm(true); setNewForm({ location_id: '', scheduled_date: new Date().toISOString().split('T')[0], notes: '' }); }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4" /> New Count Session
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+          {canManage && <button
+            onClick={() => { setEditingId(null); setShowNewForm(true); setNewForm({ location_id: '', scheduled_date: new Date().toISOString().split('T')[0], notes: '' }); }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" /> New Count Session
+          </button>}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -325,12 +406,12 @@ export default function CycleCountingPanel() {
                       <button onClick={() => setSelectedSession(session)} className="p-1 text-slate-400 hover:text-blue-600" title="View">
                         <Eye className="w-4 h-4" />
                       </button>
-                      {session.status === 'planned' && (
+                      {canManage && session.status === 'planned' && (
                         <button onClick={() => handleStartCount(session.id)} className="p-1 text-slate-400 hover:text-blue-600" title="Start">
                           <ClipboardList className="w-4 h-4" />
                         </button>
                       )}
-                      {session.status === 'in_progress' && (
+                      {canManage && session.status === 'in_progress' && (
                         <button onClick={() => { setSelectedSession(session); setShowCountForm(true); }} className="p-1 text-slate-400 hover:text-emerald-600" title="Count">
                           <Package className="w-4 h-4" />
                         </button>
@@ -339,6 +420,35 @@ export default function CycleCountingPanel() {
                         <button onClick={() => handleApprove(session)} className="p-1 text-slate-400 hover:text-emerald-600" title="Approve">
                           <Check className="w-4 h-4" />
                         </button>
+                      )}
+                      {canManage && ['planned', 'draft', 'in_progress'].includes(session.status) && (
+                        <button onClick={() => handleEditSession(session)} className="p-1 text-slate-400 hover:text-amber-600" title="Edit">
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {canManage && ['planned', 'draft'].includes(session.status) && (
+                        <>
+                          {deletingId === session.id ? (
+                            <div className="flex items-center gap-1 ml-1">
+                              <button
+                                onClick={() => handleDeleteSession(session.id)}
+                                className="px-2 py-0.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                onClick={() => setDeletingId(null)}
+                                className="px-2 py-0.5 text-xs font-medium text-slate-600 border border-slate-200 rounded hover:bg-slate-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setDeletingId(session.id)} className="p-1 text-slate-400 hover:text-red-600" title="Delete">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </td>
@@ -350,7 +460,7 @@ export default function CycleCountingPanel() {
       </div>
 
       {showNewForm && (
-        <Modal title="New Cycle Count Session" onClose={() => setShowNewForm(false)}>
+        <Modal title={editingId ? 'Edit Cycle Count Session' : 'New Cycle Count Session'} onClose={() => { setShowNewForm(false); setEditingId(null); }}>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Location (optional)</label>
@@ -368,7 +478,7 @@ export default function CycleCountingPanel() {
               <textarea value={newForm.notes} onChange={e => setNewForm({ ...newForm, notes: e.target.value })} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
             <button onClick={handleCreateSession} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-              <Save className="w-4 h-4" /> Create Session
+              <Save className="w-4 h-4" /> {editingId ? 'Update Session' : 'Create Session'}
             </button>
           </div>
         </Modal>

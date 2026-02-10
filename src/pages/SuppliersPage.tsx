@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Building2, Search, Plus, X, Save, Star, Mail, Phone, MapPin, Globe, CheckCircle, TrendingUp } from 'lucide-react';
+import { Building2, Search, Plus, X, Save, Star, Mail, Phone, MapPin, Globe, CheckCircle, TrendingUp, Users, FileText } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
 import toast from 'react-hot-toast';
 import SupplierPerformancePanel from '../components/purchasing/SupplierPerformancePanel';
+import VendorContactsPanel from '../components/purchasing/VendorContactsPanel';
+import VendorDocumentsPanel from '../components/purchasing/VendorDocumentsPanel';
 
 const typeColors: Record<string, string> = {
   manufacturer: 'bg-blue-100 text-blue-700',
@@ -35,6 +37,7 @@ export default function SuppliersPage() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [pageTab, setPageTab] = useState<'directory' | 'performance'>('directory');
   const [form, setForm] = useState({ ...emptyForm });
+  const [supplierDetailTab, setSupplierDetailTab] = useState<'details' | 'contacts' | 'documents'>('details');
 
   useEffect(() => { loadSuppliers(); }, []);
 
@@ -80,6 +83,7 @@ export default function SuppliersPage() {
 
   const editSupplier = (s: any) => {
     setEditingId(s.id);
+    setSupplierDetailTab('details');
     setForm({
       supplier_name: s.supplier_name || '', supplier_code: s.supplier_code || '',
       supplier_type: s.supplier_type || 'manufacturer', contact_person: s.contact_person || '',
@@ -139,6 +143,29 @@ export default function SuppliersPage() {
             <button onClick={resetForm} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
           </div>
 
+          {editingId && (
+            <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
+              <button onClick={() => setSupplierDetailTab('details')} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${supplierDetailTab === 'details' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>
+                <Building2 className="w-3.5 h-3.5" /> Details
+              </button>
+              <button onClick={() => setSupplierDetailTab('contacts')} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${supplierDetailTab === 'contacts' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>
+                <Users className="w-3.5 h-3.5" /> Contacts
+              </button>
+              <button onClick={() => setSupplierDetailTab('documents')} className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${supplierDetailTab === 'documents' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>
+                <FileText className="w-3.5 h-3.5" /> Documents
+              </button>
+            </div>
+          )}
+
+          {editingId && supplierDetailTab === 'contacts' && (
+            <VendorContactsPanel supplierId={editingId} />
+          )}
+
+          {editingId && supplierDetailTab === 'documents' && (
+            <VendorDocumentsPanel supplierId={editingId} />
+          )}
+
+          {(!editingId || supplierDetailTab === 'details') && <>
           <h4 className="text-sm font-semibold text-slate-700 border-b border-slate-200 pb-1">Basic Information</h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div><label className="block text-xs font-medium text-slate-600 mb-1">Name *</label><input type="text" value={form.supplier_name} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" /></div>
@@ -170,6 +197,7 @@ export default function SuppliersPage() {
             <button onClick={handleSave} className="inline-flex items-center gap-1 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700"><Save className="w-4 h-4" /> {editingId ? 'Update' : 'Add'}</button>
             <button onClick={resetForm} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">Cancel</button>
           </div>
+          </>}
         </div>
       )}
 

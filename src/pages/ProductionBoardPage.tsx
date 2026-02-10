@@ -12,6 +12,7 @@ import ProductionScheduleBoard from '../components/production/ProductionSchedule
 import ShopFloorControlPanel from '../components/production/ShopFloorControlPanel';
 import WorkOrdersPanel from '../components/production/WorkOrdersPanel';
 import DowntimeTrackingPanel from '../components/production/DowntimeTrackingPanel';
+import EquipmentAllocationsPanel from '../components/production/EquipmentAllocationsPanel';
 
 const STAGES = [
   { key: 'pending_material', label: 'Pending Material', color: 'amber', icon: Package },
@@ -67,7 +68,7 @@ interface ProductionLog {
   job_order_item_id: string | null;
 }
 
-type TabKey = 'board' | 'materials' | 'schedule' | 'shop_floor' | 'work_orders' | 'downtime';
+type TabKey = 'board' | 'materials' | 'schedule' | 'shop_floor' | 'work_orders' | 'downtime' | 'equipment';
 
 export default function ProductionBoardPage() {
   const { profile } = useAuth();
@@ -264,6 +265,12 @@ export default function ProductionBoardPage() {
         >
           <Clock className="w-4 h-4" /> Downtime
         </button>
+        <button
+          onClick={() => setActiveTab('equipment')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'equipment' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <Wrench className="w-4 h-4" /> Equipment
+        </button>
       </div>
 
       {activeTab === 'board' && (
@@ -341,6 +348,7 @@ export default function ProductionBoardPage() {
       {activeTab === 'shop_floor' && <ShopFloorControlPanel />}
       {activeTab === 'work_orders' && <WorkOrdersPanel />}
       {activeTab === 'downtime' && <DowntimeTrackingPanel />}
+      {activeTab === 'equipment' && <EquipmentAllocationsPanel />}
     </div>
   );
 }

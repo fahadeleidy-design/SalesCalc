@@ -26,7 +26,6 @@ import SettingsPage from './pages/SettingsPage';
 import NotificationsPage from './pages/NotificationsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
-import PurchaseOrdersPage from './pages/PurchaseOrdersPage';
 import CollectionPage from './pages/CollectionPage';
 import CustomReportsPage from './pages/CustomReportsPage';
 import ProjectProfitabilityPage from './pages/ProjectProfitabilityPage';
@@ -167,7 +166,7 @@ function AppContent() {
       case '/users':
         return hasAccess(['admin']) ? <UsersPage /> : <UnauthorizedPage />;
       case '/purchase-orders':
-        return hasAccess(['finance', 'ceo', 'admin', 'engineering', 'solution_consultant']) ? <PurchaseOrdersPage /> : <UnauthorizedPage />;
+        return hasAccess(['finance', 'ceo', 'admin', 'engineering', 'solution_consultant', 'purchasing']) ? <PurchasingOrdersPage /> : <UnauthorizedPage />;
       case '/collection':
         return hasAccess(['sales', 'manager', 'finance', 'ceo', 'admin']) ? <CollectionPage /> : <UnauthorizedPage />;
       case '/custom-reports':
@@ -195,7 +194,7 @@ function AppContent() {
       case '/project-tasks':
         return hasAccess(['project_manager']) ? <ProjectTasksPage /> : <UnauthorizedPage />;
       case '/purchasing-orders':
-        return hasAccess(['purchasing']) ? <PurchasingOrdersPage /> : <UnauthorizedPage />;
+        return hasAccess(['purchasing', 'finance', 'ceo', 'admin', 'engineering', 'solution_consultant']) ? <PurchasingOrdersPage /> : <UnauthorizedPage />;
       case '/procurement-requests':
         return hasAccess(['purchasing']) ? <ProcurementRequestsPage /> : <UnauthorizedPage />;
       case '/bom':

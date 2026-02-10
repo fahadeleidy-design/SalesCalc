@@ -175,17 +175,31 @@ export default function CAPAManagementPanel() {
     else { toast.success('Action completed'); loadData(); }
   };
 
+  const [showEffectivenessModal, setShowEffectivenessModal] = useState(false);
+  const [effectivenessForm, setEffectivenessForm] = useState({
+    rating: 'effective', method: 'data_review', notes: '', follow_up: false, follow_up_date: '',
+  });
+  const [effectivenessCapa, setEffectivenessCapa] = useState<CAPAReport | null>(null);
+
   const handleVerifyEffectiveness = async (capa: CAPAReport) => {
-    const notes = prompt('Enter effectiveness verification notes:');
-    if (!notes) return;
+    setEffectivenessCapa(capa);
+    setEffectivenessForm({ rating: 'effective', method: 'data_review', notes: '', follow_up: false, follow_up_date: '' });
+    setShowEffectivenessModal(true);
+  };
+
+  const submitEffectivenessVerification = async () => {
+    if (!effectivenessCapa || !effectivenessForm.notes) {
+      toast.error('Verification notes are required');
+      return;
+    }
     const { error } = await supabase.from('capa_reports').update({
       effectiveness_verified: true,
-      effectiveness_notes: notes,
+      effectiveness_notes: `[${effectivenessForm.rating}] [${effectivenessForm.method}] ${effectivenessForm.notes}${effectivenessForm.follow_up ? ` | Follow-up: ${effectivenessForm.follow_up_date}` : ''}`,
       effectiveness_check_date: new Date().toISOString().split('T')[0],
       updated_at: new Date().toISOString(),
-    }).eq('id', capa.id);
+    }).eq('id', effectivenessCapa.id);
     if (error) toast.error('Failed');
-    else { toast.success('Effectiveness verified'); loadData(); }
+    else { toast.success('Effectiveness verified'); setShowEffectivenessModal(false); loadData(); }
   };
 
   const filtered = capaReports.filter(c => {
@@ -336,6 +350,61 @@ export default function CAPAManagementPanel() {
               <div className="flex gap-3 pt-3 border-t border-slate-200">
                 <button onClick={() => setShowNewForm(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
                 <button onClick={handleCreateCAPA} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Create CAPA</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEffectivenessModal && effectivenessCapa && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60] p-4" onClick={() => setShowEffectivenessModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900">Verify Effectiveness</h2>
+              <button onClick={() => setShowEffectivenessModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Effectiveness Rating</label>
+                <select value={effectivenessForm.rating} onChange={e => setEffectivenessForm({ ...effectivenessForm, rating: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                  <option value="effective">Effective</option>
+                  <option value="partially_effective">Partially Effective</option>
+                  <option value="not_effective">Not Effective</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Verification Method</label>
+                <select value={effectivenessForm.method} onChange={e => setEffectivenessForm({ ...effectivenessForm, method: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                  <option value="data_review">Data Review</option>
+                  <option value="process_audit">Process Audit</option>
+                  <option value="customer_feedback">Customer Feedback</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Verification Notes *</label>
+                <textarea rows={3} value={effectivenessForm.notes} onChange={e => setEffectivenessForm({ ...effectivenessForm, notes: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none" placeholder="Describe the findings..." />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="follow-up" checked={effectivenessForm.follow_up}
+                  onChange={e => setEffectivenessForm({ ...effectivenessForm, follow_up: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded" />
+                <label htmlFor="follow-up" className="text-sm text-slate-700">Follow-up required</label>
+              </div>
+              {effectivenessForm.follow_up && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Follow-up Date</label>
+                  <input type="date" value={effectivenessForm.follow_up_date}
+                    onChange={e => setEffectivenessForm({ ...effectivenessForm, follow_up_date: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg" />
+                </div>
+              )}
+              <div className="flex gap-3 pt-3 border-t border-slate-200">
+                <button onClick={() => setShowEffectivenessModal(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onClick={submitEffectivenessVerification} className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">Verify</button>
               </div>
             </div>
           </div>

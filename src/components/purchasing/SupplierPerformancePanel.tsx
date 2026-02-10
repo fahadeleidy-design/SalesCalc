@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp, Star, Search, Plus, X, Award, BarChart3,
-  Clock, CheckCircle2, AlertTriangle, ChevronDown
+  Clock, CheckCircle2, AlertTriangle, ChevronDown, Calculator, Loader2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -81,6 +81,8 @@ export default function SupplierPerformancePanel() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showEvalForm, setShowEvalForm] = useState(false);
+  const [calculating, setCalculating] = useState(false);
+  const [calcPeriod, setCalcPeriod] = useState<'30' | '90' | '180' | '365'>('90');
   const [evalForm, setEvalForm] = useState({
     vendor_id: '', evaluation_period: '', quality_rating: 3, delivery_rating: 3,
     price_rating: 3, service_rating: 3, communication_rating: 3,
@@ -143,6 +145,208 @@ export default function SupplierPerformancePanel() {
     }
   };
 
+  const calculateMetrics = async () => {
+    setCalculating(true);
+    try {
+      const periodDays = parseInt(calcPeriod);
+      const periodEnd = new Date();
+      const periodStart = new Date();
+      periodStart.setDate(periodStart.getDate() - periodDays);
+      const periodStartStr = periodStart.toISOString().split('T')[0];
+      const periodEndStr = periodEnd.toISOString().split('T')[0];
+
+      // Fetch all suppliers
+      const { data: allSuppliers, error: suppErr } = await supabase
+        .from('suppliers')
+        .select('id, supplier_name');
+      if (suppErr) throw suppErr;
+      if (!allSuppliers || allSuppliers.length === 0) {
+        toast.error('No suppliers found');
+        return;
+      }
+
+      // Fetch purchase orders in the period
+      const { data: purchaseOrders, error: poErr } = await supabase
+        .from('purchase_orders')
+        .select('id, supplier_id, expected_delivery_date, created_at, status, total')
+        .gte('created_at', periodStartStr)
+        .lte('created_at', periodEndStr);
+      if (poErr) throw poErr;
+
+      // Fetch goods receipts in the period
+      const { data: goodsReceipts, error: grErr } = await supabase
+        .from('goods_receipts')
+        .select('id, supplier_id, purchase_order_id, receipt_date, inspection_status, quality_rating')
+        .gte('receipt_date', periodStartStr)
+        .lte('receipt_date', periodEndStr);
+      if (grErr) throw grErr;
+
+      // Fetch quality inspections in the period
+      const { data: qualityInspections, error: qiErr } = await supabase
+        .from('quality_inspections')
+        .select('id, reference_id, reference_type, result, quantity_inspected, quantity_failed')
+        .gte('created_at', periodStartStr)
+        .lte('created_at', periodEndStr);
+      if (qiErr) throw qiErr;
+
+      const pos = purchaseOrders || [];
+      const grs = goodsReceipts || [];
+      const qis = qualityInspections || [];
+
+      // Build lookup: PO id -> goods receipt(s)
+      const grByPo: Record<string, typeof grs> = {};
+      for (const gr of grs) {
+        if (gr.purchase_order_id) {
+          if (!grByPo[gr.purchase_order_id]) grByPo[gr.purchase_order_id] = [];
+          grByPo[gr.purchase_order_id].push(gr);
+        }
+      }
+
+      // Build lookup: goods_receipt id -> inspections
+      const qiByGr: Record<string, typeof qis> = {};
+      for (const qi of qis) {
+        if (qi.reference_type === 'goods_receipt' && qi.reference_id) {
+          if (!qiByGr[qi.reference_id]) qiByGr[qi.reference_id] = [];
+          qiByGr[qi.reference_id].push(qi);
+        }
+      }
+
+      const upsertPromises = allSuppliers.map(async (supplier) => {
+        const supplierPos = pos.filter(po => po.supplier_id === supplier.id);
+        const supplierGrs = grs.filter(gr => gr.supplier_id === supplier.id);
+        const totalOrders = supplierPos.length;
+
+        if (totalOrders === 0) return null; // skip suppliers with no orders in this period
+
+        // On-time / late delivery calculation
+        let onTimeDeliveries = 0;
+        let lateDeliveries = 0;
+        const leadTimes: number[] = [];
+
+        for (const po of supplierPos) {
+          const poReceipts = grByPo[po.id] || [];
+          if (poReceipts.length === 0) continue; // no receipt yet, skip for delivery timing
+
+          // Use the earliest receipt date for this PO
+          const earliestReceipt = poReceipts.reduce((earliest, gr) =>
+            new Date(gr.receipt_date) < new Date(earliest.receipt_date) ? gr : earliest,
+            poReceipts[0]
+          );
+
+          const receiptDate = new Date(earliestReceipt.receipt_date);
+          const expectedDate = po.expected_delivery_date ? new Date(po.expected_delivery_date) : null;
+
+          if (expectedDate) {
+            if (receiptDate <= expectedDate) {
+              onTimeDeliveries++;
+            } else {
+              lateDeliveries++;
+            }
+          }
+
+          // Lead time: days from PO created_at to receipt date
+          const poCreated = new Date(po.created_at);
+          const diffMs = receiptDate.getTime() - poCreated.getTime();
+          const diffDays = diffMs / (1000 * 60 * 60 * 24);
+          if (diffDays >= 0) {
+            leadTimes.push(diffDays);
+          }
+        }
+
+        const deliveriesWithDate = onTimeDeliveries + lateDeliveries;
+        const onTimeDeliveryPct = deliveriesWithDate > 0
+          ? (onTimeDeliveries / deliveriesWithDate) * 100 : 0;
+
+        // Quality: from inspections linked to this supplier's goods receipts
+        let totalItemsReceived = 0;
+        let itemsAccepted = 0;
+        let itemsRejected = 0;
+
+        for (const gr of supplierGrs) {
+          const inspections = qiByGr[gr.id] || [];
+          for (const insp of inspections) {
+            const inspected = insp.quantity_inspected || 0;
+            const failed = insp.quantity_failed || 0;
+            totalItemsReceived += inspected;
+            if (insp.result === 'pass') {
+              itemsAccepted += inspected;
+            } else if (insp.result === 'fail') {
+              itemsRejected += failed;
+              itemsAccepted += (inspected - failed);
+            }
+          }
+        }
+
+        // If no inspections, fall back to goods receipt counts
+        if (totalItemsReceived === 0 && supplierGrs.length > 0) {
+          totalItemsReceived = supplierGrs.length;
+          itemsAccepted = supplierGrs.filter(gr => gr.inspection_status === 'passed').length;
+          itemsRejected = supplierGrs.filter(gr => gr.inspection_status === 'failed').length;
+        }
+
+        const qualityAcceptancePct = totalItemsReceived > 0
+          ? (itemsAccepted / totalItemsReceived) * 100 : 0;
+
+        const avgLeadTimeDays = leadTimes.length > 0
+          ? leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length : 0;
+
+        // Responsiveness: based on average lead time relative to a 30-day benchmark
+        // Shorter lead times get higher scores
+        const responsivenessScore = avgLeadTimeDays > 0
+          ? Math.max(0, Math.min(100, 100 - ((avgLeadTimeDays - 1) / 29) * 100))
+          : 50; // default middle score if no data
+
+        // Overall score: 40% OTD + 40% Quality + 20% Responsiveness
+        const overallScore = (onTimeDeliveryPct * 0.4) + (qualityAcceptancePct * 0.4) + (responsivenessScore * 0.2);
+
+        return {
+          supplier_id: supplier.id,
+          period_start: periodStartStr,
+          period_end: periodEndStr,
+          total_orders: totalOrders,
+          on_time_deliveries: onTimeDeliveries,
+          late_deliveries: lateDeliveries,
+          on_time_delivery_pct: Math.round(onTimeDeliveryPct * 100) / 100,
+          total_items_received: totalItemsReceived,
+          items_accepted: itemsAccepted,
+          items_rejected: itemsRejected,
+          quality_acceptance_pct: Math.round(qualityAcceptancePct * 100) / 100,
+          avg_lead_time_days: Math.round(avgLeadTimeDays * 100) / 100,
+          total_cost_variance: 0,
+          cost_variance_pct: 0,
+          responsiveness_score: Math.round(responsivenessScore * 100) / 100,
+          overall_score: Math.round(overallScore * 100) / 100,
+          notes: `Auto-calculated for ${periodDays}-day period ending ${periodEndStr}`,
+          created_by: profile?.id || null,
+        };
+      });
+
+      const results = (await Promise.all(upsertPromises)).filter(Boolean);
+
+      if (results.length === 0) {
+        toast.error('No supplier data found for the selected period');
+        return;
+      }
+
+      // Upsert into supplier_performance_metrics
+      const { error: upsertErr } = await supabase
+        .from('supplier_performance_metrics')
+        .upsert(results as any[], {
+          onConflict: 'supplier_id,period_start,period_end',
+        });
+
+      if (upsertErr) throw upsertErr;
+
+      toast.success(`Metrics calculated for ${results.length} supplier(s)`);
+      await loadData();
+    } catch (err: any) {
+      console.error('Metrics calculation failed:', err);
+      toast.error(err.message || 'Failed to calculate metrics');
+    } finally {
+      setCalculating(false);
+    }
+  };
+
   const filteredMetrics = metrics.filter(m => {
     if (!searchTerm) return true;
     const s = searchTerm.toLowerCase();
@@ -197,6 +401,32 @@ export default function SupplierPerformancePanel() {
           <input type="text" placeholder="Search suppliers..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500" />
         </div>
+        {tab === 'metrics' && (
+          <>
+            <select
+              value={calcPeriod}
+              onChange={e => setCalcPeriod(e.target.value as '30' | '90' | '180' | '365')}
+              className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="180">Last 6 months</option>
+              <option value="365">Last year</option>
+            </select>
+            <button
+              onClick={calculateMetrics}
+              disabled={calculating}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {calculating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Calculator className="w-4 h-4" />
+              )}
+              {calculating ? 'Calculating...' : 'Calculate Metrics'}
+            </button>
+          </>
+        )}
         {tab === 'evaluations' && (
           <button onClick={() => setShowEvalForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
             <Plus className="w-4 h-4" /> New Evaluation

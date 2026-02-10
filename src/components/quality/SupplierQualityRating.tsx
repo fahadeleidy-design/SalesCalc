@@ -38,7 +38,7 @@ export default function SupplierQualityRating() {
 
       const { data: receipts } = await supabase
         .from('goods_receipts')
-        .select('supplier_id, inspection_status, quality_rating, receipt_date, suppliers(name)')
+        .select('id, supplier_id, inspection_status, quality_rating, receipt_date, suppliers(supplier_name), purchase_order_id')
         .gte('receipt_date', cutoffDate);
 
       const { data: inspections } = await supabase
@@ -52,6 +52,11 @@ export default function SupplierQualityRating() {
         .select('quality_inspection_id, severity, created_at, quality_inspections(reference_id)')
         .gte('created_at', cutoffDate);
 
+      const { data: purchaseOrders } = await supabase
+        .from('purchase_orders')
+        .select('id, supplier_id, expected_delivery_date')
+        .gte('created_at', cutoffDate);
+
       const supplierMap: Record<string, SupplierMetrics> = {};
 
       (receipts || []).forEach((receipt: any) => {
@@ -60,7 +65,7 @@ export default function SupplierQualityRating() {
         if (!supplierMap[receipt.supplier_id]) {
           supplierMap[receipt.supplier_id] = {
             supplier_id: receipt.supplier_id,
-            supplier_name: receipt.suppliers?.name || 'Unknown',
+            supplier_name: receipt.suppliers?.supplier_name || 'Unknown',
             total_receipts: 0,
             total_inspections: 0,
             passed_inspections: 0,
@@ -108,6 +113,26 @@ export default function SupplierQualityRating() {
         if (metrics.total_receipts > 0) {
           metrics.avg_quality_rating = metrics.avg_quality_rating / metrics.total_receipts;
           metrics.defect_rate = (metrics.failed_inspections / Math.max(1, metrics.total_receipts)) * 100;
+        }
+
+        const supplierPOs = (purchaseOrders || []).filter(po => po.supplier_id === metrics.supplier_id && po.expected_delivery_date);
+        const supplierReceipts = (receipts || []).filter((r: any) => r.supplier_id === metrics.supplier_id);
+        if (supplierPOs.length > 0) {
+          let onTimeCount = 0;
+          supplierPOs.forEach(po => {
+            const matchingReceipt = supplierReceipts.find((r: any) => r.purchase_order_id === po.id);
+            if (matchingReceipt) {
+              const expectedDate = new Date(po.expected_delivery_date);
+              const actualDate = new Date(matchingReceipt.receipt_date);
+              if (actualDate <= expectedDate) onTimeCount++;
+            } else {
+              const expectedDate = new Date(po.expected_delivery_date);
+              if (expectedDate >= new Date()) onTimeCount++;
+            }
+          });
+          metrics.on_time_delivery_rate = (onTimeCount / supplierPOs.length) * 100;
+        } else {
+          metrics.on_time_delivery_rate = 100;
         }
 
         const qualityScore = metrics.avg_quality_rating * 20;

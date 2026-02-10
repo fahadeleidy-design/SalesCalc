@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Plug, Settings, CheckCircle, XCircle, Clock, Activity,
   Play, RefreshCw, AlertCircle, ArrowUpRight, ArrowDownRight,
-  Search, X, Plus, Trash2, Save, ToggleLeft, ToggleRight
+  Search, X, Plus, Trash2, Save, ToggleLeft, ToggleRight, GitBranch
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import FieldMappingsPanel from '../components/integrations/FieldMappingsPanel';
 
 interface Provider {
   id: string;
@@ -91,6 +92,7 @@ export default function IntegrationsPage() {
     is_active: true,
     credentials: {} as Record<string, string>,
   });
+  const [configModalTab, setConfigModalTab] = useState<'settings' | 'mappings'>('settings');
 
   const loadData = useCallback(async () => {
     try {
@@ -137,6 +139,7 @@ export default function IntegrationsPage() {
         credentials: emptyCredentials,
       });
     }
+    setConfigModalTab('settings');
     setShowConfigModal(true);
   };
 
@@ -469,62 +472,86 @@ export default function IntegrationsPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Connection Name</label>
-                <input type="text" value={configForm.connection_name} onChange={e => setConfigForm({ ...configForm, connection_name: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            {editingConnection && (
+              <div className="flex items-center gap-1 border-b border-slate-200 px-6">
+                <button onClick={() => setConfigModalTab('settings')}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                    configModalTab === 'settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}>
+                  <Settings className="w-3.5 h-3.5" />
+                  Settings
+                </button>
+                <button onClick={() => setConfigModalTab('mappings')}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                    configModalTab === 'mappings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+                  }`}>
+                  <GitBranch className="w-3.5 h-3.5" />
+                  Field Mappings
+                </button>
               </div>
-
-              {(selectedProvider.config_schema?.fields || []).map((field: string) => (
-                <div key={field}>
-                  <label className="block text-xs font-medium text-slate-600 mb-1.5 capitalize">{field.replace(/_/g, ' ')}</label>
-                  <input
-                    type={field.toLowerCase().includes('secret') || field.toLowerCase().includes('key') || field.toLowerCase().includes('password') || field.toLowerCase().includes('token') ? 'password' : 'text'}
-                    value={configForm.credentials[field] || ''}
-                    onChange={e => setConfigForm({ ...configForm, credentials: { ...configForm.credentials, [field]: e.target.value } })}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder={`Enter ${field.replace(/_/g, ' ')}`}
-                  />
-                </div>
-              ))}
-
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Sync Frequency</label>
-                <select value={configForm.sync_frequency} onChange={e => setConfigForm({ ...configForm, sync_frequency: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option value="realtime">Realtime</option>
-                  <option value="hourly">Hourly</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="manual">Manual</option>
-                </select>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+            )}
+            {configModalTab === 'settings' ? (
+              <div className="p-6 space-y-5">
                 <div>
-                  <p className="text-sm font-medium text-slate-900">Enable Connection</p>
-                  <p className="text-xs text-slate-500">Toggle to enable or disable syncing</p>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Connection Name</label>
+                  <input type="text" value={configForm.connection_name} onChange={e => setConfigForm({ ...configForm, connection_name: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-                <button onClick={() => setConfigForm({ ...configForm, is_active: !configForm.is_active })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${configForm.is_active ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${configForm.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-200">
-                {editingConnection && (
-                  <button onClick={handleTestConnection}
-                    className="flex-1 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 font-medium text-sm flex items-center justify-center gap-2">
-                    <Play className="w-4 h-4" /> Test
+                {(selectedProvider.config_schema?.fields || []).map((field: string) => (
+                  <div key={field}>
+                    <label className="block text-xs font-medium text-slate-600 mb-1.5 capitalize">{field.replace(/_/g, ' ')}</label>
+                    <input
+                      type={field.toLowerCase().includes('secret') || field.toLowerCase().includes('key') || field.toLowerCase().includes('password') || field.toLowerCase().includes('token') ? 'password' : 'text'}
+                      value={configForm.credentials[field] || ''}
+                      onChange={e => setConfigForm({ ...configForm, credentials: { ...configForm.credentials, [field]: e.target.value } })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder={`Enter ${field.replace(/_/g, ' ')}`}
+                    />
+                  </div>
+                ))}
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Sync Frequency</label>
+                  <select value={configForm.sync_frequency} onChange={e => setConfigForm({ ...configForm, sync_frequency: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="realtime">Realtime</option>
+                    <option value="hourly">Hourly</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Enable Connection</p>
+                    <p className="text-xs text-slate-500">Toggle to enable or disable syncing</p>
+                  </div>
+                  <button onClick={() => setConfigForm({ ...configForm, is_active: !configForm.is_active })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${configForm.is_active ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${configForm.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
-                )}
-                <button onClick={handleSaveConnection}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2">
-                  <Save className="w-4 h-4" /> {editingConnection ? 'Update' : 'Connect'}
-                </button>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t border-slate-200">
+                  {editingConnection && (
+                    <button onClick={handleTestConnection}
+                      className="flex-1 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 font-medium text-sm flex items-center justify-center gap-2">
+                      <Play className="w-4 h-4" /> Test
+                    </button>
+                  )}
+                  <button onClick={handleSaveConnection}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center justify-center gap-2">
+                    <Save className="w-4 h-4" /> {editingConnection ? 'Update' : 'Connect'}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-6">
+                {editingConnection && <FieldMappingsPanel connectionId={editingConnection.id} />}
+              </div>
+            )}
           </div>
         </div>
       )}

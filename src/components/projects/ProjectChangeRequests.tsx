@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileEdit, Plus, X, Check, XCircle, Clock, DollarSign, Calendar, User, MessageSquare } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
-
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface ChangeRequest {
   id: string;
@@ -68,12 +64,12 @@ const ProjectChangeRequests: React.FC<ProjectChangeRequestsProps> = ({ jobOrderI
       setLoading(true);
       const { data, error } = await supabase
         .from('project_change_requests')
-        .select('*')
+        .select('*, reviewer:profiles!project_change_requests_reviewed_by_fkey(full_name)')
         .eq('job_order_id', jobOrderId)
         .order('requested_date', { ascending: false });
 
       if (error) throw error;
-      setChangeRequests(data || []);
+      setChangeRequests((data || []).map((r: any) => ({ ...r, reviewer_name: r.reviewer?.full_name })));
     } catch (error) {
       console.error('Error fetching change requests:', error);
       toast.error('Failed to load change requests');
@@ -560,7 +556,7 @@ const ProjectChangeRequests: React.FC<ProjectChangeRequestsProps> = ({ jobOrderI
                         <User className="w-4 h-4" />
                         Reviewed By
                       </div>
-                      <p className="text-gray-900">{selectedRequest.reviewed_by}</p>
+                      <p className="text-gray-900">{(selectedRequest as any).reviewer_name || selectedRequest.reviewed_by}</p>
                     </div>
 
                     {selectedRequest.reviewed_date && (

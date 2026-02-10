@@ -104,7 +104,7 @@ const navigationItems: NavItem[] = [
     labelKey: 'purchaseOrders',
     icon: ShoppingCart,
     path: '/purchase-orders',
-    roles: ['finance', 'ceo', 'admin', 'engineering', 'solution_consultant'],
+    roles: ['finance', 'ceo', 'admin', 'engineering', 'solution_consultant', 'purchasing'],
   },
   {
     labelKey: 'collection',
@@ -213,12 +213,6 @@ const navigationItems: NavItem[] = [
     icon: ListTodo,
     path: '/project-tasks',
     roles: ['project_manager'],
-  },
-  {
-    labelKey: 'purchasingOrders',
-    icon: ShoppingCart,
-    path: '/purchasing-orders',
-    roles: ['purchasing'],
   },
   {
     labelKey: 'procurementRequests',

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Download, Eye, Plus, ArrowRight, Clock, FileText, ClipboardCheck, RotateCcw } from 'lucide-react';
+import { ShoppingCart, Search, Download, Eye, Plus, ArrowRight, Clock, FileText, ClipboardCheck, RotateCcw, SendHorizonal } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
@@ -95,6 +95,22 @@ export default function PurchasingOrdersPage() {
     setExpandedPO(poId);
   };
 
+  const handleSubmitForApproval = async (poId: string) => {
+    try {
+      const { error } = await supabase.from('po_approval_requests').insert({
+        purchase_order_id: poId,
+        requested_by: profile?.id,
+        status: 'pending',
+        approval_level: 1,
+      });
+      if (error) throw error;
+      toast.success('Submitted for approval');
+    } catch (err: any) {
+      console.error('Error submitting for approval:', err);
+      toast.error('Failed to submit for approval');
+    }
+  };
+
   const filtered = purchaseOrders.filter(po => {
     if (statusFilter !== 'all' && po.status !== statusFilter) return false;
     if (searchTerm) {
@@ -176,6 +192,9 @@ export default function PurchasingOrdersPage() {
                           <div className="flex items-center justify-center gap-1">
                             <button onClick={() => loadPODetails(po.id)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="View Details"><Eye className="w-4 h-4" /></button>
                             <button onClick={() => exportProfessionalPOPDF(po)} className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded" title="Download PDF"><Download className="w-4 h-4" /></button>
+                            {po.status === 'draft' && (
+                              <button onClick={() => handleSubmitForApproval(po.id)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded" title="Submit for Approval"><SendHorizonal className="w-4 h-4" /></button>
+                            )}
                             {po.status !== 'closed' && po.status !== 'cancelled' && (
                               <select value="" onChange={e => { if (e.target.value) updatePOStatus(po.id, po.status, e.target.value); e.target.value = ''; }} className="text-xs border border-slate-200 rounded px-1 py-1">
                                 <option value="">Update...</option>

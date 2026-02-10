@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PackageCheck, Search, Plus, X, Save, Eye, Star, AlertTriangle } from 'lucide-react';
+import { PackageCheck, Search, Plus, X, Save, Eye, Star, AlertTriangle, Download, Edit3, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
@@ -21,6 +21,7 @@ const statusColors: Record<string, string> = {
 
 export default function GoodsReceivingPage() {
   const { profile } = useAuth();
+  const canManage = ['purchasing', 'admin', 'ceo'].includes(profile?.role || '');
   const [receipts, setReceipts] = useState<any[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +33,8 @@ export default function GoodsReceivingPage() {
   const [poItems, setPOItems] = useState<any[]>([]);
   const [formItems, setFormItems] = useState<any[]>([]);
   const [form, setForm] = useState({ delivery_note_number: '', carrier_name: '', tracking_number: '', notes: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -67,75 +70,108 @@ export default function GoodsReceivingPage() {
   const handleSaveReceipt = async () => {
     if (!selectedPO) return;
     try {
-      const receiptNumber = await generateReceiptNumber();
-      const { data: receipt, error: receiptError } = await supabase.from('goods_receipts').insert({
-        receipt_number: receiptNumber,
-        purchase_order_id: selectedPO.id,
-        receipt_date: new Date().toISOString().split('T')[0],
-        delivery_note_number: form.delivery_note_number || null,
-        carrier_name: form.carrier_name || null,
-        tracking_number: form.tracking_number || null,
-        notes: form.notes || null,
-        received_by: profile?.id,
-        status: 'received',
-      }).select().single();
-      if (receiptError) throw receiptError;
+      if (editingId) {
+        const { error: updateError } = await supabase.from('goods_receipts').update({
+          delivery_note_number: form.delivery_note_number || null,
+          carrier_name: form.carrier_name || null,
+          tracking_number: form.tracking_number || null,
+          notes: form.notes || null,
+        }).eq('id', editingId);
+        if (updateError) throw updateError;
 
-      const itemInserts = formItems.map(item => ({
-        receipt_id: receipt.id,
-        po_item_id: item.po_item_id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        ordered_quantity: Number(item.ordered_quantity),
-        received_quantity: Number(item.received_quantity),
-        accepted_quantity: Number(item.accepted_quantity),
-        rejected_quantity: Number(item.rejected_quantity),
-        condition: item.condition,
-        defect_description: item.defect_description || null,
-        storage_location: item.storage_location || null,
-        batch_number: item.batch_number || null,
-        notes: item.notes || null,
-      }));
-      const { error: itemsError } = await supabase.from('goods_receipt_items').insert(itemInserts);
-      if (itemsError) throw itemsError;
-
-      const { count: smCount } = await supabase.from('stock_movements').select('*', { count: 'exact', head: true });
-      let smIndex = (smCount || 0) + 1;
-      const stockMovements = formItems
-        .filter(item => Number(item.accepted_quantity) > 0 && item.product_id)
-        .map(item => ({
-          movement_number: `SM-${String(smIndex++).padStart(5, '0')}`,
-          movement_type: 'goods_received' as const,
+        await supabase.from('goods_receipt_items').delete().eq('receipt_id', editingId);
+        const itemInserts = formItems.map(item => ({
+          receipt_id: editingId,
+          po_item_id: item.po_item_id,
           product_id: item.product_id,
-          quantity: Number(item.accepted_quantity),
-          reference_type: 'goods_receipt' as const,
-          reference_id: receipt.id,
-          reference_number: receiptNumber,
-          reason: 'receiving' as const,
-          notes: `Received from PO ${selectedPO.po_number}`,
-          performed_by: profile?.id,
+          product_name: item.product_name,
+          ordered_quantity: Number(item.ordered_quantity),
+          received_quantity: Number(item.received_quantity),
+          accepted_quantity: Number(item.accepted_quantity),
+          rejected_quantity: Number(item.rejected_quantity),
+          condition: item.condition,
+          defect_description: item.defect_description || null,
+          storage_location: item.storage_location || null,
+          batch_number: item.batch_number || null,
+          notes: item.notes || null,
         }));
-      if (stockMovements.length > 0) {
-        await supabase.from('stock_movements').insert(stockMovements);
+        const { error: itemsError } = await supabase.from('goods_receipt_items').insert(itemInserts);
+        if (itemsError) throw itemsError;
+
+        toast.success('Receipt updated');
+      } else {
+        const receiptNumber = await generateReceiptNumber();
+        const { data: receipt, error: receiptError } = await supabase.from('goods_receipts').insert({
+          receipt_number: receiptNumber,
+          purchase_order_id: selectedPO.id,
+          receipt_date: new Date().toISOString().split('T')[0],
+          delivery_note_number: form.delivery_note_number || null,
+          carrier_name: form.carrier_name || null,
+          tracking_number: form.tracking_number || null,
+          notes: form.notes || null,
+          received_by: profile?.id,
+          status: 'received',
+        }).select().single();
+        if (receiptError) throw receiptError;
+
+        const itemInserts = formItems.map(item => ({
+          receipt_id: receipt.id,
+          po_item_id: item.po_item_id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          ordered_quantity: Number(item.ordered_quantity),
+          received_quantity: Number(item.received_quantity),
+          accepted_quantity: Number(item.accepted_quantity),
+          rejected_quantity: Number(item.rejected_quantity),
+          condition: item.condition,
+          defect_description: item.defect_description || null,
+          storage_location: item.storage_location || null,
+          batch_number: item.batch_number || null,
+          notes: item.notes || null,
+        }));
+        const { error: itemsError } = await supabase.from('goods_receipt_items').insert(itemInserts);
+        if (itemsError) throw itemsError;
+
+        const { count: smCount } = await supabase.from('stock_movements').select('*', { count: 'exact', head: true });
+        let smIndex = (smCount || 0) + 1;
+        const stockMovements = formItems
+          .filter(item => Number(item.accepted_quantity) > 0 && item.product_id)
+          .map(item => ({
+            movement_number: `SM-${String(smIndex++).padStart(5, '0')}`,
+            movement_type: 'goods_received' as const,
+            product_id: item.product_id,
+            quantity: Number(item.accepted_quantity),
+            reference_type: 'goods_receipt' as const,
+            reference_id: receipt.id,
+            reference_number: receiptNumber,
+            reason: 'receiving' as const,
+            notes: `Received from PO ${selectedPO.po_number}`,
+            performed_by: profile?.id,
+          }));
+        if (stockMovements.length > 0) {
+          await supabase.from('stock_movements').insert(stockMovements);
+        }
+
+        const { data: jo } = await supabase.from('job_orders').select('id').eq('quotation_id', (await supabase.from('purchase_orders').select('quotation_id').eq('id', selectedPO.id).maybeSingle()).data?.quotation_id || '').maybeSingle();
+        if (jo) {
+          await supabase.from('project_timeline_events').insert({
+            job_order_id: jo.id,
+            event_type: 'goods_received',
+            description: `Goods receipt ${receiptNumber} created for PO ${selectedPO.po_number}`,
+            triggered_by: profile?.id,
+          });
+        }
+
+        toast.success(`Receipt ${receiptNumber} created`);
       }
 
-      const { data: jo } = await supabase.from('job_orders').select('id').eq('quotation_id', (await supabase.from('purchase_orders').select('quotation_id').eq('id', selectedPO.id).maybeSingle()).data?.quotation_id || '').maybeSingle();
-      if (jo) {
-        await supabase.from('project_timeline_events').insert({
-          job_order_id: jo.id,
-          event_type: 'goods_received',
-          description: `Goods receipt ${receiptNumber} created for PO ${selectedPO.po_number}`,
-          triggered_by: profile?.id,
-        });
-      }
-
-      toast.success(`Receipt ${receiptNumber} created`);
       setShowForm(false);
       setSelectedPO(null);
+      setEditingId(null);
       setForm({ delivery_note_number: '', carrier_name: '', tracking_number: '', notes: '' });
       loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create receipt');
+      toast.error(err.message || (editingId ? 'Failed to update receipt' : 'Failed to create receipt'));
     }
   };
 
@@ -156,6 +192,51 @@ export default function GoodsReceivingPage() {
     loadData();
   };
 
+  const startEditReceipt = async (receipt: any) => {
+    const po = purchaseOrders.find(p => p.id === receipt.purchase_order_id) || { id: receipt.purchase_order_id, po_number: receipt.purchase_order?.po_number, supplier_name: receipt.purchase_order?.supplier_name };
+    setSelectedPO(po);
+    setEditingId(receipt.id);
+    setForm({ delivery_note_number: receipt.delivery_note_number || '', carrier_name: receipt.carrier_name || '', tracking_number: receipt.tracking_number || '', notes: receipt.notes || '' });
+    const { data } = await supabase.from('goods_receipt_items').select('*').eq('receipt_id', receipt.id);
+    const items = (data || []).map((item: any) => ({
+      po_item_id: item.po_item_id, product_id: item.product_id, product_name: item.product_name,
+      ordered_quantity: item.ordered_quantity, received_quantity: item.received_quantity,
+      accepted_quantity: item.accepted_quantity, rejected_quantity: item.rejected_quantity, condition: item.condition,
+      defect_description: item.defect_description || '', storage_location: item.storage_location || '', batch_number: item.batch_number || '', notes: item.notes || '',
+    }));
+    setFormItems(items);
+    setShowForm(true);
+  };
+
+  const handleDeleteReceipt = async (id: string) => {
+    try {
+      const { error } = await supabase.from('goods_receipts').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Receipt deleted');
+      setDeletingId(null);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete receipt');
+    }
+  };
+
+  const exportCSV = () => {
+    const headers = ['Receipt #', 'PO Number', 'Supplier', 'Date', 'Delivery Note', 'Carrier', 'Tracking #', 'Inspection', 'Quality Rating', 'Received By', 'Status'];
+    const rows = filtered.map(r => [
+      r.receipt_number, r.purchase_order?.po_number || '', r.purchase_order?.supplier_name || '',
+      r.receipt_date, r.delivery_note_number || '', r.carrier_name || '', r.tracking_number || '',
+      r.inspection_status, r.quality_rating || '', r.received_by_profile?.full_name || '', r.status,
+    ]);
+    const csv = [headers, ...rows].map(row => row.map((v: any) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `goods-receipts-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filtered = receipts.filter(r => {
     if (searchTerm) {
       const s = searchTerm.toLowerCase();
@@ -173,7 +254,7 @@ export default function GoodsReceivingPage() {
         </div>
       </div>
 
-      {!showForm && (
+      {!showForm && canManage && (
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Create New Receipt</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -193,10 +274,10 @@ export default function GoodsReceivingPage() {
         <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">New Goods Receipt</h3>
+              <h3 className="text-lg font-semibold text-slate-900">{editingId ? 'Edit Goods Receipt' : 'New Goods Receipt'}</h3>
               <p className="text-sm text-slate-500">PO: {selectedPO.po_number} - {selectedPO.supplier_name}</p>
             </div>
-            <button onClick={() => { setShowForm(false); setSelectedPO(null); }} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            <button onClick={() => { setShowForm(false); setSelectedPO(null); setEditingId(null); }} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -228,15 +309,18 @@ export default function GoodsReceivingPage() {
           <div><label className="block text-xs font-medium text-slate-600 mb-1">Notes</label><textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" rows={2} /></div>
 
           <div className="flex gap-2">
-            <button onClick={handleSaveReceipt} className="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"><Save className="w-4 h-4" /> Create Receipt</button>
-            <button onClick={() => { setShowForm(false); setSelectedPO(null); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">Cancel</button>
+            <button onClick={handleSaveReceipt} className="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"><Save className="w-4 h-4" /> {editingId ? 'Update Receipt' : 'Create Receipt'}</button>
+            <button onClick={() => { setShowForm(false); setSelectedPO(null); setEditingId(null); }} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">Cancel</button>
           </div>
         </div>
       )}
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" placeholder="Search receipts..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" />
+      <div className="flex items-center gap-3">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input type="text" placeholder="Search receipts..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm" />
+        </div>
+        <button onClick={exportCSV} className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50"><Download className="w-4 h-4" /> Export CSV</button>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -277,10 +361,21 @@ export default function GoodsReceivingPage() {
                       <div className="flex items-center justify-center gap-1">
                         <button onClick={() => loadReceiptItems(r.id)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Eye className="w-4 h-4" /></button>
                         {r.inspection_status === 'pending' && (
-                          <div className="flex gap-1">
-                            <button onClick={() => updateInspection(r.id, 'passed', 5)} className="text-xs px-2 py-1 text-emerald-600 hover:bg-emerald-50 rounded">Pass</button>
-                            <button onClick={() => updateInspection(r.id, 'failed', 1)} className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded">Fail</button>
-                          </div>
+                          <>
+                            {canManage && <button onClick={() => startEditReceipt(r)} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded" title="Edit"><Edit3 className="w-4 h-4" /></button>}
+                            {canManage && (deletingId === r.id ? (
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleDeleteReceipt(r.id)} className="text-xs px-2 py-1 text-white bg-red-600 hover:bg-red-700 rounded">Confirm</button>
+                                <button onClick={() => setDeletingId(null)} className="text-xs px-2 py-1 text-slate-600 hover:bg-slate-100 rounded">Cancel</button>
+                              </div>
+                            ) : (
+                              <button onClick={() => setDeletingId(r.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                            ))}
+                            <div className="flex gap-1">
+                              <button onClick={() => updateInspection(r.id, 'passed', 5)} className="text-xs px-2 py-1 text-emerald-600 hover:bg-emerald-50 rounded">Pass</button>
+                              <button onClick={() => updateInspection(r.id, 'failed', 1)} className="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded">Fail</button>
+                            </div>
+                          </>
                         )}
                       </div>
                     </td>

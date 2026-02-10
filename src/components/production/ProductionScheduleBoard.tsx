@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Calendar, Clock, AlertTriangle, TrendingUp, Plus, X, Save, Edit3
+  Calendar, Clock, AlertTriangle, TrendingUp, Plus, X, Save, Edit3,
+  Trash2, Play, CheckCircle, XCircle, ChevronRight
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -49,6 +50,9 @@ export default function ProductionScheduleBoard() {
     scheduled_end: '',
     estimated_hours: 8,
   });
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ workstationId: string; day: string } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -108,25 +112,111 @@ export default function ProductionScheduleBoard() {
       return;
     }
     try {
-      const { error } = await supabase.from('scheduled_jobs').insert({
-        job_order_id: scheduleForm.job_order_id,
-        workstation_id: scheduleForm.workstation_id,
-        operator_id: scheduleForm.operator_id || null,
-        scheduled_start: scheduleForm.scheduled_start,
-        scheduled_end: scheduleForm.scheduled_end,
-        estimated_hours: scheduleForm.estimated_hours,
-        status: 'scheduled',
-        created_by: profile?.id,
-      });
-      if (error) throw error;
-      toast.success('Job scheduled');
+      if (editingJobId) {
+        const { error } = await supabase.from('scheduled_jobs').update({
+          job_order_id: scheduleForm.job_order_id,
+          workstation_id: scheduleForm.workstation_id,
+          operator_id: scheduleForm.operator_id || null,
+          scheduled_start: scheduleForm.scheduled_start,
+          scheduled_end: scheduleForm.scheduled_end,
+          estimated_hours: scheduleForm.estimated_hours,
+        }).eq('id', editingJobId);
+        if (error) throw error;
+        toast.success('Job updated');
+      } else {
+        const { error } = await supabase.from('scheduled_jobs').insert({
+          job_order_id: scheduleForm.job_order_id,
+          workstation_id: scheduleForm.workstation_id,
+          operator_id: scheduleForm.operator_id || null,
+          scheduled_start: scheduleForm.scheduled_start,
+          scheduled_end: scheduleForm.scheduled_end,
+          estimated_hours: scheduleForm.estimated_hours,
+          status: 'scheduled',
+          created_by: profile?.id,
+        });
+        if (error) throw error;
+        toast.success('Job scheduled');
+      }
       setShowScheduleForm(false);
+      setEditingJobId(null);
       setScheduleForm({ job_order_id: '', workstation_id: '', operator_id: '', scheduled_start: '', scheduled_end: '', estimated_hours: 8 });
       loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to schedule job');
+      toast.error(err.message || 'Failed to save job');
     }
   };
+
+  const handleEditJob = (job: ScheduledJob) => {
+    setEditingJobId(job.id);
+    setScheduleForm({
+      job_order_id: job.job_order_id,
+      workstation_id: job.workstation_id,
+      operator_id: job.operator_id || '',
+      scheduled_start: job.scheduled_start.split('T')[0],
+      scheduled_end: job.scheduled_end.split('T')[0],
+      estimated_hours: job.estimated_hours,
+    });
+    setSelectedCell(null);
+    setShowScheduleForm(true);
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      const { error } = await supabase.from('scheduled_jobs').delete().eq('id', jobId);
+      if (error) throw error;
+      toast.success('Scheduled job deleted');
+      setConfirmDelete(null);
+      setSelectedCell(null);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete job');
+    }
+  };
+
+  const handleStatusChange = async (jobId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase.from('scheduled_jobs').update({ status: newStatus }).eq('id', jobId);
+      if (error) throw error;
+      toast.success(`Status changed to ${newStatus.replace('_', ' ')}`);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update status');
+    }
+  };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'bg-blue-100 text-blue-700';
+      case 'in_progress': return 'bg-amber-100 text-amber-700';
+      case 'completed': return 'bg-emerald-100 text-emerald-700';
+      case 'cancelled': return 'bg-slate-100 text-slate-500';
+      default: return 'bg-slate-100 text-slate-600';
+    }
+  };
+
+  const getStatusTransitions = (status: string): { label: string; value: string; icon: any; color: string }[] => {
+    switch (status) {
+      case 'scheduled':
+        return [
+          { label: 'Start', value: 'in_progress', icon: Play, color: 'text-amber-600 hover:bg-amber-50' },
+          { label: 'Cancel', value: 'cancelled', icon: XCircle, color: 'text-slate-500 hover:bg-slate-50' },
+        ];
+      case 'in_progress':
+        return [
+          { label: 'Complete', value: 'completed', icon: CheckCircle, color: 'text-emerald-600 hover:bg-emerald-50' },
+          { label: 'Cancel', value: 'cancelled', icon: XCircle, color: 'text-slate-500 hover:bg-slate-50' },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const selectedCellJobs = selectedCell
+    ? scheduledJobs.filter(sj =>
+        sj.workstation_id === selectedCell.workstationId &&
+        format(parseISO(sj.scheduled_start), 'yyyy-MM-dd') === selectedCell.day
+      )
+    : [];
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -243,10 +333,20 @@ export default function ProductionScheduleBoard() {
                     <div className="text-[10px] text-slate-500">{ws.code} • {ws.capacity_hours_per_day}h/day</div>
                   </td>
                   {weekDays.map(day => {
+                    const dayStr = format(day, 'yyyy-MM-dd');
                     const { totalHours, utilization, jobs } = getWorkstationUtilization(ws, day);
+                    const isCellSelected = selectedCell?.workstationId === ws.id && selectedCell?.day === dayStr;
                     return (
-                      <td key={day.toString()} className="px-3 py-2 text-center">
-                        <div className={`rounded px-2 py-1 ${getUtilizationColor(utilization)}`}>
+                      <td key={day.toString()} className="px-3 py-2 text-center relative">
+                        <div
+                          className={`rounded px-2 py-1 ${getUtilizationColor(utilization)} ${jobs.length > 0 ? 'cursor-pointer ring-offset-1 hover:ring-2 hover:ring-blue-300' : ''} ${isCellSelected ? 'ring-2 ring-blue-500' : ''}`}
+                          onClick={() => {
+                            if (jobs.length > 0) {
+                              setSelectedCell(isCellSelected ? null : { workstationId: ws.id, day: dayStr });
+                              setConfirmDelete(null);
+                            }
+                          }}
+                        >
                           <div className="font-semibold">{totalHours.toFixed(1)}h</div>
                           <div className="text-[10px]">{utilization.toFixed(0)}%</div>
                           {jobs.length > 0 && <div className="text-[9px] mt-0.5">{jobs.length} job{jobs.length !== 1 ? 's' : ''}</div>}
@@ -258,6 +358,90 @@ export default function ProductionScheduleBoard() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {selectedCell && selectedCellJobs.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900">
+              Jobs for {selectedCell.day} — {workstations.find(w => w.id === selectedCell.workstationId)?.name}
+            </h3>
+            <button onClick={() => { setSelectedCell(null); setConfirmDelete(null); }} className="p-1 text-slate-400 hover:text-slate-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {selectedCellJobs.map(job => {
+              const transitions = getStatusTransitions(job.status);
+              return (
+                <div key={job.id} className="py-3 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-900">
+                        {job.job_order?.job_order_number || 'N/A'}
+                      </span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadgeColor(job.status)}`}>
+                        {job.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-500">{job.estimated_hours}h</span>
+                  </div>
+                  <div className="text-xs text-slate-500 mb-2">
+                    {job.job_order?.customer?.company_name || 'No customer'}
+                    {job.operator?.full_name && <span> • {job.operator.full_name}</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {transitions.map(t => (
+                      <button
+                        key={t.value}
+                        onClick={() => handleStatusChange(job.id, t.value)}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${t.color}`}
+                        title={t.label}
+                      >
+                        <t.icon className="w-3.5 h-3.5" />
+                        {t.label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => handleEditJob(job)}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50"
+                      title="Edit"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                    {confirmDelete === job.id ? (
+                      <span className="inline-flex items-center gap-1 text-xs">
+                        <span className="text-slate-500">Delete?</span>
+                        <button
+                          onClick={() => handleDeleteJob(job.id)}
+                          className="px-2 py-1 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(null)}
+                          className="px-2 py-1 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-50"
+                        >
+                          No
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDelete(job.id)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-red-500 hover:bg-red-50"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -284,7 +468,7 @@ export default function ProductionScheduleBoard() {
       )}
 
       {showScheduleForm && (
-        <Modal title="Schedule Job" onClose={() => setShowScheduleForm(false)}>
+        <Modal title={editingJobId ? 'Edit Scheduled Job' : 'Schedule Job'} onClose={() => { setShowScheduleForm(false); setEditingJobId(null); setScheduleForm({ job_order_id: '', workstation_id: '', operator_id: '', scheduled_start: '', scheduled_end: '', estimated_hours: 8 }); }}>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Job Order *</label>
@@ -322,7 +506,7 @@ export default function ProductionScheduleBoard() {
               <input type="number" min={1} value={scheduleForm.estimated_hours} onChange={e => setScheduleForm({ ...scheduleForm, estimated_hours: parseInt(e.target.value) || 8 })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
             </div>
             <button onClick={handleScheduleJob} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
-              <Save className="w-4 h-4" /> Schedule Job
+              <Save className="w-4 h-4" /> {editingJobId ? 'Update Job' : 'Schedule Job'}
             </button>
           </div>
         </Modal>

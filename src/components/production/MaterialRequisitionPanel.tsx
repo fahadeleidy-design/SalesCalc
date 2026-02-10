@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Plus, X, Save, Check, XCircle, Clock, Package, Search, Eye, AlertCircle
+  Plus, X, Save, Check, XCircle, Clock, Package, Search, Eye, AlertCircle, Download, Edit3, Trash2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -56,6 +56,7 @@ const purposeOptions = [
 
 export default function MaterialRequisitionPanel() {
   const { profile } = useAuth();
+  const canManage = ['engineering', 'admin', 'project_manager'].includes(profile?.role || '');
   const [requisitions, setRequisitions] = useState<MaterialRequisition[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [jobOrders, setJobOrders] = useState<any[]>([]);
@@ -64,6 +65,8 @@ export default function MaterialRequisitionPanel() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showNewForm, setShowNewForm] = useState(false);
   const [selectedRequisition, setSelectedRequisition] = useState<MaterialRequisition | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [newForm, setNewForm] = useState({
     job_order_id: '',
     purpose: 'production',
@@ -123,37 +126,90 @@ export default function MaterialRequisitionPanel() {
       return;
     }
     try {
-      const { data: req, error: reqErr } = await supabase
-        .from('material_requisitions')
-        .insert({
-          job_order_id: newForm.job_order_id,
-          status: 'draft',
-          purpose: newForm.purpose,
-          notes: newForm.notes || null,
-          requested_by_id: profile?.id,
-        })
-        .select('id')
-        .single();
+      if (editingId) {
+        const { error: reqErr } = await supabase
+          .from('material_requisitions')
+          .update({
+            job_order_id: newForm.job_order_id,
+            purpose: newForm.purpose,
+            notes: newForm.notes || null,
+          })
+          .eq('id', editingId);
 
-      if (reqErr || !req) throw reqErr;
+        if (reqErr) throw reqErr;
 
-      const items = newForm.items.map(i => ({
-        material_requisition_id: req.id,
-        product_id: i.product_id,
-        quantity_requested: i.quantity_requested,
-        quantity_approved: 0,
-        quantity_issued: 0,
-      }));
+        await supabase.from('material_requisition_items').delete().eq('material_requisition_id', editingId);
 
-      const { error: itemsErr } = await supabase.from('material_requisition_items').insert(items);
-      if (itemsErr) throw itemsErr;
+        const items = newForm.items.map(i => ({
+          material_requisition_id: editingId,
+          product_id: i.product_id,
+          quantity_requested: i.quantity_requested,
+          quantity_approved: 0,
+          quantity_issued: 0,
+        }));
 
-      toast.success('Material requisition created');
+        const { error: itemsErr } = await supabase.from('material_requisition_items').insert(items);
+        if (itemsErr) throw itemsErr;
+
+        toast.success('Material requisition updated');
+      } else {
+        const { data: req, error: reqErr } = await supabase
+          .from('material_requisitions')
+          .insert({
+            job_order_id: newForm.job_order_id,
+            status: 'draft',
+            purpose: newForm.purpose,
+            notes: newForm.notes || null,
+            requested_by_id: profile?.id,
+          })
+          .select('id')
+          .single();
+
+        if (reqErr || !req) throw reqErr;
+
+        const items = newForm.items.map(i => ({
+          material_requisition_id: req.id,
+          product_id: i.product_id,
+          quantity_requested: i.quantity_requested,
+          quantity_approved: 0,
+          quantity_issued: 0,
+        }));
+
+        const { error: itemsErr } = await supabase.from('material_requisition_items').insert(items);
+        if (itemsErr) throw itemsErr;
+
+        toast.success('Material requisition created');
+      }
+
       setShowNewForm(false);
+      setEditingId(null);
       setNewForm({ job_order_id: '', purpose: 'production', notes: '', items: [] });
       loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create requisition');
+      toast.error(err.message || 'Failed to save requisition');
+    }
+  };
+
+  const handleEditRequisition = (req: MaterialRequisition) => {
+    setEditingId(req.id);
+    setNewForm({
+      job_order_id: req.job_order_id,
+      purpose: req.purpose,
+      notes: req.notes || '',
+      items: (req.items || []).map(i => ({ product_id: i.product_id, quantity_requested: i.quantity_requested })),
+    });
+    setShowNewForm(true);
+  };
+
+  const handleDeleteRequisition = async (id: string) => {
+    try {
+      const { error } = await supabase.from('material_requisitions').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Requisition deleted');
+      setDeletingId(null);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete requisition');
     }
   };
 
@@ -217,6 +273,19 @@ export default function MaterialRequisitionPanel() {
     return matchSearch && matchStatus;
   });
 
+  const exportCSV = () => {
+    const headers = ['Requisition #', 'Job Order', 'Status', 'Priority', 'Requested By', 'Date'];
+    const rows = filteredReqs.map(r => [r.requisition_number, r.job_order?.job_order_number, r.status, r.priority, r.requester?.full_name, r.created_at]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v || ''}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'material_requisitions.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return <div className="h-96 bg-white rounded-xl animate-pulse" />;
   }
@@ -240,12 +309,20 @@ export default function MaterialRequisitionPanel() {
             {Object.entries(statusConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
         </div>
-        <button
-          onClick={() => { setShowNewForm(true); setNewForm({ job_order_id: '', purpose: 'production', notes: '', items: [] }); }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4" /> New Requisition
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50"
+          >
+            <Download className="w-4 h-4" /> Export CSV
+          </button>
+          {canManage && <button
+            onClick={() => { setEditingId(null); setShowNewForm(true); setNewForm({ job_order_id: '', purpose: 'production', notes: '', items: [] }); }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" /> New Requisition
+          </button>}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -303,6 +380,25 @@ export default function MaterialRequisitionPanel() {
                           <Package className="w-4 h-4" />
                         </button>
                       )}
+                      {canManage && ['pending', 'draft'].includes(req.status) && (
+                        <button onClick={() => handleEditRequisition(req)} className="p-1 text-slate-400 hover:text-amber-600" title="Edit">
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {canManage && ['pending', 'draft'].includes(req.status) && (
+                        deletingId === req.id ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-red-600">
+                            Delete?
+                            <button onClick={() => handleDeleteRequisition(req.id)} className="font-semibold hover:underline">Yes</button>
+                            <span>/</span>
+                            <button onClick={() => setDeletingId(null)} className="font-semibold hover:underline">No</button>
+                          </span>
+                        ) : (
+                          <button onClick={() => setDeletingId(req.id)} className="p-1 text-slate-400 hover:text-red-600" title="Delete">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -319,7 +415,8 @@ export default function MaterialRequisitionPanel() {
           products={products}
           jobOrders={jobOrders}
           onSave={handleCreateRequisition}
-          onClose={() => setShowNewForm(false)}
+          onClose={() => { setShowNewForm(false); setEditingId(null); }}
+          editingId={editingId}
         />
       )}
 
@@ -338,7 +435,7 @@ export default function MaterialRequisitionPanel() {
   );
 }
 
-function NewRequisitionModal({ form, setForm, products, jobOrders, onSave, onClose }: any) {
+function NewRequisitionModal({ form, setForm, products, jobOrders, onSave, onClose, editingId }: any) {
   const addItem = () => {
     setForm({ ...form, items: [...form.items, { product_id: '', quantity_requested: 0 }] });
   };
@@ -358,7 +455,7 @@ function NewRequisitionModal({ form, setForm, products, jobOrders, onSave, onClo
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between z-10">
-          <h2 className="text-lg font-bold text-slate-900">New Material Requisition</h2>
+          <h2 className="text-lg font-bold text-slate-900">{editingId ? 'Edit Material Requisition' : 'New Material Requisition'}</h2>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
         </div>
 
@@ -415,7 +512,7 @@ function NewRequisitionModal({ form, setForm, products, jobOrders, onSave, onClo
         <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
           <button onClick={onSave} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-            <Save className="w-4 h-4" /> Create Requisition
+            <Save className="w-4 h-4" /> {editingId ? 'Update Requisition' : 'Create Requisition'}
           </button>
         </div>
       </div>

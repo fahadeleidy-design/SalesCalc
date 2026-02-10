@@ -45,7 +45,7 @@ export default function QualityAnalyticsDashboard() {
     setLoading(true);
     try {
       const [inspRes, ncrRes, capaRes] = await Promise.all([
-        supabase.from('quality_inspections').select('id, result, inspection_date, created_at, defects_found, total_inspected'),
+        supabase.from('quality_inspections').select('id, result, inspected_at, created_at, quantity_failed, quantity_inspected'),
         supabase.from('ncr_reports').select('id, status, severity, category, created_at, containment_date'),
         supabase.from('capa_reports').select('id, status, severity, source'),
       ]);
@@ -72,8 +72,8 @@ export default function QualityAnalyticsDashboard() {
           }, 0) / resolvedNCRs.length
         : 0;
 
-      const totalDefects = inspections.reduce((s, i) => s + (i.defects_found || 0), 0);
-      const totalInspected = inspections.reduce((s, i) => s + (i.total_inspected || 1), 0);
+      const totalDefects = inspections.reduce((s, i) => s + (i.quantity_failed || 0), 0);
+      const totalInspected = inspections.reduce((s, i) => s + (i.quantity_inspected || 1), 0);
       const dpmo = totalInspected > 0 ? (totalDefects / totalInspected) * 1000000 : 0;
 
       const sigmaMap: [number, number][] = [[6210, 4], [66807, 3], [308538, 2], [690000, 1]];
@@ -105,7 +105,7 @@ export default function QualityAnalyticsDashboard() {
 
       const monthlyMap = new Map<string, { pass: number; fail: number }>();
       inspections.forEach(insp => {
-        const d = new Date(insp.inspection_date || insp.created_at);
+        const d = new Date(insp.inspected_at || insp.created_at);
         const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         const current = monthlyMap.get(month) || { pass: 0, fail: 0 };
         if (insp.result === 'pass') current.pass++;

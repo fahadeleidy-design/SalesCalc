@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Clock, Plus, X, Search, AlertTriangle, CheckCircle2,
-  Play, Square, Settings, Timer
+  Play, Square, Settings, Timer, Download, Edit3, Trash2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -57,12 +57,15 @@ const reasonColors: Record<string, { bg: string; text: string }> = {
 
 export default function DowntimeTrackingPanel() {
   const { profile } = useAuth();
+  const canManage = ['engineering', 'admin', 'project_manager'].includes(profile?.role || '');
   const [events, setEvents] = useState<DowntimeEvent[]>([]);
   const [workstations, setWorkstations] = useState<Workstation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [reasonFilter, setReasonFilter] = useState('all');
   const [showNewForm, setShowNewForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     workstation_id: '',
     reason: 'Machine Breakdown',
@@ -91,24 +94,92 @@ export default function DowntimeTrackingPanel() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  const resetForm = () => {
+    setShowNewForm(false);
+    setEditingId(null);
+    setForm({ workstation_id: '', reason: 'Machine Breakdown', description: '', started_at: new Date().toISOString().slice(0, 16) });
+  };
+
   const handleCreate = async () => {
     if (!form.reason) { toast.error('Reason is required'); return; }
     try {
-      const { error } = await supabase.from('downtime_events').insert({
-        workstation_id: form.workstation_id || null,
-        reason: form.reason,
-        description: form.description || null,
-        started_at: new Date(form.started_at).toISOString(),
-        reported_by: profile?.id,
-      });
-      if (error) throw error;
-      toast.success('Downtime event recorded');
-      setShowNewForm(false);
-      setForm({ workstation_id: '', reason: 'Machine Breakdown', description: '', started_at: new Date().toISOString().slice(0, 16) });
+      if (editingId) {
+        const { error } = await supabase.from('downtime_events').update({
+          workstation_id: form.workstation_id || null,
+          reason: form.reason,
+          description: form.description || null,
+          started_at: new Date(form.started_at).toISOString(),
+        }).eq('id', editingId);
+        if (error) throw error;
+        toast.success('Downtime event updated');
+      } else {
+        const { error } = await supabase.from('downtime_events').insert({
+          workstation_id: form.workstation_id || null,
+          reason: form.reason,
+          description: form.description || null,
+          started_at: new Date(form.started_at).toISOString(),
+          reported_by: profile?.id,
+        });
+        if (error) throw error;
+        toast.success('Downtime event recorded');
+      }
+      resetForm();
       loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to record downtime');
+      toast.error(err.message || 'Failed to save downtime');
     }
+  };
+
+  const handleEdit = (evt: DowntimeEvent) => {
+    setEditingId(evt.id);
+    setForm({
+      workstation_id: evt.workstation_id || '',
+      reason: evt.reason,
+      description: evt.description || '',
+      started_at: new Date(evt.started_at).toISOString().slice(0, 16),
+    });
+    setShowNewForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from('downtime_events').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Downtime event deleted');
+      setDeletingId(null);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete');
+    }
+  };
+
+  const exportCSV = () => {
+    const headers = ['Status', 'Reason', 'Workstation', 'Started', 'Duration (min)', 'Reported By', 'Description'];
+    const rows = filtered.map(evt => {
+      const isActive = !evt.ended_at;
+      const duration = evt.duration_minutes
+        ? String(evt.duration_minutes)
+        : isActive
+        ? `${differenceInMinutes(new Date(), new Date(evt.started_at))} (ongoing)`
+        : '';
+      return [
+        isActive ? 'Active' : 'Resolved',
+        evt.reason,
+        evt.workstation ? `${evt.workstation.name} (${evt.workstation.code})` : '',
+        format(new Date(evt.started_at), 'yyyy-MM-dd HH:mm'),
+        duration,
+        evt.reporter?.full_name || '',
+        (evt.description || '').replace(/"/g, '""'),
+      ];
+    });
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `downtime-events-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleResolve = async (evt: DowntimeEvent) => {
@@ -240,9 +311,12 @@ export default function DowntimeTrackingPanel() {
           <option value="all">All Reasons</option>
           {REASON_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
-        <button onClick={() => setShowNewForm(true)} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
-          <Plus className="w-4 h-4" /> Report Downtime
+        <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50">
+          <Download className="w-4 h-4" /> Export CSV
         </button>
+        {canManage && <button onClick={() => { resetForm(); setShowNewForm(true); }} className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+          <Plus className="w-4 h-4" /> Report Downtime
+        </button>}
       </div>
 
       <div className="overflow-x-auto">
@@ -256,11 +330,12 @@ export default function DowntimeTrackingPanel() {
               <th className="px-4 py-3 font-medium text-slate-500">Duration</th>
               <th className="px-4 py-3 font-medium text-slate-500">Reported By</th>
               <th className="px-4 py-3 font-medium text-slate-500">Description</th>
+              <th className="px-4 py-3 font-medium text-slate-500">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400">No downtime events found</td></tr>
+              <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">No downtime events found</td></tr>
             ) : filtered.map(evt => {
               const isActive = !evt.ended_at;
               const rc = reasonColors[evt.reason] || reasonColors['Other'];
@@ -292,6 +367,43 @@ export default function DowntimeTrackingPanel() {
                   <td className={`px-4 py-3 text-xs font-medium ${isActive ? 'text-red-600' : 'text-slate-700'}`}>{duration}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{evt.reporter?.full_name || '-'}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs max-w-[200px] truncate">{evt.description || '-'}</td>
+                  <td className="px-4 py-3">
+                    {isActive && canManage && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleEdit(evt)}
+                          className="p-1 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50"
+                          title="Edit"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        {deletingId === evt.id ? (
+                          <span className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDelete(evt.id)}
+                              className="px-2 py-0.5 text-[10px] font-medium bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(null)}
+                              className="px-2 py-0.5 text-[10px] font-medium border border-slate-200 text-slate-600 rounded hover:bg-slate-50"
+                            >
+                              Cancel
+                            </button>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setDeletingId(evt.id)}
+                            className="p-1 text-slate-400 hover:text-red-600 rounded hover:bg-red-50"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -300,11 +412,11 @@ export default function DowntimeTrackingPanel() {
       </div>
 
       {showNewForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={() => setShowNewForm(false)}>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={resetForm}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full" onClick={e => e.stopPropagation()}>
             <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900">Report Downtime</h2>
-              <button onClick={() => setShowNewForm(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+              <h2 className="text-lg font-bold text-slate-900">{editingId ? 'Edit Downtime Event' : 'Report Downtime'}</h2>
+              <button onClick={resetForm} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -333,8 +445,10 @@ export default function DowntimeTrackingPanel() {
                   placeholder="Additional details about the downtime..." className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none" />
               </div>
               <div className="flex gap-3 pt-3 border-t border-slate-200">
-                <button onClick={() => setShowNewForm(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
-                <button onClick={handleCreate} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">Report</button>
+                <button onClick={resetForm} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onClick={handleCreate} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+                  {editingId ? 'Save Changes' : 'Report'}
+                </button>
               </div>
             </div>
           </div>
