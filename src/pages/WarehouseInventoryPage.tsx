@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Search, Plus, X, Save, Edit3, MapPin, Package, AlertTriangle,
-  Eye, Box, Layers, Download
+  Eye, Box, Layers, Download, PackageCheck
 } from 'lucide-react';
+import LotTrackingPanel from '../components/warehouse/LotTrackingPanel';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import Pagination, { usePagination } from '../components/ui/Pagination';
 
-type TabKey = 'inventory' | 'locations';
+type TabKey = 'inventory' | 'locations' | 'lot_tracking';
 
 const locationTypeConfig: Record<string, { label: string; bg: string; text: string }> = {
   raw_material: { label: 'Raw Material', bg: 'bg-amber-100', text: 'text-amber-700' },
@@ -225,15 +226,21 @@ export default function WarehouseInventoryPage() {
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
         <button
           onClick={() => setActiveTab('inventory')}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'inventory' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'inventory' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
         >
-          Inventory
+          <Package className="w-4 h-4" /> Inventory
         </button>
         <button
           onClick={() => setActiveTab('locations')}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'locations' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'locations' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
         >
-          Locations
+          <MapPin className="w-4 h-4" /> Locations
+        </button>
+        <button
+          onClick={() => setActiveTab('lot_tracking')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'lot_tracking' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <PackageCheck className="w-4 h-4" /> Lot Tracking
         </button>
       </div>
 
@@ -271,6 +278,8 @@ export default function WarehouseInventoryPage() {
           <Pagination currentPage={currentPage} totalPages={locPagination.totalPages} totalItems={locPagination.totalItems} pageSize={locPagination.pageSize} onPageChange={setCurrentPage} />
         </>
       )}
+
+      {activeTab === 'lot_tracking' && <LotTrackingPanel />}
 
       {showLocationForm && (
         <LocationFormModal

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Download, Eye, Plus, ArrowRight, Clock } from 'lucide-react';
+import { ShoppingCart, Search, Download, Eye, Plus, ArrowRight, Clock, FileText, ClipboardCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
 import { format } from 'date-fns';
 import { exportProfessionalPOPDF } from '../lib/poPdfExport';
 import GeneratePOModal from '../components/finance/GeneratePOModal';
+import { RFQManagement } from '../components/purchasing/RFQManagement';
+import POApprovalWorkflow from '../components/purchasing/POApprovalWorkflow';
 import toast from 'react-hot-toast';
 
 const poStatuses = ['draft', 'sent_to_supplier', 'acknowledged', 'drawing_approval', 'in_production', 'quality_check', 'shipped', 'delivered', 'closed'];
@@ -29,7 +31,7 @@ export default function PurchasingOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [activeTab, setActiveTab] = useState<'pos' | 'available'>('pos');
+  const [activeTab, setActiveTab] = useState<'pos' | 'available' | 'rfq' | 'approvals'>('pos');
   const [showGeneratePO, setShowGeneratePO] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
@@ -109,11 +111,17 @@ export default function PurchasingOrdersPage() {
       </div>
 
       <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-        <button onClick={() => setActiveTab('pos')} className={`px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'pos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-          Purchase Orders ({purchaseOrders.length})
+        <button onClick={() => setActiveTab('pos')} className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'pos' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+          <ShoppingCart className="w-4 h-4" /> Purchase Orders ({purchaseOrders.length})
         </button>
-        <button onClick={() => setActiveTab('available')} className={`px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'available' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-          Available to Generate ({wonQuotations.length})
+        <button onClick={() => setActiveTab('available')} className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'available' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+          <Plus className="w-4 h-4" /> Available to Generate ({wonQuotations.length})
+        </button>
+        <button onClick={() => setActiveTab('rfq')} className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'rfq' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+          <FileText className="w-4 h-4" /> RFQ Management
+        </button>
+        <button onClick={() => setActiveTab('approvals')} className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'approvals' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+          <ClipboardCheck className="w-4 h-4" /> PO Approvals
         </button>
       </div>
 
@@ -234,6 +242,10 @@ export default function PurchasingOrdersPage() {
           ))}
         </div>
       )}
+
+      {activeTab === 'rfq' && <RFQManagement />}
+
+      {activeTab === 'approvals' && <POApprovalWorkflow />}
 
       {showGeneratePO && selectedQuotation && (
         <GeneratePOModal quotation={selectedQuotation} onClose={() => { setShowGeneratePO(false); setSelectedQuotation(null); }} onSuccess={() => { setShowGeneratePO(false); setSelectedQuotation(null); loadData(); }} />

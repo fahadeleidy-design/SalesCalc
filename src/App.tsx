@@ -52,6 +52,7 @@ import WarehouseInventoryPage from './pages/WarehouseInventoryPage';
 import StockMovementsPage from './pages/StockMovementsPage';
 import QualityInspectionsPage from './pages/QualityInspectionsPage';
 import ShipmentsPage from './pages/ShipmentsPage';
+import IntegrationsPage from './pages/IntegrationsPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -212,6 +213,8 @@ function AppContent() {
         return hasAccess(['purchasing', 'engineering', 'project_manager', 'manager', 'admin']) ? <QualityInspectionsPage /> : <UnauthorizedPage />;
       case '/shipments':
         return hasAccess(['purchasing', 'project_manager', 'manager', 'admin']) ? <ShipmentsPage /> : <UnauthorizedPage />;
+      case '/integrations':
+        return hasAccess(['admin']) ? <IntegrationsPage /> : <UnauthorizedPage />;
 
       default:
         return getDashboardForRole();
