@@ -255,7 +255,7 @@ export default function DemoTrackerPage() {
 
     const filteredDemos = demos.filter((demo) => {
         const matchesSearch =
-            demo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            demo.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             demo.opportunity?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             demo.customer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || demo.status === statusFilter;

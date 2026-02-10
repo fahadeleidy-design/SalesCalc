@@ -240,7 +240,7 @@ export default function TechnicalDiscoveryPage() {
 
     const filteredDiscoveries = discoveries.filter((discovery) => {
         const matchesSearch =
-            discovery.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            discovery.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             discovery.opportunity?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             discovery.opportunity?.customer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || discovery.status === statusFilter;

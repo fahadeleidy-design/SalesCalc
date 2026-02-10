@@ -348,6 +348,13 @@ export const en = {
       },
     },
   },
+  customers: {
+    title: 'Customers',
+    subtitle: 'Manage your customer database',
+    addCustomer: 'Add Customer',
+    companyName: 'Company Name',
+    contactPerson: 'Contact Person',
+  },
   products: {
     title: 'Products',
     subtitle: 'Manage product catalog',

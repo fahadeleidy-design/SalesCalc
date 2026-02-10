@@ -163,8 +163,8 @@ export default function PurchaseOrdersPage() {
     const matchesSearch =
       po.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       po.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      po.quotation.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      po.quotation.customer.company_name.toLowerCase().includes(searchTerm.toLowerCase());
+      po.quotation?.quotation_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      po.quotation?.customer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || po.status === statusFilter;
 
@@ -172,9 +172,9 @@ export default function PurchaseOrdersPage() {
   });
 
   const filteredQuotations = wonQuotations.filter(q =>
-    q.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    q.customer.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    q.title.toLowerCase().includes(searchTerm.toLowerCase())
+    q.quotation_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    q.customer?.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    q.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (profile?.role !== 'finance' && profile?.role !== 'ceo' && profile?.role !== 'admin') {
@@ -356,10 +356,10 @@ export default function PurchaseOrdersPage() {
                             <div className="text-sm text-slate-900">{po.supplier_name}</div>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="text-sm text-slate-600">{po.quotation.quotation_number}</div>
+                            <div className="text-sm text-slate-600">{po.quotation?.quotation_number}</div>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="text-sm text-slate-900">{po.quotation.customer.company_name}</div>
+                            <div className="text-sm text-slate-900">{po.quotation?.customer?.company_name}</div>
                           </td>
                           <td className="px-4 py-3 text-center">
                             {po.dimensional_confirmed ? (
@@ -437,9 +437,9 @@ export default function PurchaseOrdersPage() {
                           </div>
                           <p className="text-slate-600 mb-2">{quotation.title}</p>
                           <div className="flex items-center gap-4 text-sm text-slate-600">
-                            <span className="font-medium">{quotation.customer.company_name}</span>
+                            <span className="font-medium">{quotation.customer?.company_name}</span>
                             <span>•</span>
-                            <span>{quotation.quotation_items.length} items</span>
+                            <span>{quotation.quotation_items?.length || 0} items</span>
                             <span>•</span>
                             <span className="font-semibold text-slate-900">{formatCurrency(quotation.total)}</span>
                           </div>

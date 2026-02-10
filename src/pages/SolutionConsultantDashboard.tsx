@@ -206,7 +206,7 @@ export default function SolutionConsultantDashboard() {
                                                 {request.description}
                                             </p>
                                             <p className="text-sm text-slate-500 mt-1">
-                                                {request.quotation.quotation_number} • {request.requester.full_name}
+                                                {request.quotation?.quotation_number} • {request.requester?.full_name}
                                             </p>
                                         </div>
                                         <button

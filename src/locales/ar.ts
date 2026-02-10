@@ -280,6 +280,7 @@ export const ar: TranslationKeys = {
       },
     },
   },
+  customers: { title: 'العملاء', subtitle: 'إدارة قاعدة بيانات العملاء', addCustomer: 'إضافة عميل', companyName: 'اسم الشركة', contactPerson: 'الشخص المسؤول' },
   products: { title: 'المنتجات', subtitle: 'إدارة كتالوج المنتجات', addProduct: 'إضافة منتج', productName: 'اسم المنتج', sku: 'رمز المنتج', description: 'الوصف', category: 'الفئة', basePrice: 'السعر الأساسي', cost: 'التكلفة', stockQuantity: 'كمية المخزون', minStockLevel: 'الحد الأدنى', isActive: 'نشط', specifications: 'المواصفات', importCSV: 'استيراد', exportCSV: 'تصدير' },
   users: { title: 'المستخدمين', subtitle: 'إدارة مستخدمي النظام', addUser: 'إضافة مستخدم', fullName: 'الاسم الكامل', email: 'البريد الإلكتروني', role: 'الدور', department: 'القسم', phone: 'الهاتف', status: 'الحالة', active: 'نشط', inactive: 'غير نشط', salesTarget: 'هدف المبيعات' },
   reports: { title: 'التقارير', subtitle: 'التحليلات والرؤى', salesReport: 'تقرير المبيعات', performanceReport: 'تقرير الأداء', customerReport: 'تقرير العملاء', productReport: 'تقرير المنتجات', dateRange: 'النطاق الزمني', from: 'من', to: 'إلى', generate: 'إنشاء', export: 'تصدير' },
