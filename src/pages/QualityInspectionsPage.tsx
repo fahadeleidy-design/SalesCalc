@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   ClipboardCheck, Search, Filter, Plus, ChevronRight, X, Save,
   AlertTriangle, CheckCircle2, XCircle, Clock, FileText, ListChecks,
-  Eye, Trash2, ToggleLeft, ToggleRight, ChevronDown, RefreshCw
+  Eye, Trash2, ToggleLeft, ToggleRight, ChevronDown, RefreshCw, Download
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import Pagination, { usePagination } from '../components/ui/Pagination';
 
 type TabKey = 'inspections' | 'ncr' | 'templates';
 
@@ -386,6 +387,27 @@ function KPICard({ label, value, icon: Icon, color }: { label: string; value: st
 }
 
 function InspectionsTab({ inspections, searchTerm, setSearchTerm, typeFilter, setTypeFilter, resultFilter, setResultFilter, onSelect, onNew, canEdit }: any) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const { totalItems, totalPages, pageSize, getPageItems } = usePagination(inspections, 25);
+  const pageItems = getPageItems(currentPage);
+
+  const exportCSV = () => {
+    const rows = [['Number', 'Type', 'Product', 'Reference', 'Qty Inspected', 'Passed', 'Failed', 'Result', 'Inspector', 'Date']];
+    inspections.forEach((i: Inspection) => {
+      rows.push([
+        i.inspection_number, i.inspection_type, i.product?.name || '', i.reference_type,
+        String(i.quantity_inspected), String(i.quantity_passed), String(i.quantity_failed),
+        i.result, i.inspector?.full_name || '', format(new Date(i.created_at), 'yyyy-MM-dd'),
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `inspections_${format(new Date(), 'yyyy-MM-dd')}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       <div className="p-4 flex flex-wrap items-center gap-3 border-b border-slate-100">
@@ -395,24 +417,27 @@ function InspectionsTab({ inspections, searchTerm, setSearchTerm, typeFilter, se
             type="text"
             placeholder="Search inspections..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
+        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
           <option value="all">All Types</option>
           <option value="incoming">Incoming</option>
           <option value="in_process">In-Process</option>
           <option value="final">Final</option>
           <option value="return">Return</option>
         </select>
-        <select value={resultFilter} onChange={e => setResultFilter(e.target.value)} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
+        <select value={resultFilter} onChange={e => { setResultFilter(e.target.value); setCurrentPage(1); }} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
           <option value="all">All Results</option>
           <option value="pass">Pass</option>
           <option value="fail">Fail</option>
           <option value="conditional">Conditional</option>
           <option value="pending">Pending</option>
         </select>
+        <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+          <Download className="w-4 h-4" /> Export
+        </button>
         {canEdit && (
           <button onClick={onNew} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
             <Plus className="w-4 h-4" /> New Inspection
@@ -436,9 +461,9 @@ function InspectionsTab({ inspections, searchTerm, setSearchTerm, typeFilter, se
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {inspections.length === 0 ? (
+            {pageItems.length === 0 ? (
               <tr><td colSpan={10} className="px-4 py-12 text-center text-slate-400">No inspections found</td></tr>
-            ) : inspections.map((insp: Inspection) => (
+            ) : pageItems.map((insp: Inspection) => (
               <tr key={insp.id} onClick={() => onSelect(insp)} className="hover:bg-slate-50 cursor-pointer">
                 <td className="px-4 py-3 font-medium text-slate-900">{insp.inspection_number}</td>
                 <td className="px-4 py-3">
@@ -463,26 +488,31 @@ function InspectionsTab({ inspections, searchTerm, setSearchTerm, typeFilter, se
           </tbody>
         </table>
       </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} />
     </div>
   );
 }
 
 function NCRTab({ ncrReports, searchTerm, setSearchTerm, severityFilter, setSeverityFilter, statusFilter, setStatusFilter, onSelect, onNew, canEdit }: any) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const { totalItems, totalPages, pageSize, getPageItems } = usePagination(ncrReports, 25);
+  const pageItems = getPageItems(currentPage);
+
   return (
     <div>
       <div className="p-4 flex flex-wrap items-center gap-3 border-b border-slate-100">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" placeholder="Search NCRs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+          <input type="text" placeholder="Search NCRs..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
         </div>
-        <select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
+        <select value={severityFilter} onChange={e => { setSeverityFilter(e.target.value); setCurrentPage(1); }} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
           <option value="all">All Severity</option>
           <option value="minor">Minor</option>
           <option value="major">Major</option>
           <option value="critical">Critical</option>
         </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
+        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
           <option value="all">All Status</option>
           <option value="open">Open</option>
           <option value="investigating">Investigating</option>
@@ -513,9 +543,9 @@ function NCRTab({ ncrReports, searchTerm, setSearchTerm, severityFilter, setSeve
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {ncrReports.length === 0 ? (
+            {pageItems.length === 0 ? (
               <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-400">No NCR reports found</td></tr>
-            ) : ncrReports.map((ncr: NCRReport) => {
+            ) : pageItems.map((ncr: NCRReport) => {
               const age = Math.floor((Date.now() - new Date(ncr.created_at).getTime()) / (1000 * 60 * 60 * 24));
               return (
                 <tr key={ncr.id} onClick={() => onSelect(ncr)} className="hover:bg-slate-50 cursor-pointer">
@@ -540,6 +570,7 @@ function NCRTab({ ncrReports, searchTerm, setSearchTerm, severityFilter, setSeve
           </tbody>
         </table>
       </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} />
     </div>
   );
 }

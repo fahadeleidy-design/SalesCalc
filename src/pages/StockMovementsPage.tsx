@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  ArrowUpDown, Search, X, Save, ArrowRight, RotateCcw
+  ArrowUpDown, Search, X, Save, ArrowRight, RotateCcw, Download, Calendar
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import Pagination, { usePagination } from '../components/ui/Pagination';
 
 const movementTypeConfig: Record<string, { label: string; color: string; bg: string; icon: string }> = {
   goods_received: { label: 'Goods Received', color: 'text-emerald-700', bg: 'bg-emerald-50', icon: '+' },
@@ -38,6 +39,9 @@ export default function StockMovementsPage() {
   const [adjustForm, setAdjustForm] = useState({ product_id: '', quantity: 0, reason: 'correction', notes: '' });
   const [transferForm, setTransferForm] = useState({ product_id: '', quantity: 0, from_location_id: '', to_location_id: '', notes: '' });
   const [stats, setStats] = useState({ totalToday: 0, received: 0, consumed: 0, adjustments: 0 });
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadData = useCallback(async () => {
     try {
@@ -140,8 +144,32 @@ export default function StockMovementsPage() {
   const filteredMovements = movements.filter(m => {
     const matchSearch = !searchTerm || m.movement_number?.toLowerCase().includes(searchTerm.toLowerCase()) || m.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || m.reference_number?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchType = typeFilter === 'all' || m.movement_type === typeFilter;
+    if (dateFrom && m.performed_at < dateFrom) return false;
+    if (dateTo && m.performed_at > dateTo + 'T23:59:59') return false;
     return matchSearch && matchType;
   });
+
+  const { totalItems, totalPages, pageSize, getPageItems } = usePagination(filteredMovements, 30);
+  const pageItems = getPageItems(currentPage);
+
+  const exportCSV = () => {
+    const rows = [['Movement #', 'Type', 'Product', 'SKU', 'Qty', 'From', 'To', 'Reference', 'Reason', 'By', 'Date']];
+    filteredMovements.forEach((m: any) => {
+      const conf = movementTypeConfig[m.movement_type] || { label: m.movement_type };
+      rows.push([
+        m.movement_number, conf.label, m.product?.name || '', m.product?.sku || '',
+        String(m.quantity), m.from_location?.location_code || '', m.to_location?.location_code || '',
+        m.reference_number || '', m.reason || '', m.performed_by_profile?.full_name || '',
+        m.performed_at ? format(new Date(m.performed_at), 'yyyy-MM-dd HH:mm') : '',
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `stock_movements_${format(new Date(), 'yyyy-MM-dd')}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
@@ -162,6 +190,9 @@ export default function StockMovementsPage() {
           <p className="text-sm text-slate-500 mt-1">Track all inventory transactions and adjustments</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            <Download className="w-4 h-4" /> Export
+          </button>
           <button
             onClick={() => { setFormType('adjustment'); setAdjustForm({ product_id: '', quantity: 0, reason: 'correction', notes: '' }); }}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-900 transition-colors"
@@ -184,21 +215,30 @@ export default function StockMovementsPage() {
         <MiniStat label="Adjustments" value={stats.adjustments} color="slate" />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search by movement #, product, or reference..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           />
         </div>
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white">
+        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white">
           <option value="all">All Types</option>
           {Object.entries(movementTypeConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }} className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white" />
+          <span className="text-xs text-slate-400">to</span>
+          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }} className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-white" />
+          {(dateFrom || dateTo) && (
+            <button onClick={() => { setDateFrom(''); setDateTo(''); setCurrentPage(1); }} className="text-xs text-slate-500 hover:text-slate-700">Clear</button>
+          )}
+        </div>
       </div>
 
       {filteredMovements.length === 0 ? (
@@ -223,7 +263,7 @@ export default function StockMovementsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredMovements.map(m => {
+                {pageItems.map(m => {
                   const conf = movementTypeConfig[m.movement_type] || { label: m.movement_type, color: 'text-slate-700', bg: 'bg-slate-50', icon: '?' };
                   const isPositive = ['goods_received', 'production_output', 'return'].includes(m.movement_type);
                   const isNegative = ['production_consume', 'scrap'].includes(m.movement_type);
@@ -257,6 +297,7 @@ export default function StockMovementsPage() {
               </tbody>
             </table>
           </div>
+          <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} />
         </div>
       )}
 

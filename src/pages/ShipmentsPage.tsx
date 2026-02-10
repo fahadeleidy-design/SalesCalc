@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Truck, Search, Plus, X, Save, Package, Clock, CheckCircle2, MapPin,
-  Printer, ChevronRight, AlertTriangle, RefreshCw, Eye, ArrowRight
+  Printer, ChevronRight, AlertTriangle, RefreshCw, Eye, ArrowRight, Download
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +9,7 @@ import { formatCurrency } from '../lib/currencyUtils';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { generatePackingSlip } from '../lib/packingSlipExport';
+import Pagination, { usePagination } from '../components/ui/Pagination';
 
 interface Shipment {
   id: string;
@@ -96,6 +97,7 @@ export default function ShipmentsPage() {
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [showNewShipment, setShowNewShipment] = useState(false);
   const [stats, setStats] = useState({ active: 0, dispatchedToday: 0, inTransit: 0, deliveredThisWeek: 0, partialOrders: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
 
   const canEdit = profile?.role && ['purchasing', 'project_manager', 'admin'].includes(profile.role);
 
@@ -165,6 +167,29 @@ export default function ShipmentsPage() {
     return true;
   });
 
+  const { totalItems, totalPages, pageSize, getPageItems } = usePagination(filtered, 20);
+  const pageItems = getPageItems(currentPage);
+
+  const exportCSV = () => {
+    const rows = [['Shipment #', 'Job Order', 'Customer', 'Carrier', 'Tracking', 'Status', 'Packages', 'Ship Date', 'Delivery Date', 'Items Shipped', 'Items Ordered']];
+    filtered.forEach(s => {
+      const totalShipped = (s.items || []).reduce((sum, i) => sum + Number(i.quantity_shipped), 0);
+      const totalOrdered = (s.items || []).reduce((sum, i) => sum + Number(i.quantity_ordered), 0);
+      rows.push([
+        s.shipment_number, s.job_order?.job_order_number || '', s.customer?.company_name || '',
+        s.carrier_name || '', s.tracking_number || '', statusConfig[s.status]?.label || s.status,
+        String(s.total_packages), s.scheduled_ship_date || '', s.actual_delivery_date || '',
+        String(totalShipped), String(totalOrdered),
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `shipments_${format(new Date(), 'yyyy-MM-dd')}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -200,13 +225,16 @@ export default function ShipmentsPage() {
         <div className="p-4 flex flex-wrap items-center gap-3 border-b border-slate-100">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="text" placeholder="Search shipments, job orders, customers..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+            <input type="text" placeholder="Search shipments, job orders, customers..." value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="text-sm border border-slate-200 rounded-lg px-3 py-2">
             <option value="all">All Status</option>
             {Object.entries(statusConfig).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
+          <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+            <Download className="w-4 h-4" /> Export
+          </button>
           {canEdit && (
             <button onClick={() => setShowNewShipment(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
               <Plus className="w-4 h-4" /> New Shipment
@@ -230,9 +258,9 @@ export default function ShipmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.length === 0 ? (
+              {pageItems.length === 0 ? (
                 <tr><td colSpan={9} className="px-4 py-12 text-center text-slate-400">No shipments found</td></tr>
-              ) : filtered.map(shipment => {
+              ) : pageItems.map(shipment => {
                 const sc = statusConfig[shipment.status] || statusConfig.preparing;
                 const totalShipped = (shipment.items || []).reduce((s, i) => s + Number(i.quantity_shipped), 0);
                 const totalOrdered = (shipment.items || []).reduce((s, i) => s + Number(i.quantity_ordered), 0);
@@ -259,6 +287,7 @@ export default function ShipmentsPage() {
             </tbody>
           </table>
         </div>
+        <Pagination currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setCurrentPage} />
       </div>
 
       {selectedShipment && (

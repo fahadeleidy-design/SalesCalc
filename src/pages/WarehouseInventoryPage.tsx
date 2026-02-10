@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Search, Plus, X, Save, Edit3, MapPin, Package, AlertTriangle,
-  Eye, Box, Layers
+  Eye, Box, Layers, Download
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import Pagination, { usePagination } from '../components/ui/Pagination';
 
 type TabKey = 'inventory' | 'locations';
 
@@ -37,6 +38,7 @@ export default function WarehouseInventoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [recentMovements, setRecentMovements] = useState<any[]>([]);
   const [stats, setStats] = useState({ totalSKUs: 0, lowStock: 0, quarantined: 0, totalLocations: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadData = useCallback(async () => {
     try {
@@ -154,6 +156,30 @@ export default function WarehouseInventoryPage() {
     !searchTerm || loc.location_code.toLowerCase().includes(searchTerm.toLowerCase()) || loc.location_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const invPagination = usePagination(filteredInventory, 25);
+  const invPageItems = invPagination.getPageItems(currentPage);
+  const locPagination = usePagination(filteredLocations, 24);
+  const locPageItems = locPagination.getPageItems(currentPage);
+
+  const exportInventoryCSV = () => {
+    const rows = [['Product', 'SKU', 'Category', 'Available', 'Reserved', 'On Order', 'Reorder Level', 'Status', 'Location']];
+    filteredInventory.forEach((item: any) => {
+      const status = getStockStatus(item);
+      rows.push([
+        item.product?.name || '', item.product?.sku || '', item.product?.category || '',
+        String(Number(item.quantity_available)), String(Number(item.quantity_reserved || 0)),
+        String(Number(item.quantity_on_order || 0)), String(item.reorder_level || ''),
+        status.label, item.warehouse_location || '',
+      ]);
+    });
+    const csv = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `inventory_${format(new Date(), 'yyyy-MM-dd')}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -172,14 +198,21 @@ export default function WarehouseInventoryPage() {
           <h1 className="text-2xl font-bold text-slate-900">Warehouse & Inventory</h1>
           <p className="text-sm text-slate-500 mt-1">Stock levels, locations, and inventory management</p>
         </div>
-        {activeTab === 'locations' && (
-          <button
-            onClick={() => { setShowLocationForm(true); setEditingLocationId(null); setLocationForm({ ...emptyLocationForm }); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Add Location
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {activeTab === 'inventory' && (
+            <button onClick={exportInventoryCSV} className="flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
+              <Download className="w-4 h-4" /> Export
+            </button>
+          )}
+          {activeTab === 'locations' && (
+            <button
+              onClick={() => { setShowLocationForm(true); setEditingLocationId(null); setLocationForm({ ...emptyLocationForm }); }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add Location
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -211,12 +244,12 @@ export default function WarehouseInventoryPage() {
             type="text"
             placeholder={activeTab === 'inventory' ? 'Search products...' : 'Search locations...'}
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           />
         </div>
         {activeTab === 'inventory' && (
-          <select value={stockFilter} onChange={e => setStockFilter(e.target.value)} className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white">
+          <select value={stockFilter} onChange={e => { setStockFilter(e.target.value); setCurrentPage(1); }} className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white">
             <option value="all">All Stock Levels</option>
             <option value="low">Low / Out of Stock</option>
             <option value="warning">Warning & Below</option>
@@ -226,14 +259,17 @@ export default function WarehouseInventoryPage() {
       </div>
 
       {activeTab === 'inventory' && (
-        <InventoryTable items={filteredInventory} getStockStatus={getStockStatus} onView={handleViewProduct} />
+        <>
+          <InventoryTable items={invPageItems} getStockStatus={getStockStatus} onView={handleViewProduct} />
+          <Pagination currentPage={currentPage} totalPages={invPagination.totalPages} totalItems={invPagination.totalItems} pageSize={invPagination.pageSize} onPageChange={setCurrentPage} />
+        </>
       )}
 
       {activeTab === 'locations' && (
-        <LocationsGrid
-          locations={filteredLocations}
-          onEdit={handleEditLocation}
-        />
+        <>
+          <LocationsGrid locations={locPageItems} onEdit={handleEditLocation} />
+          <Pagination currentPage={currentPage} totalPages={locPagination.totalPages} totalItems={locPagination.totalItems} pageSize={locPagination.pageSize} onPageChange={setCurrentPage} />
+        </>
       )}
 
       {showLocationForm && (
