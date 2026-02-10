@@ -80,6 +80,8 @@ export const en = {
     production: 'Production Board',
     warehouse: 'Warehouse',
     stockMovements: 'Stock Movements',
+    qualityControl: 'Quality Control',
+    shipments: 'Shipments',
   },
   auth: {
     email: 'Email',

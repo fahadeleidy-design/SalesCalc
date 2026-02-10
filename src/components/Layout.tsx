@@ -30,6 +30,8 @@ import {
   Factory,
   Warehouse,
   ArrowUpDown,
+  ClipboardCheck,
+  Truck,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -257,6 +259,18 @@ const navigationItems: NavItem[] = [
     icon: ArrowUpDown,
     path: '/stock-movements',
     roles: ['purchasing', 'admin'],
+  },
+  {
+    labelKey: 'qualityControl',
+    icon: ClipboardCheck,
+    path: '/quality-inspections',
+    roles: ['purchasing', 'engineering', 'project_manager', 'manager', 'admin'],
+  },
+  {
+    labelKey: 'shipments',
+    icon: Truck,
+    path: '/shipments',
+    roles: ['purchasing', 'project_manager', 'manager', 'admin'],
   },
 ];
 

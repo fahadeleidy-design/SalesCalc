@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   ShoppingCart, Package, ClipboardList, AlertTriangle, ArrowRight,
-  Clock, TrendingUp, Factory, Warehouse, ArrowUpDown, PackageCheck, Wrench
+  Clock, TrendingUp, Factory, Warehouse, ArrowUpDown, PackageCheck, Wrench,
+  ClipboardCheck, Truck
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -33,6 +34,8 @@ export default function PurchasingDashboard() {
   const [stats, setStats] = useState<PurchasingStats>({ openPOs: 0, totalPOValue: 0, pendingRequests: 0, bomShortages: 0 });
   const [prodStats, setProdStats] = useState<ProductionStats>({ activeOrders: 0, inProduction: 0, qualityCheck: 0, dueThisWeek: 0 });
   const [whStats, setWhStats] = useState<WarehouseStats>({ lowStockItems: 0, recentReceipts: 0, todayMovements: 0 });
+  const [pendingQC, setPendingQC] = useState(0);
+  const [inTransitShipments, setInTransitShipments] = useState(0);
   const [recentHistory, setRecentHistory] = useState<any[]>([]);
   const [urgentRequests, setUrgentRequests] = useState<any[]>([]);
   const [activeJobOrders, setActiveJobOrders] = useState<any[]>([]);
@@ -43,7 +46,7 @@ export default function PurchasingDashboard() {
 
   const loadDashboard = async () => {
     try {
-      const [posRes, prRes, bomRes, histRes, jobsRes, invRes, movRes, grRes] = await Promise.all([
+      const [posRes, prRes, bomRes, histRes, jobsRes, invRes, movRes, grRes, qcRes, shipRes] = await Promise.all([
         supabase.from('purchase_orders').select('id, total, status').not('status', 'in', '("delivered","closed","cancelled")'),
         supabase.from('procurement_requests').select('id, material_description, urgency, status, job_order_id, estimated_cost, created_at').in('status', ['pending', 'approved']).order('created_at', { ascending: false }),
         supabase.from('bill_of_materials').select('id, quantity_required, quantity_available, status').eq('status', 'pending'),
@@ -52,6 +55,8 @@ export default function PurchasingDashboard() {
         supabase.from('product_inventory').select('*, product:products(name, sku)').order('quantity_available', { ascending: true }),
         supabase.from('stock_movements').select('id, performed_at').order('performed_at', { ascending: false }).limit(100),
         supabase.from('goods_receipts').select('id, receipt_date').order('receipt_date', { ascending: false }).limit(20),
+        supabase.from('quality_inspections').select('id, result').eq('result', 'pending'),
+        supabase.from('shipments').select('id, status').in('status', ['dispatched', 'in_transit']),
       ]);
 
       const openPOs = posRes.data || [];
@@ -91,6 +96,9 @@ export default function PurchasingDashboard() {
         recentReceipts: recentGRs.length,
         todayMovements: todayMovs.length,
       });
+
+      setPendingQC((qcRes.data || []).length);
+      setInTransitShipments((shipRes.data || []).length);
 
       const criticalFirst = [...pendingReqs].sort((a, b) => {
         const order: Record<string, number> = { critical: 0, high: 1, normal: 2, low: 3 };
@@ -136,13 +144,15 @@ export default function PurchasingDashboard() {
         <StatCard icon={AlertTriangle} label="BOM Shortages" value={stats.bomShortages} color="red" />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <MiniMetric label="Active Orders" value={prodStats.activeOrders} icon={Factory} color="blue" />
         <MiniMetric label="In Production" value={prodStats.inProduction} icon={Wrench} color="teal" />
         <MiniMetric label="Quality Check" value={prodStats.qualityCheck} icon={PackageCheck} color="amber" />
         <MiniMetric label="Due This Week" value={prodStats.dueThisWeek} icon={Clock} color="orange" />
         <MiniMetric label="Low Stock" value={whStats.lowStockItems} icon={AlertTriangle} color="red" />
         <MiniMetric label="Today's Movements" value={whStats.todayMovements} icon={ArrowUpDown} color="slate" />
+        <MiniMetric label="Pending QC" value={pendingQC} icon={ClipboardCheck} color="amber" />
+        <MiniMetric label="In Transit" value={inTransitShipments} icon={Truck} color="cyan" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -257,13 +267,15 @@ export default function PurchasingDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <QuickNav icon={ClipboardList} label="Procurement" color="amber" onClick={() => navigate('/procurement-requests')} />
         <QuickNav icon={ShoppingCart} label="POs" color="blue" onClick={() => navigate('/purchasing-orders')} />
         <QuickNav icon={Package} label="Suppliers" color="teal" onClick={() => navigate('/suppliers')} />
         <QuickNav icon={Factory} label="Production" color="cyan" onClick={() => navigate('/production')} />
         <QuickNav icon={Warehouse} label="Warehouse" color="emerald" onClick={() => navigate('/warehouse')} />
         <QuickNav icon={ArrowUpDown} label="Movements" color="slate" onClick={() => navigate('/stock-movements')} />
+        <QuickNav icon={ClipboardCheck} label="Quality" color="orange" onClick={() => navigate('/quality-inspections')} />
+        <QuickNav icon={Truck} label="Shipments" color="blue" onClick={() => navigate('/shipments')} />
       </div>
     </div>
   );
