@@ -10,6 +10,8 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { generatePackingSlip } from '../lib/packingSlipExport';
 import Pagination, { usePagination } from '../components/ui/Pagination';
+import TransportationManagement from '../components/logistics/TransportationManagement';
+import ShipmentReturnsPanel from '../components/logistics/ShipmentReturnsPanel';
 
 interface Shipment {
   id: string;
@@ -100,6 +102,7 @@ export default function ShipmentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const canEdit = profile?.role && ['purchasing', 'project_manager', 'admin'].includes(profile.role);
+  const [viewTab, setViewTab] = useState<'shipments' | 'transportation' | 'returns'>('shipments');
 
   const loadShipments = useCallback(async () => {
     setLoading(true);
@@ -205,14 +208,32 @@ export default function ShipmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Shipments</h1>
-          <p className="text-sm text-slate-500 mt-1">Outbound logistics, partial deliveries, and tracking</p>
+          <h1 className="text-2xl font-bold text-slate-900">Shipments & Logistics</h1>
+          <p className="text-sm text-slate-500 mt-1">Outbound logistics, partial deliveries, carriers, and tracking</p>
         </div>
         <button onClick={loadShipments} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
 
+      <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 px-4">
+        {[
+          { key: 'shipments' as const, label: 'Shipments', icon: Truck },
+          { key: 'transportation' as const, label: 'Carriers & Rates', icon: Package },
+          { key: 'returns' as const, label: 'Returns', icon: RefreshCw },
+        ].map(tab => (
+          <button key={tab.key} onClick={() => setViewTab(tab.key)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${viewTab === tab.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+            <tab.icon className="w-4 h-4" />{tab.label}
+          </button>
+        ))}
+      </div>
+
+      {viewTab === 'transportation' && <TransportationManagement />}
+
+      {viewTab === 'returns' && <ShipmentReturnsPanel />}
+
+      {viewTab === 'shipments' && <>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <KPICard label="Active Shipments" value={stats.active} icon={Truck} color="blue" />
         <KPICard label="Dispatched Today" value={stats.dispatchedToday} icon={ArrowRight} color="amber" />
@@ -298,6 +319,7 @@ export default function ShipmentsPage() {
           canEdit={!!canEdit}
         />
       )}
+      </>}
 
       {showNewShipment && (
         <NewShipmentModal

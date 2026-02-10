@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Download, Eye, Plus, ArrowRight, Clock, FileText, ClipboardCheck } from 'lucide-react';
+import { ShoppingCart, Search, Download, Eye, Plus, ArrowRight, Clock, FileText, ClipboardCheck, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
@@ -8,6 +8,7 @@ import { exportProfessionalPOPDF } from '../lib/poPdfExport';
 import GeneratePOModal from '../components/finance/GeneratePOModal';
 import { RFQManagement } from '../components/purchasing/RFQManagement';
 import POApprovalWorkflow from '../components/purchasing/POApprovalWorkflow';
+import PurchaseReturnsPanel from '../components/purchasing/PurchaseReturnsPanel';
 import toast from 'react-hot-toast';
 
 const poStatuses = ['draft', 'sent_to_supplier', 'acknowledged', 'drawing_approval', 'in_production', 'quality_check', 'shipped', 'delivered', 'closed'];
@@ -31,7 +32,7 @@ export default function PurchasingOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [activeTab, setActiveTab] = useState<'pos' | 'available' | 'rfq' | 'approvals'>('pos');
+  const [activeTab, setActiveTab] = useState<'pos' | 'available' | 'rfq' | 'approvals' | 'returns'>('pos');
   const [showGeneratePO, setShowGeneratePO] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
   const [expandedPO, setExpandedPO] = useState<string | null>(null);
@@ -122,6 +123,9 @@ export default function PurchasingOrdersPage() {
         </button>
         <button onClick={() => setActiveTab('approvals')} className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'approvals' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
           <ClipboardCheck className="w-4 h-4" /> PO Approvals
+        </button>
+        <button onClick={() => setActiveTab('returns')} className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium ${activeTab === 'returns' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+          <RotateCcw className="w-4 h-4" /> Purchase Returns
         </button>
       </div>
 
@@ -246,6 +250,8 @@ export default function PurchasingOrdersPage() {
       {activeTab === 'rfq' && <RFQManagement />}
 
       {activeTab === 'approvals' && <POApprovalWorkflow />}
+
+      {activeTab === 'returns' && <PurchaseReturnsPanel />}
 
       {showGeneratePO && selectedQuotation && (
         <GeneratePOModal quotation={selectedQuotation} onClose={() => { setShowGeneratePO(false); setSelectedQuotation(null); }} onSuccess={() => { setShowGeneratePO(false); setSelectedQuotation(null); loadData(); }} />

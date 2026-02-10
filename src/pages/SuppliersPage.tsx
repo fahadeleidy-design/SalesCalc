@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Building2, Search, Plus, X, Save, Star, Mail, Phone, MapPin, Globe, CheckCircle } from 'lucide-react';
+import { Building2, Search, Plus, X, Save, Star, Mail, Phone, MapPin, Globe, CheckCircle, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../lib/currencyUtils';
 import toast from 'react-hot-toast';
+import SupplierPerformancePanel from '../components/purchasing/SupplierPerformancePanel';
 
 const typeColors: Record<string, string> = {
   manufacturer: 'bg-blue-100 text-blue-700',
@@ -32,6 +33,7 @@ export default function SuppliersPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
+  const [pageTab, setPageTab] = useState<'directory' | 'performance'>('directory');
   const [form, setForm] = useState({ ...emptyForm });
 
   useEffect(() => { loadSuppliers(); }, []);
@@ -110,10 +112,25 @@ export default function SuppliersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Suppliers</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage supplier and factory directory</p>
+          <p className="text-sm text-slate-500 mt-1">Manage supplier directory and vendor performance</p>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700"><Plus className="w-4 h-4" /> Add Supplier</button>
+        {pageTab === 'directory' && (
+          <button onClick={() => { resetForm(); setShowForm(true); }} className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700"><Plus className="w-4 h-4" /> Add Supplier</button>
+        )}
       </div>
+
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
+        <button onClick={() => setPageTab('directory')} className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${pageTab === 'directory' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>
+          <Building2 className="w-4 h-4" /> Directory
+        </button>
+        <button onClick={() => setPageTab('performance')} className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${pageTab === 'performance' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>
+          <TrendingUp className="w-4 h-4" /> Performance & Evaluations
+        </button>
+      </div>
+
+      {pageTab === 'performance' && <SupplierPerformancePanel />}
+
+      {pageTab === 'directory' && <>
 
       {showForm && (
         <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
@@ -238,6 +255,8 @@ export default function SuppliersPage() {
           </div>
         </div>
       )}
+
+      </>}
     </div>
   );
 }

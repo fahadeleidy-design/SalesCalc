@@ -82,6 +82,8 @@ export const en = {
     stockMovements: 'Stock Movements',
     qualityControl: 'Quality Control',
     shipments: 'Shipments',
+    logisticsDashboard: 'Logistics',
+    integrations: 'Integrations',
   },
   auth: {
     email: 'Email',

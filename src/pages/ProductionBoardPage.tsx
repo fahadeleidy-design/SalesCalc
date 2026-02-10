@@ -10,6 +10,8 @@ import toast from 'react-hot-toast';
 import MaterialRequisitionPanel from '../components/production/MaterialRequisitionPanel';
 import ProductionScheduleBoard from '../components/production/ProductionScheduleBoard';
 import ShopFloorControlPanel from '../components/production/ShopFloorControlPanel';
+import WorkOrdersPanel from '../components/production/WorkOrdersPanel';
+import DowntimeTrackingPanel from '../components/production/DowntimeTrackingPanel';
 
 const STAGES = [
   { key: 'pending_material', label: 'Pending Material', color: 'amber', icon: Package },
@@ -65,7 +67,7 @@ interface ProductionLog {
   job_order_item_id: string | null;
 }
 
-type TabKey = 'board' | 'materials' | 'schedule' | 'shop_floor';
+type TabKey = 'board' | 'materials' | 'schedule' | 'shop_floor' | 'work_orders' | 'downtime';
 
 export default function ProductionBoardPage() {
   const { profile } = useAuth();
@@ -250,6 +252,18 @@ export default function ProductionBoardPage() {
         >
           <Users className="w-4 h-4" /> Shop Floor Control
         </button>
+        <button
+          onClick={() => setActiveTab('work_orders')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'work_orders' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <ClipboardList className="w-4 h-4" /> Work Orders
+        </button>
+        <button
+          onClick={() => setActiveTab('downtime')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'downtime' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <Clock className="w-4 h-4" /> Downtime
+        </button>
       </div>
 
       {activeTab === 'board' && (
@@ -325,6 +339,8 @@ export default function ProductionBoardPage() {
       {activeTab === 'materials' && <MaterialRequisitionPanel />}
       {activeTab === 'schedule' && <ProductionScheduleBoard />}
       {activeTab === 'shop_floor' && <ShopFloorControlPanel />}
+      {activeTab === 'work_orders' && <WorkOrdersPanel />}
+      {activeTab === 'downtime' && <DowntimeTrackingPanel />}
     </div>
   );
 }

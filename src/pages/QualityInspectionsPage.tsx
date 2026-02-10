@@ -9,8 +9,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import Pagination, { usePagination } from '../components/ui/Pagination';
+import QualityAnalyticsDashboard from '../components/quality/QualityAnalyticsDashboard';
+import SupplierQualityRating from '../components/quality/SupplierQualityRating';
+import CAPAManagementPanel from '../components/quality/CAPAManagementPanel';
 
-type TabKey = 'inspections' | 'ncr' | 'templates';
+type TabKey = 'inspections' | 'ncr' | 'templates' | 'capa' | 'analytics' | 'supplier_quality';
 
 interface Inspection {
   id: string;
@@ -215,6 +218,9 @@ export default function QualityInspectionsPage() {
     { key: 'inspections', label: 'Inspections', icon: ClipboardCheck, count: inspections.length },
     { key: 'ncr', label: 'NCR Reports', icon: AlertTriangle, count: ncrReports.filter(n => n.status !== 'closed').length },
     { key: 'templates', label: 'Templates', icon: ListChecks, count: templates.length },
+    { key: 'capa', label: 'CAPA', icon: FileText },
+    { key: 'analytics', label: 'Analytics', icon: RefreshCw },
+    { key: 'supplier_quality', label: 'Supplier Quality', icon: Eye },
   ];
 
   if (loading) {
@@ -312,6 +318,24 @@ export default function QualityInspectionsPage() {
             }}
             canEdit={!!canEdit}
           />
+        )}
+
+        {activeTab === 'capa' && (
+          <div className="p-6">
+            <CAPAManagementPanel />
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="p-6">
+            <QualityAnalyticsDashboard />
+          </div>
+        )}
+
+        {activeTab === 'supplier_quality' && (
+          <div className="p-6">
+            <SupplierQualityRating />
+          </div>
         )}
       </div>
 

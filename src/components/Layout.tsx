@@ -32,6 +32,8 @@ import {
   ArrowUpDown,
   ClipboardCheck,
   Truck,
+  BarChart,
+  Plug,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -271,6 +273,18 @@ const navigationItems: NavItem[] = [
     icon: Truck,
     path: '/shipments',
     roles: ['purchasing', 'project_manager', 'manager', 'admin'],
+  },
+  {
+    labelKey: 'logisticsDashboard',
+    icon: BarChart,
+    path: '/logistics',
+    roles: ['purchasing', 'project_manager', 'manager', 'admin'],
+  },
+  {
+    labelKey: 'integrations',
+    icon: Plug,
+    path: '/integrations',
+    roles: ['admin'],
   },
 ];
 
