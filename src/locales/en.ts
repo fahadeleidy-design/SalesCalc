@@ -77,6 +77,9 @@ export const en = {
     billOfMaterials: 'Bill of Materials',
     suppliers: 'Suppliers',
     goodsReceiving: 'Goods Receiving',
+    production: 'Production Board',
+    warehouse: 'Warehouse',
+    stockMovements: 'Stock Movements',
   },
   auth: {
     email: 'Email',

@@ -99,6 +99,26 @@ export default function GoodsReceivingPage() {
       const { error: itemsError } = await supabase.from('goods_receipt_items').insert(itemInserts);
       if (itemsError) throw itemsError;
 
+      const { count: smCount } = await supabase.from('stock_movements').select('*', { count: 'exact', head: true });
+      let smIndex = (smCount || 0) + 1;
+      const stockMovements = formItems
+        .filter(item => Number(item.accepted_quantity) > 0 && item.product_id)
+        .map(item => ({
+          movement_number: `SM-${String(smIndex++).padStart(5, '0')}`,
+          movement_type: 'goods_received' as const,
+          product_id: item.product_id,
+          quantity: Number(item.accepted_quantity),
+          reference_type: 'goods_receipt' as const,
+          reference_id: receipt.id,
+          reference_number: receiptNumber,
+          reason: 'receiving' as const,
+          notes: `Received from PO ${selectedPO.po_number}`,
+          performed_by: profile?.id,
+        }));
+      if (stockMovements.length > 0) {
+        await supabase.from('stock_movements').insert(stockMovements);
+      }
+
       const { data: jo } = await supabase.from('job_orders').select('id').eq('quotation_id', (await supabase.from('purchase_orders').select('quotation_id').eq('id', selectedPO.id).maybeSingle()).data?.quotation_id || '').maybeSingle();
       if (jo) {
         await supabase.from('project_timeline_events').insert({

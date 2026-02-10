@@ -27,6 +27,9 @@ import {
   ClipboardList,
   Layers,
   PackageCheck,
+  Factory,
+  Warehouse,
+  ArrowUpDown,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -236,6 +239,24 @@ const navigationItems: NavItem[] = [
     icon: PackageCheck,
     path: '/goods-receiving',
     roles: ['purchasing'],
+  },
+  {
+    labelKey: 'production',
+    icon: Factory,
+    path: '/production',
+    roles: ['purchasing', 'engineering', 'project_manager', 'manager'],
+  },
+  {
+    labelKey: 'warehouse',
+    icon: Warehouse,
+    path: '/warehouse',
+    roles: ['purchasing', 'engineering', 'admin'],
+  },
+  {
+    labelKey: 'stockMovements',
+    icon: ArrowUpDown,
+    path: '/stock-movements',
+    roles: ['purchasing', 'admin'],
   },
 ];
 
