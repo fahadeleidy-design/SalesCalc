@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Factory, Search, Clock, AlertTriangle, CheckCircle2, Package,
-  ChevronRight, Plus, X, Save, Truck, Wrench
+  ChevronRight, Plus, X, Save, Truck, Wrench, Calendar, Users, ClipboardList
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { format, isAfter, addDays } from 'date-fns';
 import toast from 'react-hot-toast';
+import MaterialRequisitionPanel from '../components/production/MaterialRequisitionPanel';
+import ProductionScheduleBoard from '../components/production/ProductionScheduleBoard';
+import ShopFloorControlPanel from '../components/production/ShopFloorControlPanel';
 
 const STAGES = [
   { key: 'pending_material', label: 'Pending Material', color: 'amber', icon: Package },
@@ -62,8 +65,11 @@ interface ProductionLog {
   job_order_item_id: string | null;
 }
 
+type TabKey = 'board' | 'materials' | 'schedule' | 'shop_floor';
+
 export default function ProductionBoardPage() {
   const { profile } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabKey>('board');
   const [jobOrders, setJobOrders] = useState<JobOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -205,83 +211,120 @@ export default function ProductionBoardPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Production Board</h1>
-          <p className="text-sm text-slate-500 mt-1">Track manufacturing progress across all job orders</p>
+          <h1 className="text-2xl font-bold text-slate-900">Production Management</h1>
+          <p className="text-sm text-slate-500 mt-1">Manufacturing operations, scheduling, and shop floor control</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <KPICard icon={Factory} label="Active Orders" value={stats.totalActive} color="blue" />
-        <KPICard icon={Wrench} label="In Production" value={stats.inProduction} color="teal" />
-        <KPICard icon={AlertTriangle} label="Quality Issues" value={stats.qualityIssues} color="red" />
-        <KPICard icon={Clock} label="Due This Week" value={stats.dueThisWeek} color="amber" />
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by order # or customer..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-          />
+      {activeTab === 'board' && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <KPICard icon={Factory} label="Active Orders" value={stats.totalActive} color="blue" />
+          <KPICard icon={Wrench} label="In Production" value={stats.inProduction} color="teal" />
+          <KPICard icon={AlertTriangle} label="Quality Issues" value={stats.qualityIssues} color="red" />
+          <KPICard icon={Clock} label="Due This Week" value={stats.dueThisWeek} color="amber" />
         </div>
-        <select
-          value={priorityFilter}
-          onChange={e => setPriorityFilter(e.target.value)}
-          className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">All Priorities</option>
-          <option value="urgent">Urgent</option>
-          <option value="high">High</option>
-          <option value="normal">Normal</option>
-          <option value="low">Low</option>
-        </select>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[500px]">
-        {STAGES.map(stage => {
-          const orders = getColumnOrders(stage.key);
-          const StageIcon = stage.icon;
-          return (
-            <div key={stage.key} className="flex flex-col">
-              <div className={`flex items-center gap-2 px-4 py-3 rounded-t-xl bg-${stage.color}-50 border border-${stage.color}-200 border-b-0`}>
-                <StageIcon className={`w-4 h-4 text-${stage.color}-600`} />
-                <span className={`text-sm font-semibold text-${stage.color}-800`}>{stage.label}</span>
-                <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-${stage.color}-200 text-${stage.color}-800`}>{orders.length}</span>
-              </div>
-              <div className={`flex-1 p-3 space-y-3 bg-slate-50 border border-slate-200 border-t-0 rounded-b-xl overflow-y-auto max-h-[600px]`}>
-                {orders.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400 text-sm">No orders</div>
-                ) : orders.map(order => (
-                  <JobOrderCard
-                    key={order.id}
-                    order={order}
-                    onView={() => setSelectedOrder(order)}
-                    onStatusChange={handleStatusChange}
-                    stages={STAGES}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {selectedOrder && (
-        <OrderDetailPanel
-          order={selectedOrder}
-          onClose={() => { setSelectedOrder(null); setShowLogForm(false); }}
-          onLogProduction={() => setShowLogForm(true)}
-          showLogForm={showLogForm}
-          logForm={logForm}
-          setLogForm={setLogForm}
-          onSaveLog={handleLogProduction}
-          onCancelLog={() => setShowLogForm(false)}
-        />
       )}
+
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
+        <button
+          onClick={() => setActiveTab('board')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'board' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <Factory className="w-4 h-4" /> Production Board
+        </button>
+        <button
+          onClick={() => setActiveTab('materials')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'materials' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <ClipboardList className="w-4 h-4" /> Material Requisitions
+        </button>
+        <button
+          onClick={() => setActiveTab('schedule')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'schedule' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <Calendar className="w-4 h-4" /> Production Schedule
+        </button>
+        <button
+          onClick={() => setActiveTab('shop_floor')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'shop_floor' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <Users className="w-4 h-4" /> Shop Floor Control
+        </button>
+      </div>
+
+      {activeTab === 'board' && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by order # or customer..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              />
+            </div>
+            <select
+              value={priorityFilter}
+              onChange={e => setPriorityFilter(e.target.value)}
+              className="px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Priorities</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="normal">Normal</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[500px]">
+            {STAGES.map(stage => {
+              const orders = getColumnOrders(stage.key);
+              const StageIcon = stage.icon;
+              return (
+                <div key={stage.key} className="flex flex-col">
+                  <div className={`flex items-center gap-2 px-4 py-3 rounded-t-xl bg-${stage.color}-50 border border-${stage.color}-200 border-b-0`}>
+                    <StageIcon className={`w-4 h-4 text-${stage.color}-600`} />
+                    <span className={`text-sm font-semibold text-${stage.color}-800`}>{stage.label}</span>
+                    <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-${stage.color}-200 text-${stage.color}-800`}>{orders.length}</span>
+                  </div>
+                  <div className={`flex-1 p-3 space-y-3 bg-slate-50 border border-slate-200 border-t-0 rounded-b-xl overflow-y-auto max-h-[600px]`}>
+                    {orders.length === 0 ? (
+                      <div className="text-center py-8 text-slate-400 text-sm">No orders</div>
+                    ) : orders.map(order => (
+                      <JobOrderCard
+                        key={order.id}
+                        order={order}
+                        onView={() => setSelectedOrder(order)}
+                        onStatusChange={handleStatusChange}
+                        stages={STAGES}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {selectedOrder && (
+            <OrderDetailPanel
+              order={selectedOrder}
+              onClose={() => { setSelectedOrder(null); setShowLogForm(false); }}
+              onLogProduction={() => setShowLogForm(true)}
+              showLogForm={showLogForm}
+              logForm={logForm}
+              setLogForm={setLogForm}
+              onSaveLog={handleLogProduction}
+              onCancelLog={() => setShowLogForm(false)}
+            />
+          )}
+        </>
+      )}
+
+      {activeTab === 'materials' && <MaterialRequisitionPanel />}
+      {activeTab === 'schedule' && <ProductionScheduleBoard />}
+      {activeTab === 'shop_floor' && <ShopFloorControlPanel />}
     </div>
   );
 }

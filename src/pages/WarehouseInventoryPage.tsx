@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Search, Plus, X, Save, Edit3, MapPin, Package, AlertTriangle,
-  Eye, Box, Layers, Download, PackageCheck
+  Eye, Box, Layers, Download, PackageCheck, ClipboardList, Truck
 } from 'lucide-react';
 import LotTrackingPanel from '../components/warehouse/LotTrackingPanel';
+import CycleCountingPanel from '../components/warehouse/CycleCountingPanel';
+import PickingPackingPanel from '../components/warehouse/PickingPackingPanel';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import Pagination, { usePagination } from '../components/ui/Pagination';
 
-type TabKey = 'inventory' | 'locations' | 'lot_tracking';
+type TabKey = 'inventory' | 'locations' | 'lot_tracking' | 'cycle_counting' | 'picking_packing';
 
 const locationTypeConfig: Record<string, { label: string; bg: string; text: string }> = {
   raw_material: { label: 'Raw Material', bg: 'bg-amber-100', text: 'text-amber-700' },
@@ -223,24 +225,36 @@ export default function WarehouseInventoryPage() {
         <StatCard icon={MapPin} label="Active Locations" value={stats.totalLocations} color="teal" />
       </div>
 
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit overflow-x-auto">
         <button
           onClick={() => setActiveTab('inventory')}
-          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'inventory' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'inventory' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
         >
           <Package className="w-4 h-4" /> Inventory
         </button>
         <button
           onClick={() => setActiveTab('locations')}
-          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'locations' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'locations' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
         >
           <MapPin className="w-4 h-4" /> Locations
         </button>
         <button
           onClick={() => setActiveTab('lot_tracking')}
-          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors ${activeTab === 'lot_tracking' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'lot_tracking' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
         >
           <PackageCheck className="w-4 h-4" /> Lot Tracking
+        </button>
+        <button
+          onClick={() => setActiveTab('cycle_counting')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'cycle_counting' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <ClipboardList className="w-4 h-4" /> Cycle Counting
+        </button>
+        <button
+          onClick={() => setActiveTab('picking_packing')}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === 'picking_packing' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
+        >
+          <Truck className="w-4 h-4" /> Picking & Packing
         </button>
       </div>
 
@@ -280,6 +294,10 @@ export default function WarehouseInventoryPage() {
       )}
 
       {activeTab === 'lot_tracking' && <LotTrackingPanel />}
+
+      {activeTab === 'cycle_counting' && <CycleCountingPanel />}
+
+      {activeTab === 'picking_packing' && <PickingPackingPanel />}
 
       {showLocationForm && (
         <LocationFormModal
