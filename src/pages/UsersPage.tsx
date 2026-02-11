@@ -7,7 +7,7 @@ import type { Database, UserRole } from '../lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-const roleColors: Record<UserRole, string> = {
+const roleColors: Record<string, string> = {
   sales: 'bg-orange-100 text-orange-600',
   engineering: 'bg-teal-100 text-teal-700',
   solution_consultant: 'bg-indigo-100 text-indigo-700',
@@ -17,6 +17,10 @@ const roleColors: Record<UserRole, string> = {
   admin: 'bg-slate-100 text-slate-700',
   project_manager: 'bg-blue-100 text-blue-700',
   purchasing: 'bg-cyan-100 text-cyan-700',
+  production: 'bg-amber-100 text-amber-700',
+  logistics: 'bg-sky-100 text-sky-700',
+  quality: 'bg-emerald-100 text-emerald-700',
+  warehouse: 'bg-stone-100 text-stone-700',
 };
 
 export default function UsersPage() {
@@ -268,8 +272,8 @@ export default function UsersPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-4">
-        {(['sales', 'engineering', 'solution_consultant', 'manager', 'ceo', 'finance', 'admin', 'project_manager', 'purchasing'] as UserRole[]).map(
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+        {(['sales', 'engineering', 'solution_consultant', 'manager', 'ceo', 'finance', 'admin', 'project_manager', 'purchasing', 'production', 'logistics', 'quality', 'warehouse'] as UserRole[]).map(
           (role) => (
             <div key={role} className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -462,6 +466,10 @@ export default function UsersPage() {
                   <option value="admin">Admin</option>
                   <option value="project_manager">Project Manager</option>
                   <option value="purchasing">Purchasing</option>
+                  <option value="production">Production</option>
+                  <option value="logistics">Logistics</option>
+                  <option value="quality">Quality Control</option>
+                  <option value="warehouse">Warehouse</option>
                 </select>
               </div>
 
