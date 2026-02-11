@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, Shield, Mail, X, Save, Key, AlertCircle } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database, UserRole } from '../lib/database.types';
@@ -167,22 +168,26 @@ export default function UsersPage() {
         if (error) throw error;
         alert('User updated successfully!');
       } else {
-        // Step 1: Create the user in Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        const isolatedClient = createClient(
+          import.meta.env.VITE_SUPABASE_URL,
+          import.meta.env.VITE_SUPABASE_ANON_KEY,
+          { auth: { persistSession: false, autoRefreshToken: false } }
+        );
+
+        const { data: authData, error: authError } = await isolatedClient.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
             data: {
               full_name: formData.full_name,
             },
-            emailRedirectTo: undefined, // Disable email confirmation
+            emailRedirectTo: undefined,
           },
         });
 
         if (authError) throw authError;
         if (!authData.user) throw new Error('Failed to create user');
 
-        // Step 2: Create the profile with the specified role
         const { error: profileError } = await supabase.rpc('create_profile_for_user', {
           p_user_id: authData.user.id,
           p_email: formData.email,
@@ -191,7 +196,6 @@ export default function UsersPage() {
         } as any);
 
         if (profileError) {
-          // If profile creation fails, try to delete the auth user
           console.error('Profile creation failed:', profileError);
           throw new Error(`Failed to create user profile: ${profileError.message}`);
         }
