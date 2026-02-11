@@ -87,6 +87,7 @@ export const en = {
     automatedReorder: 'Automated Reorder',
     production: 'Production Board',
     warehouse: 'Warehouse',
+    warehouseOperations: 'Warehouse Operations',
     stockMovements: 'Stock Movements',
     qualityControl: 'Quality Control',
     qualityCosts: 'Quality Costs',

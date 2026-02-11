@@ -305,6 +305,12 @@ const navigationItems: NavItem[] = [
     roles: ['purchasing', 'engineering', 'admin'],
   },
   {
+    labelKey: 'warehouseOperations',
+    icon: ClipboardList,
+    path: '/warehouse-operations',
+    roles: ['purchasing', 'project_manager', 'engineering', 'manager', 'admin'],
+  },
+  {
     labelKey: 'stockMovements',
     icon: ArrowUpDown,
     path: '/stock-movements',

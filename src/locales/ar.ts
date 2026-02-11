@@ -89,6 +89,7 @@ export const ar: TranslationKeys = {
     automatedReorder: 'إعادة الطلب التلقائي',
     production: 'لوحة الإنتاج',
     warehouse: 'المستودع',
+    warehouseOperations: 'عمليات المستودع',
     stockMovements: 'حركات المخزون',
     qualityControl: 'مراقبة الجودة',
     qualityCosts: 'تكاليف الجودة',
