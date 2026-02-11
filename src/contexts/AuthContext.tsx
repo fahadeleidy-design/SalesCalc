@@ -50,27 +50,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInInProgress = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+    const maxRetries = 3;
+    const profileColumns = 'id,user_id,email,full_name,role,department,phone,avatar_url,sales_target,language,theme,notifications_enabled,account_status,rejection_reason,requested_role,preferred_language,force_password_change,created_at,updated_at';
 
-      if (error) {
-        console.error('Error fetching profile:', error);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select(profileColumns)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (error) {
+          console.error(`Profile fetch attempt ${attempt}/${maxRetries} error:`, error);
+          if (attempt < maxRetries) {
+            await new Promise(r => setTimeout(r, 500 * attempt));
+            continue;
+          }
+          return null;
+        }
+
+        if (data && (data as any).force_password_change === true) {
+          setShowPasswordChange(true);
+        }
+
+        return data as Profile | null;
+      } catch (err) {
+        console.error(`Profile fetch attempt ${attempt}/${maxRetries} exception:`, err);
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 500 * attempt));
+          continue;
+        }
         return null;
       }
-
-      if (data && (data as any).force_password_change === true) {
-        setShowPasswordChange(true);
-      }
-
-      return data as Profile | null;
-    } catch (err) {
-      console.error('Exception fetching profile:', err);
-      return null;
     }
+    return null;
   }, []);
 
   const refreshProfile = useCallback(async () => {
