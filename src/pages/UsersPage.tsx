@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Shield, Mail, X, Save, Key } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Shield, Mail, X, Save, Key, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import type { Database, UserRole } from '../lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -18,6 +19,9 @@ const roleColors: Record<UserRole, string> = {
 };
 
 export default function UsersPage() {
+  const { profile } = useAuth();
+  const canManage = ['admin', 'ceo'].includes(profile?.role || '');
+
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -235,14 +239,30 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold text-slate-900">User Management</h1>
           <p className="text-slate-600 mt-1">Manage system users and roles</p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add User
-        </button>
+        {canManage && (
+          <button
+            onClick={handleAdd}
+            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Add User
+          </button>
+        )}
       </div>
+
+      {!canManage && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-semibold text-amber-900">View Only Access</h3>
+              <p className="text-sm text-amber-800 mt-1">
+                You can view user information but only Admin and CEO roles can create, edit, or delete users.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-4">
         {(['sales', 'engineering', 'solution_consultant', 'manager', 'ceo', 'finance', 'admin', 'project_manager', 'purchasing'] as UserRole[]).map(
@@ -324,29 +344,33 @@ export default function UsersPage() {
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="p-1 text-orange-500 hover:bg-orange-50 rounded"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleResetPassword(user)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                        title="Reset Password"
-                      >
-                        <Key className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {canManage ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="p-1 text-orange-500 hover:bg-orange-50 rounded"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleResetPassword(user)}
+                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                          title="Reset Password"
+                        >
+                          <Key className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">No actions</span>
+                    )}
                   </td>
                 </tr>
               ))}
