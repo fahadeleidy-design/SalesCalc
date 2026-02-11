@@ -38,7 +38,6 @@ import {
   RefreshCw,
   CalendarRange,
   Timer,
-  Bell,
   Calculator,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
