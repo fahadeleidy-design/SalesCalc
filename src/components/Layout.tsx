@@ -34,6 +34,8 @@ import {
   Truck,
   BarChart,
   Plug,
+  Receipt,
+  RefreshCw,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -237,6 +239,30 @@ const navigationItems: NavItem[] = [
     icon: PackageCheck,
     path: '/goods-receiving',
     roles: ['purchasing'],
+  },
+  {
+    labelKey: 'invoiceMatching',
+    icon: Receipt,
+    path: '/invoice-matching',
+    roles: ['purchasing', 'finance', 'ceo', 'admin'],
+  },
+  {
+    labelKey: 'purchaseContracts',
+    icon: FileText,
+    path: '/purchase-contracts',
+    roles: ['purchasing', 'finance', 'ceo', 'admin'],
+  },
+  {
+    labelKey: 'spendAnalytics',
+    icon: BarChart3,
+    path: '/spend-analytics',
+    roles: ['purchasing', 'finance', 'ceo', 'admin', 'manager'],
+  },
+  {
+    labelKey: 'automatedReorder',
+    icon: RefreshCw,
+    path: '/automated-reorder',
+    roles: ['purchasing', 'admin'],
   },
   {
     labelKey: 'production',

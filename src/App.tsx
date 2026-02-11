@@ -56,6 +56,10 @@ import FleetManagementPage from './pages/FleetManagementPage';
 import RoutePlanningPage from './pages/RoutePlanningPage';
 import WarehouseOperationsPage from './pages/WarehouseOperationsPage';
 import IntegrationsPage from './pages/IntegrationsPage';
+import InvoiceMatchingPage from './pages/InvoiceMatchingPage';
+import PurchaseContractsPage from './pages/PurchaseContractsPage';
+import SpendAnalyticsPage from './pages/SpendAnalyticsPage';
+import AutomatedReorderPage from './pages/AutomatedReorderPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -224,6 +228,14 @@ function AppContent() {
         return hasAccess(['purchasing', 'project_manager', 'manager', 'admin']) ? <RoutePlanningPage /> : <UnauthorizedPage />;
       case '/warehouse-operations':
         return hasAccess(['purchasing', 'project_manager', 'engineering', 'manager', 'admin']) ? <WarehouseOperationsPage /> : <UnauthorizedPage />;
+      case '/invoice-matching':
+        return hasAccess(['purchasing', 'finance', 'ceo', 'admin']) ? <InvoiceMatchingPage /> : <UnauthorizedPage />;
+      case '/purchase-contracts':
+        return hasAccess(['purchasing', 'finance', 'ceo', 'admin']) ? <PurchaseContractsPage /> : <UnauthorizedPage />;
+      case '/spend-analytics':
+        return hasAccess(['purchasing', 'finance', 'ceo', 'admin', 'manager']) ? <SpendAnalyticsPage /> : <UnauthorizedPage />;
+      case '/automated-reorder':
+        return hasAccess(['purchasing', 'admin']) ? <AutomatedReorderPage /> : <UnauthorizedPage />;
       case '/integrations':
         return hasAccess(['admin']) ? <IntegrationsPage /> : <UnauthorizedPage />;
 

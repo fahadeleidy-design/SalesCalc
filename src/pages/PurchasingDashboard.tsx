@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   ShoppingCart, Package, ClipboardList, AlertTriangle, ArrowRight,
   Clock, TrendingUp, Factory, Warehouse, ArrowUpDown, PackageCheck, Wrench,
-  ClipboardCheck, Truck
+  ClipboardCheck, Truck, FileText, BarChart3, RefreshCw, Receipt, Bell
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -40,13 +40,16 @@ export default function PurchasingDashboard() {
   const [urgentRequests, setUrgentRequests] = useState<any[]>([]);
   const [activeJobOrders, setActiveJobOrders] = useState<any[]>([]);
   const [lowStockItems, setLowStockItems] = useState<any[]>([]);
+  const [invoiceStats, setInvoiceStats] = useState({ pending: 0, matched: 0, overdue: 0 });
+  const [contractStats, setContractStats] = useState({ active: 0, expiring: 0 });
+  const [reorderAlerts, setReorderAlerts] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadDashboard(); }, []);
 
   const loadDashboard = async () => {
     try {
-      const [posRes, prRes, bomRes, histRes, jobsRes, invRes, movRes, grRes, qcRes, shipRes] = await Promise.all([
+      const [posRes, prRes, bomRes, histRes, jobsRes, invRes, movRes, grRes, qcRes, shipRes, invMatchRes, contractsRes, reorderRes] = await Promise.all([
         supabase.from('purchase_orders').select('id, total, status').not('status', 'in', '("delivered","closed","cancelled")'),
         supabase.from('procurement_requests').select('id, material_description, urgency, status, job_order_id, estimated_cost, created_at').in('status', ['pending', 'approved']).order('created_at', { ascending: false }),
         supabase.from('bill_of_materials').select('id, quantity_required, quantity_available, status').eq('status', 'pending'),
@@ -57,6 +60,9 @@ export default function PurchasingDashboard() {
         supabase.from('goods_receipts').select('id, receipt_date').order('receipt_date', { ascending: false }).limit(20),
         supabase.from('quality_inspections').select('id, result').eq('result', 'pending'),
         supabase.from('shipments').select('id, status').in('status', ['dispatched', 'in_transit']),
+        supabase.from('purchase_invoices').select('id, match_status, payment_status, due_date'),
+        supabase.from('purchase_contracts').select('id, status, end_date'),
+        supabase.from('reorder_alerts').select('id, status').eq('status', 'triggered'),
       ]);
 
       const openPOs = posRes.data || [];
@@ -99,6 +105,22 @@ export default function PurchasingDashboard() {
 
       setPendingQC((qcRes.data || []).length);
       setInTransitShipments((shipRes.data || []).length);
+
+      const invoices = invMatchRes.data || [];
+      setInvoiceStats({
+        pending: invoices.filter((i: any) => i.match_status === 'pending' || i.match_status === 'partial').length,
+        matched: invoices.filter((i: any) => i.match_status === 'matched').length,
+        overdue: invoices.filter((i: any) => i.payment_status !== 'paid' && i.due_date && i.due_date < today).length,
+      });
+
+      const contracts = contractsRes.data || [];
+      const thirtyDaysLater = addDays(now, 30).toISOString().split('T')[0];
+      setContractStats({
+        active: contracts.filter((c: any) => c.status === 'active').length,
+        expiring: contracts.filter((c: any) => c.status === 'active' && c.end_date && c.end_date <= thirtyDaysLater).length,
+      });
+
+      setReorderAlerts((reorderRes.data || []).length);
 
       const criticalFirst = [...pendingReqs].sort((a, b) => {
         const order: Record<string, number> = { critical: 0, high: 1, normal: 2, low: 3 };
@@ -153,6 +175,10 @@ export default function PurchasingDashboard() {
         <MiniMetric label="Today's Movements" value={whStats.todayMovements} icon={ArrowUpDown} color="slate" />
         <MiniMetric label="Pending QC" value={pendingQC} icon={ClipboardCheck} color="amber" />
         <MiniMetric label="In Transit" value={inTransitShipments} icon={Truck} color="cyan" />
+        <MiniMetric label="Invoice Match" value={invoiceStats.pending} icon={Receipt} color="orange" />
+        <MiniMetric label="Contracts" value={contractStats.active} icon={FileText} color="teal" />
+        <MiniMetric label="Expiring" value={contractStats.expiring} icon={Clock} color="red" />
+        <MiniMetric label="Reorder Alerts" value={reorderAlerts} icon={Bell} color="red" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -267,15 +293,19 @@ export default function PurchasingDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
         <QuickNav icon={ClipboardList} label="Procurement" color="amber" onClick={() => navigate('/procurement-requests')} />
         <QuickNav icon={ShoppingCart} label="POs" color="blue" onClick={() => navigate('/purchasing-orders')} />
         <QuickNav icon={Package} label="Suppliers" color="teal" onClick={() => navigate('/suppliers')} />
         <QuickNav icon={Factory} label="Production" color="cyan" onClick={() => navigate('/production')} />
         <QuickNav icon={Warehouse} label="Warehouse" color="emerald" onClick={() => navigate('/warehouse')} />
-        <QuickNav icon={ArrowUpDown} label="Movements" color="slate" onClick={() => navigate('/stock-movements')} />
         <QuickNav icon={ClipboardCheck} label="Quality" color="orange" onClick={() => navigate('/quality-inspections')} />
+        <QuickNav icon={Receipt} label="Invoices" color="blue" onClick={() => navigate('/invoice-matching')} />
+        <QuickNav icon={FileText} label="Contracts" color="teal" onClick={() => navigate('/purchase-contracts')} />
+        <QuickNav icon={BarChart3} label="Analytics" color="cyan" onClick={() => navigate('/spend-analytics')} />
+        <QuickNav icon={RefreshCw} label="Reorder" color="amber" onClick={() => navigate('/automated-reorder')} />
         <QuickNav icon={Truck} label="Shipments" color="blue" onClick={() => navigate('/shipments')} />
+        <QuickNav icon={ArrowUpDown} label="Movements" color="slate" onClick={() => navigate('/stock-movements')} />
       </div>
     </div>
   );
