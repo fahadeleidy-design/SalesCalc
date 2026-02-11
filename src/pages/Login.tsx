@@ -66,7 +66,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Create auth user
+      // Create auth user with metadata
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: signupData.email,
         password: signupData.password,
@@ -74,6 +74,9 @@ export default function Login() {
           emailRedirectTo: window.location.origin,
           data: {
             full_name: signupData.full_name,
+            phone: signupData.phone || null,
+            department: signupData.department || null,
+            requested_role: signupData.requested_role,
           }
         }
       });
@@ -81,24 +84,22 @@ export default function Login() {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
-        // Create profile with pending status
+        // Wait for trigger to create profile, then update with pending status and additional fields
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         const { error: profileError } = await (supabase as any)
           .from('profiles')
-          .insert({
-            id: authData.user.id,
-            user_id: authData.user.id,
-            email: signupData.email,
-            full_name: signupData.full_name,
+          .update({
             phone: signupData.phone || null,
             department: signupData.department || null,
             requested_role: signupData.requested_role,
-            role: 'sales', // Default role, will be changed on approval
             account_status: 'pending',
-          });
+          })
+          .eq('id', authData.user.id);
 
         if (profileError) {
-          console.error('Profile creation error:', profileError);
-          throw profileError;
+          console.error('Profile update error:', profileError);
+          // Don't throw error here - profile was created by trigger
         }
 
         // Success message
