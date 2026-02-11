@@ -60,6 +60,10 @@ import InvoiceMatchingPage from './pages/InvoiceMatchingPage';
 import PurchaseContractsPage from './pages/PurchaseContractsPage';
 import SpendAnalyticsPage from './pages/SpendAnalyticsPage';
 import AutomatedReorderPage from './pages/AutomatedReorderPage';
+import ProjectTimelinePage from './pages/ProjectTimelinePage';
+import TimesheetsPage from './pages/TimesheetsPage';
+import ProjectBudgetPage from './pages/ProjectBudgetPage';
+import ResourceUtilizationPage from './pages/ResourceUtilizationPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -200,6 +204,14 @@ function AppContent() {
         return hasAccess(['project_manager']) ? <ProjectsOverviewPage /> : <UnauthorizedPage />;
       case '/project-tasks':
         return hasAccess(['project_manager']) ? <ProjectTasksPage /> : <UnauthorizedPage />;
+      case '/project-timeline':
+        return hasAccess(['project_manager', 'ceo', 'manager']) ? <ProjectTimelinePage /> : <UnauthorizedPage />;
+      case '/timesheets':
+        return hasAccess(['project_manager', 'engineering', 'purchasing']) ? <TimesheetsPage /> : <UnauthorizedPage />;
+      case '/project-budgets':
+        return hasAccess(['project_manager', 'finance', 'ceo']) ? <ProjectBudgetPage /> : <UnauthorizedPage />;
+      case '/resource-utilization':
+        return hasAccess(['project_manager', 'manager', 'ceo']) ? <ResourceUtilizationPage /> : <UnauthorizedPage />;
       case '/purchasing-orders':
         return hasAccess(['purchasing', 'finance', 'ceo', 'admin', 'engineering', 'solution_consultant']) ? <PurchasingOrdersPage /> : <UnauthorizedPage />;
       case '/procurement-requests':

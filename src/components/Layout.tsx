@@ -36,6 +36,8 @@ import {
   Plug,
   Receipt,
   RefreshCw,
+  CalendarRange,
+  Timer,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -215,6 +217,30 @@ const navigationItems: NavItem[] = [
     icon: ListTodo,
     path: '/project-tasks',
     roles: ['project_manager'],
+  },
+  {
+    labelKey: 'projectTimeline',
+    icon: CalendarRange,
+    path: '/project-timeline',
+    roles: ['project_manager', 'ceo', 'manager'],
+  },
+  {
+    labelKey: 'timesheets',
+    icon: Timer,
+    path: '/timesheets',
+    roles: ['project_manager', 'engineering', 'purchasing'],
+  },
+  {
+    labelKey: 'projectBudgets',
+    icon: DollarSign,
+    path: '/project-budgets',
+    roles: ['project_manager', 'finance', 'ceo'],
+  },
+  {
+    labelKey: 'resourceUtilization',
+    icon: Users,
+    path: '/resource-utilization',
+    roles: ['project_manager', 'manager', 'ceo'],
   },
   {
     labelKey: 'procurementRequests',

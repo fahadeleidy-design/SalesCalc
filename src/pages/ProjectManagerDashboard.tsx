@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, AlertTriangle, ListTodo, DollarSign, Clock, CheckCircle, ArrowRight, TrendingUp, Package } from 'lucide-react';
+import {
+  Briefcase, AlertTriangle, ListTodo, DollarSign, Clock, CheckCircle,
+  ArrowRight, TrendingUp, Package, CalendarRange, Users, FileText,
+  BarChart3, Timer, Layers, Shield, ChevronRight
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '../contexts/NavigationContext';
 import { formatCurrency } from '../lib/currencyUtils';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 interface DashboardStats {
   activeProjects: number;
@@ -11,6 +15,11 @@ interface DashboardStats {
   openTasks: number;
   totalProjectValue: number;
   totalPOCost: number;
+  pendingTimesheets: number;
+  totalHoursThisMonth: number;
+  healthGreen: number;
+  healthAmber: number;
+  healthRed: number;
 }
 
 interface ProjectSummary {
@@ -19,10 +28,14 @@ interface ProjectSummary {
   status: string;
   priority: string;
   due_date: string | null;
+  health_status: string;
+  overall_completion: number;
   customer: { company_name: string } | null;
   quotation: { quotation_number: string; total: number } | null;
   milestoneProgress: { completed: number; total: number };
+  taskProgress: { completed: number; total: number };
   poCost: number;
+  daysRemaining: number | null;
 }
 
 interface TimelineEvent {
@@ -53,6 +66,12 @@ const priorityColors: Record<string, string> = {
   urgent: 'bg-red-100 text-red-700',
 };
 
+const healthConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+  green: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'On Track' },
+  amber: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'At Risk' },
+  red: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', label: 'Critical' },
+};
+
 const eventIcons: Record<string, typeof Clock> = {
   status_change: ArrowRight,
   po_created: Package,
@@ -68,9 +87,24 @@ const eventIcons: Record<string, typeof Clock> = {
   bom_updated: Package,
 };
 
+const quickNavItems = [
+  { label: 'Projects', path: '/projects', icon: Briefcase, color: 'bg-blue-500' },
+  { label: 'Tasks', path: '/project-tasks', icon: ListTodo, color: 'bg-amber-500' },
+  { label: 'Timeline', path: '/project-timeline', icon: CalendarRange, color: 'bg-teal-500' },
+  { label: 'Timesheets', path: '/timesheets', icon: Timer, color: 'bg-cyan-500' },
+  { label: 'Budgets', path: '/project-budgets', icon: DollarSign, color: 'bg-emerald-500' },
+  { label: 'Resources', path: '/resource-utilization', icon: Users, color: 'bg-sky-500' },
+  { label: 'Production', path: '/production', icon: Layers, color: 'bg-orange-500' },
+  { label: 'Quality', path: '/quality-inspections', icon: Shield, color: 'bg-rose-500' },
+];
+
 export default function ProjectManagerDashboard() {
   const { navigate } = useNavigation();
-  const [stats, setStats] = useState<DashboardStats>({ activeProjects: 0, overdueMilestones: 0, openTasks: 0, totalProjectValue: 0, totalPOCost: 0 });
+  const [stats, setStats] = useState<DashboardStats>({
+    activeProjects: 0, overdueMilestones: 0, openTasks: 0,
+    totalProjectValue: 0, totalPOCost: 0, pendingTimesheets: 0,
+    totalHoursThisMonth: 0, healthGreen: 0, healthAmber: 0, healthRed: 0,
+  });
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,12 +115,17 @@ export default function ProjectManagerDashboard() {
 
   const loadDashboard = async () => {
     try {
-      const [jobOrdersRes, milestonesRes, tasksRes, posRes, timelineRes] = await Promise.all([
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [jobOrdersRes, milestonesRes, tasksRes, posRes, timelineRes, timesheetsRes, monthHoursRes] = await Promise.all([
         supabase.from('job_orders').select('*, customer:customers(company_name), quotation:quotations(quotation_number, total)').not('status', 'eq', 'cancelled').order('created_at', { ascending: false }),
         supabase.from('project_milestones').select('id, job_order_id, status, due_date'),
         supabase.from('project_tasks').select('id, job_order_id, status'),
         supabase.from('purchase_orders').select('id, quotation_id, total, status').not('status', 'eq', 'cancelled'),
         supabase.from('project_timeline_events').select('*, job_order:job_orders(job_order_number), triggered_by_profile:profiles!project_timeline_events_triggered_by_fkey(full_name)').order('created_at', { ascending: false }).limit(10),
+        supabase.from('project_timesheets').select('id').eq('status', 'submitted'),
+        supabase.from('project_timesheets').select('hours_worked').eq('status', 'approved').gte('work_date', monthStart),
       ]);
 
       const jobOrders = (jobOrdersRes.data || []) as any[];
@@ -95,10 +134,16 @@ export default function ProjectManagerDashboard() {
       const pos = (posRes.data || []) as any[];
 
       const activeJobs = jobOrders.filter((j: any) => j.status !== 'completed');
-
-      const now = new Date();
       const overdueMilestones = milestones.filter((m: any) => m.status !== 'completed' && m.due_date && new Date(m.due_date) < now).length;
       const openTasks = tasks.filter((t: any) => t.status !== 'done').length;
+
+      let healthGreen = 0, healthAmber = 0, healthRed = 0;
+      activeJobs.forEach((j: any) => {
+        const h = j.health_status || 'green';
+        if (h === 'green') healthGreen++;
+        else if (h === 'amber') healthAmber++;
+        else healthRed++;
+      });
 
       const quotationIdToPO = new Map<string, number>();
       pos.forEach((po: any) => {
@@ -117,20 +162,36 @@ export default function ProjectManagerDashboard() {
         const joMilestones = milestones.filter((m: any) => m.job_order_id === jo.id);
         const completedMilestones = joMilestones.filter((m: any) => m.status === 'completed').length;
 
+        const joTasks = tasks.filter((t: any) => t.job_order_id === jo.id);
+        const completedTasks = joTasks.filter((t: any) => t.status === 'done').length;
+
+        const daysRemaining = jo.due_date ? differenceInDays(new Date(jo.due_date), now) : null;
+
         return {
           id: jo.id,
           job_order_number: jo.job_order_number,
           status: jo.status,
           priority: jo.priority,
           due_date: jo.due_date,
+          health_status: jo.health_status || 'green',
+          overall_completion: jo.overall_completion || 0,
           customer: jo.customer,
           quotation: jo.quotation,
           milestoneProgress: { completed: completedMilestones, total: joMilestones.length },
+          taskProgress: { completed: completedTasks, total: joTasks.length },
           poCost,
+          daysRemaining,
         };
       });
 
-      setStats({ activeProjects: activeJobs.length, overdueMilestones, openTasks, totalProjectValue, totalPOCost });
+      const pendingTimesheets = timesheetsRes.data?.length || 0;
+      const totalHoursThisMonth = (monthHoursRes.data || []).reduce((sum: number, t: any) => sum + Number(t.hours_worked || 0), 0);
+
+      setStats({
+        activeProjects: activeJobs.length, overdueMilestones, openTasks,
+        totalProjectValue, totalPOCost, pendingTimesheets, totalHoursThisMonth,
+        healthGreen, healthAmber, healthRed,
+      });
       setProjects(projectSummaries);
       setTimeline((timelineRes.data || []) as TimelineEvent[]);
     } catch (err) {
@@ -151,20 +212,65 @@ export default function ProjectManagerDashboard() {
     );
   }
 
+  const activeProjects = projects.filter(p => p.status !== 'completed');
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Project Manager Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">Overview of all projects, milestones, and tasks</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Project Manager Dashboard</h1>
+          <p className="text-sm text-slate-500 mt-1">Overview of all projects, health status, and team performance</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Briefcase} label="Active Projects" value={stats.activeProjects} color="blue" />
-        <StatCard icon={AlertTriangle} label="Overdue Milestones" value={stats.overdueMilestones} color="red" />
-        <StatCard icon={ListTodo} label="Open Tasks" value={stats.openTasks} color="amber" />
-        <StatCard icon={TrendingUp} label="Total Margin" value={formatCurrency(stats.totalProjectValue - stats.totalPOCost)} subtitle={`${stats.totalProjectValue > 0 ? ((stats.totalProjectValue - stats.totalPOCost) / stats.totalProjectValue * 100).toFixed(1) : 0}%`} color="emerald" />
+      {/* Health Summary Banner */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Project Health Overview</h2>
+          <button onClick={() => navigate('/project-timeline')} className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1">
+            View Timeline <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {(['green', 'amber', 'red'] as const).map(h => {
+            const cfg = healthConfig[h];
+            const count = h === 'green' ? stats.healthGreen : h === 'amber' ? stats.healthAmber : stats.healthRed;
+            return (
+              <div key={h} className={`${cfg.bg} rounded-lg p-4 flex items-center gap-3`}>
+                <div className={`w-3 h-3 rounded-full ${cfg.dot}`} />
+                <div>
+                  <p className={`text-2xl font-bold ${cfg.text}`}>{count}</p>
+                  <p className={`text-xs font-medium ${cfg.text} opacity-80`}>{cfg.label}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <MiniKPI label="Active Projects" value={stats.activeProjects} icon={Briefcase} color="blue" />
+        <MiniKPI label="Overdue Milestones" value={stats.overdueMilestones} icon={AlertTriangle} color="red" />
+        <MiniKPI label="Open Tasks" value={stats.openTasks} icon={ListTodo} color="amber" />
+        <MiniKPI label="Pending Approvals" value={stats.pendingTimesheets} icon={Clock} color="orange" />
+        <MiniKPI label="Hours This Month" value={Math.round(stats.totalHoursThisMonth)} icon={Timer} color="cyan" />
+        <MiniKPI label="Gross Margin" value={formatCurrency(stats.totalProjectValue - stats.totalPOCost)} icon={TrendingUp} color="emerald" />
+      </div>
+
+      {/* Quick Navigation */}
+      <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+        {quickNavItems.map(item => (
+          <button key={item.path} onClick={() => navigate(item.path)} className="flex flex-col items-center gap-1.5 p-3 bg-white rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all group">
+            <div className={`p-2 rounded-lg ${item.color} bg-opacity-10 group-hover:bg-opacity-20 transition-colors`}>
+              <item.icon className={`w-4 h-4 ${item.color.replace('bg-', 'text-')}`} />
+            </div>
+            <span className="text-[10px] sm:text-xs font-medium text-slate-600 text-center leading-tight">{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Active Projects with Health */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-slate-100">
@@ -173,92 +279,113 @@ export default function ProjectManagerDashboard() {
               View All <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-          <div className="divide-y divide-slate-100 max-h-[480px] overflow-y-auto">
-            {projects.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">No projects found</div>
+          <div className="divide-y divide-slate-100 max-h-[520px] overflow-y-auto">
+            {activeProjects.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">No active projects</div>
             ) : (
-              projects.slice(0, 8).map(project => (
-                <button key={project.id} onClick={() => navigate('/projects', { projectId: project.id })} className="w-full p-4 hover:bg-slate-50 transition-colors text-left">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-900 text-sm">{project.job_order_number}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-slate-100 text-slate-600'}`}>{project.status.replace(/_/g, ' ')}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityColors[project.priority] || ''}`}>{project.priority}</span>
-                    </div>
-                    <span className="text-xs text-slate-400">{project.due_date ? format(new Date(project.due_date), 'MMM d, yyyy') : 'No due date'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">{project.customer?.company_name || 'N/A'}</span>
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                      <span>Value: {formatCurrency(project.quotation?.total || 0)}</span>
-                      <span>PO: {formatCurrency(project.poCost)}</span>
-                    </div>
-                  </div>
-                  {project.milestoneProgress.total > 0 && (
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                        <span>Milestones</span>
-                        <span>{project.milestoneProgress.completed}/{project.milestoneProgress.total}</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-1.5">
-                        <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${(project.milestoneProgress.completed / project.milestoneProgress.total) * 100}%` }} />
-                      </div>
-                    </div>
-                  )}
-                </button>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100">
-            <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
-          </div>
-          <div className="divide-y divide-slate-100 max-h-[480px] overflow-y-auto">
-            {timeline.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">No activity yet</div>
-            ) : (
-              timeline.map(event => {
-                const Icon = eventIcons[event.event_type] || Clock;
+              activeProjects.slice(0, 8).map(project => {
+                const hCfg = healthConfig[project.health_status] || healthConfig.green;
                 return (
-                  <div key={event.id} className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 p-1.5 rounded-lg bg-slate-100">
-                        <Icon className="w-3.5 h-3.5 text-slate-500" />
+                  <button key={project.id} onClick={() => navigate('/projects', { projectId: project.id })} className="w-full p-4 hover:bg-slate-50 transition-colors text-left">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2.5 h-2.5 rounded-full ${hCfg.dot}`} title={hCfg.label} />
+                        <span className="font-semibold text-slate-900 text-sm">{project.job_order_number}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[project.status] || 'bg-slate-100 text-slate-600'}`}>{project.status.replace(/_/g, ' ')}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityColors[project.priority] || ''}`}>{project.priority}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-700">{event.description}</p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
-                          <span>{event.job_order?.job_order_number}</span>
-                          {event.triggered_by_profile?.full_name && <span>by {event.triggered_by_profile.full_name}</span>}
-                          <span>{format(new Date(event.created_at), 'MMM d, h:mm a')}</span>
+                      <div className="flex items-center gap-2">
+                        {project.daysRemaining !== null && (
+                          <span className={`text-xs font-medium ${project.daysRemaining < 0 ? 'text-red-600' : project.daysRemaining < 7 ? 'text-amber-600' : 'text-slate-400'}`}>
+                            {project.daysRemaining < 0 ? `${Math.abs(project.daysRemaining)}d overdue` : `${project.daysRemaining}d left`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-slate-600">{project.customer?.company_name || 'N/A'}</span>
+                      <div className="flex items-center gap-4 text-xs text-slate-500">
+                        <span>Value: {formatCurrency(project.quotation?.total || 0)}</span>
+                        <span>Cost: {formatCurrency(project.poCost)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+                          <span>Completion</span>
+                          <span>{project.overall_completion}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5">
+                          <div className={`h-1.5 rounded-full transition-all ${project.health_status === 'red' ? 'bg-red-500' : project.health_status === 'amber' ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(project.overall_completion, 100)}%` }} />
                         </div>
                       </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-400 whitespace-nowrap">
+                        <span title="Milestones">M: {project.milestoneProgress.completed}/{project.milestoneProgress.total}</span>
+                        <span title="Tasks">T: {project.taskProgress.completed}/{project.taskProgress.total}</span>
+                      </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })
             )}
           </div>
         </div>
-      </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Financial Overview</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <p className="text-xs text-blue-600 font-medium">Total Quotation Value</p>
-            <p className="text-xl font-bold text-blue-900 mt-1">{formatCurrency(stats.totalProjectValue)}</p>
+        <div className="lg:col-span-2 space-y-6">
+          {/* Recent Activity */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-lg font-semibold text-slate-900">Recent Activity</h2>
+            </div>
+            <div className="divide-y divide-slate-100 max-h-[300px] overflow-y-auto">
+              {timeline.length === 0 ? (
+                <div className="p-8 text-center text-slate-500">No activity yet</div>
+              ) : (
+                timeline.map(event => {
+                  const Icon = eventIcons[event.event_type] || Clock;
+                  return (
+                    <div key={event.id} className="p-3">
+                      <div className="flex items-start gap-2.5">
+                        <div className="mt-0.5 p-1 rounded bg-slate-100">
+                          <Icon className="w-3 h-3 text-slate-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-slate-700 line-clamp-2">{event.description}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                            <span>{event.job_order?.job_order_number}</span>
+                            <span>{format(new Date(event.created_at), 'MMM d, h:mm a')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
-          <div className="p-4 bg-amber-50 rounded-lg">
-            <p className="text-xs text-amber-600 font-medium">Total PO Cost</p>
-            <p className="text-xl font-bold text-amber-900 mt-1">{formatCurrency(stats.totalPOCost)}</p>
-          </div>
-          <div className="p-4 bg-emerald-50 rounded-lg">
-            <p className="text-xs text-emerald-600 font-medium">Gross Margin</p>
-            <p className="text-xl font-bold text-emerald-900 mt-1">{formatCurrency(stats.totalProjectValue - stats.totalPOCost)}</p>
-            <p className="text-xs text-emerald-600 mt-0.5">{stats.totalProjectValue > 0 ? ((stats.totalProjectValue - stats.totalPOCost) / stats.totalProjectValue * 100).toFixed(1) : 0}% margin</p>
+
+          {/* Financial Summary */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">Financial Summary</h2>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">Quotation Value</span>
+                <span className="text-sm font-semibold text-slate-900">{formatCurrency(stats.totalProjectValue)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">PO Cost</span>
+                <span className="text-sm font-semibold text-amber-700">{formatCurrency(stats.totalPOCost)}</span>
+              </div>
+              <div className="border-t border-slate-100 pt-2 flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">Gross Margin</span>
+                <div className="text-right">
+                  <span className="text-sm font-bold text-emerald-700">{formatCurrency(stats.totalProjectValue - stats.totalPOCost)}</span>
+                  <span className="text-xs text-emerald-600 ml-1">
+                    ({stats.totalProjectValue > 0 ? ((stats.totalProjectValue - stats.totalPOCost) / stats.totalProjectValue * 100).toFixed(1) : 0}%)
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -266,22 +393,14 @@ export default function ProjectManagerDashboard() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, subtitle, color }: { icon: any; label: string; value: string | number; subtitle?: string; color: string }) {
-  const bgColor = `bg-${color}-50`;
-  const iconColor = `text-${color}-600`;
-  const valueColor = `text-${color}-900`;
+function MiniKPI({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: any; color: string }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <div className="flex items-center gap-3">
-        <div className={`p-2.5 rounded-lg ${bgColor}`}>
-          <Icon className={`w-5 h-5 ${iconColor}`} />
-        </div>
-        <div>
-          <p className="text-xs text-slate-500 font-medium">{label}</p>
-          <p className={`text-xl font-bold ${valueColor}`}>{value}</p>
-          {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
-        </div>
+    <div className="bg-white rounded-xl border border-slate-200 p-3">
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className={`w-4 h-4 text-${color}-600`} />
+        <span className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">{label}</span>
       </div>
+      <p className={`text-lg font-bold text-${color}-900`}>{value}</p>
     </div>
   );
 }
