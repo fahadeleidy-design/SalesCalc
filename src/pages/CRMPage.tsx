@@ -970,9 +970,9 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
   });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold text-slate-900">
             {lead ? t.common.edit : t.crm.leads.addLead}
           </h2>
@@ -981,7 +981,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
           </button>
         </div>
 
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-6">
           {/* Company Information */}
           <div className={isRTL ? 'text-right font-arabic' : 'text-left'}>
             <h3 className={`text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -1903,9 +1903,9 @@ function OpportunityModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8">
-        <div className={`flex items-center justify-between p-6 border-b border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
+        <div className={`flex items-center justify-between p-6 border-b border-slate-200 sticky top-0 bg-white z-10 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <h2 className="text-xl font-bold text-slate-900">
               {opportunity ? t.common.edit : t.crm.opportunities.addOpportunity}
@@ -1968,7 +1968,7 @@ function OpportunityModal({
           </div>
         )}
 
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-6">
           {/* Basic Information */}
           <div className={isRTL ? 'text-right font-arabic' : 'text-left'}>
             <h3 className={`text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
