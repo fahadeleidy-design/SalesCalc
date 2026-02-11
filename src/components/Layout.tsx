@@ -38,6 +38,8 @@ import {
   RefreshCw,
   CalendarRange,
   Timer,
+  Bell,
+  Calculator,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -312,7 +314,25 @@ const navigationItems: NavItem[] = [
     labelKey: 'qualityControl',
     icon: ClipboardCheck,
     path: '/quality-inspections',
-    roles: ['purchasing', 'engineering', 'project_manager', 'manager', 'admin'],
+    roles: ['purchasing', 'engineering', 'project_manager', 'manager', 'admin', 'ceo', 'finance'],
+  },
+  {
+    labelKey: 'qualityCosts',
+    icon: DollarSign,
+    path: '/quality-costs',
+    roles: ['purchasing', 'engineering', 'project_manager', 'admin', 'finance', 'ceo'],
+  },
+  {
+    labelKey: 'samplingPlans',
+    icon: Calculator,
+    path: '/sampling-plans',
+    roles: ['purchasing', 'engineering', 'project_manager', 'admin'],
+  },
+  {
+    labelKey: 'qualityAlerts',
+    icon: Bell,
+    path: '/quality-alerts',
+    roles: ['purchasing', 'engineering', 'project_manager', 'admin', 'manager', 'ceo'],
   },
   {
     labelKey: 'shipments',

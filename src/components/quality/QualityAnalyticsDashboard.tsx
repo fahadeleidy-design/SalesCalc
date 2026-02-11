@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, XCircle, Target, Activity } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, XCircle, Target, Activity, DollarSign } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, ComposedChart, Area, Legend,
+  LineChart, Line, PieChart, Pie, Cell, ComposedChart, Legend,
   ReferenceLine
 } from 'recharts';
 
@@ -21,6 +21,14 @@ interface QualityMetrics {
   dpmo: number;
   sigmaLevel: number;
   firstPassYield: number;
+  copq: {
+    prevention: number;
+    appraisal: number;
+    internalFailure: number;
+    externalFailure: number;
+    total: number;
+    monthlyTrend: { month: string; prevention: number; appraisal: number; internal: number; external: number }[];
+  };
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -31,12 +39,20 @@ const SEVERITY_COLORS: Record<string, string> = {
   observation: '#94a3b8',
 };
 
+const COPQ_COLORS = {
+  prevention: '#3b82f6',
+  appraisal: '#06b6d4',
+  internal: '#f59e0b',
+  external: '#ef4444',
+};
+
 export default function QualityAnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<QualityMetrics>({
     totalInspections: 0, passRate: 0, failRate: 0, totalNCRs: 0, openNCRs: 0,
     averageResolutionDays: 0, topDefectCategories: [], monthlyTrend: [],
     severityDistribution: [], spcData: [], dpmo: 0, sigmaLevel: 0, firstPassYield: 0,
+    copq: { prevention: 0, appraisal: 0, internalFailure: 0, externalFailure: 0, total: 0, monthlyTrend: [] },
   });
 
   useEffect(() => { loadMetrics(); }, []);
@@ -44,15 +60,16 @@ export default function QualityAnalyticsDashboard() {
   const loadMetrics = async () => {
     setLoading(true);
     try {
-      const [inspRes, ncrRes, capaRes] = await Promise.all([
+      const [inspRes, ncrRes, capaRes, costsRes] = await Promise.all([
         supabase.from('quality_inspections').select('id, result, inspected_at, created_at, quantity_failed, quantity_inspected'),
         supabase.from('ncr_reports').select('id, status, severity, category, created_at, containment_date'),
         supabase.from('capa_reports').select('id, status, severity, source'),
+        supabase.from('quality_costs').select('cost_type, amount, cost_date'),
       ]);
 
       const inspections = inspRes.data || [];
       const ncrs = ncrRes.data || [];
-      const capas = capaRes.data || [];
+      const costs = costsRes.data || [];
 
       const totalInspections = inspections.length;
       const passedInspections = inspections.filter(i => i.result === 'pass').length;
@@ -121,16 +138,32 @@ export default function QualityAnalyticsDashboard() {
           return { month: shortMonth, ...data, rate: total > 0 ? Math.round((data.pass / total) * 100) : 0 };
         });
 
-      const spcData = monthlyTrend.map(m => ({
-        month: m.month,
-        defectRate: 100 - m.rate,
-      }));
+      const spcData = monthlyTrend.map(m => ({ month: m.month, defectRate: 100 - m.rate }));
+
+      const prevention = costs.filter(c => c.cost_type === 'prevention').reduce((s, c) => s + Number(c.amount), 0);
+      const appraisal = costs.filter(c => c.cost_type === 'appraisal').reduce((s, c) => s + Number(c.amount), 0);
+      const internalFailure = costs.filter(c => c.cost_type === 'internal_failure').reduce((s, c) => s + Number(c.amount), 0);
+      const externalFailure = costs.filter(c => c.cost_type === 'external_failure').reduce((s, c) => s + Number(c.amount), 0);
+
+      const costMonthlyMap = new Map<string, { prevention: number; appraisal: number; internal: number; external: number }>();
+      costs.forEach(c => {
+        const d = new Date(c.cost_date);
+        const month = new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+        const curr = costMonthlyMap.get(month) || { prevention: 0, appraisal: 0, internal: 0, external: 0 };
+        if (c.cost_type === 'prevention') curr.prevention += Number(c.amount);
+        else if (c.cost_type === 'appraisal') curr.appraisal += Number(c.amount);
+        else if (c.cost_type === 'internal_failure') curr.internal += Number(c.amount);
+        else if (c.cost_type === 'external_failure') curr.external += Number(c.amount);
+        costMonthlyMap.set(month, curr);
+      });
+      const copqMonthly = Array.from(costMonthlyMap.entries()).map(([month, data]) => ({ month, ...data }));
 
       setMetrics({
         totalInspections, passRate: Math.round(passRate * 10) / 10, failRate: Math.round(failRate * 10) / 10,
         totalNCRs, openNCRs, averageResolutionDays: Math.round(avgResolution),
         topDefectCategories, monthlyTrend, severityDistribution, spcData,
         dpmo: Math.round(dpmo), sigmaLevel, firstPassYield: Math.round(firstPassYield * 10) / 10,
+        copq: { prevention, appraisal, internalFailure, externalFailure, total: prevention + appraisal + internalFailure + externalFailure, monthlyTrend: copqMonthly },
       });
     } catch (err) {
       console.error('Failed to load quality metrics:', err);
@@ -160,6 +193,16 @@ export default function QualityAnalyticsDashboard() {
     : 0;
   const ucl = avgDefectRate + 3 * stdDev;
   const lcl = Math.max(0, avgDefectRate - 3 * stdDev);
+
+  const copqData = [
+    { name: 'Prevention', value: metrics.copq.prevention, color: COPQ_COLORS.prevention },
+    { name: 'Appraisal', value: metrics.copq.appraisal, color: COPQ_COLORS.appraisal },
+    { name: 'Internal Failure', value: metrics.copq.internalFailure, color: COPQ_COLORS.internal },
+    { name: 'External Failure', value: metrics.copq.externalFailure, color: COPQ_COLORS.external },
+  ].filter(d => d.value > 0);
+
+  const conformanceCost = metrics.copq.prevention + metrics.copq.appraisal;
+  const nonConformanceCost = metrics.copq.internalFailure + metrics.copq.externalFailure;
 
   return (
     <div className="space-y-6">
@@ -201,11 +244,11 @@ export default function QualityAnalyticsDashboard() {
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-4 h-4 text-amber-600" />
-            <span className="text-xs font-medium text-slate-500">Total NCRs</span>
+            <DollarSign className="w-4 h-4 text-amber-600" />
+            <span className="text-xs font-medium text-slate-500">Total COPQ</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{metrics.totalNCRs}</p>
-          <p className="text-[10px] text-slate-400">{metrics.openNCRs} open</p>
+          <p className="text-2xl font-bold text-slate-900">${metrics.copq.total.toLocaleString()}</p>
+          <p className="text-[10px] text-slate-400">Cost of Poor Quality</p>
         </div>
       </div>
 
@@ -308,6 +351,80 @@ export default function QualityAnalyticsDashboard() {
           ) : (
             <div className="h-64 flex items-center justify-center text-slate-400 text-sm">No NCR data available</div>
           )}
+        </div>
+      </div>
+
+      {/* Cost of Quality Section */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <h3 className="text-sm font-semibold text-slate-900 mb-1">Cost of Quality (COQ) Breakdown</h3>
+        <p className="text-[10px] text-slate-400 mb-4">Prevention + Appraisal = Conformance Cost; Internal + External Failure = Non-Conformance Cost</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <div className="bg-blue-50 rounded-lg p-3">
+              <p className="text-xs text-blue-600 font-medium">Prevention Costs</p>
+              <p className="text-lg font-bold text-blue-900">${metrics.copq.prevention.toLocaleString()}</p>
+              <p className="text-[10px] text-blue-500">Training, planning, process control</p>
+            </div>
+            <div className="bg-cyan-50 rounded-lg p-3">
+              <p className="text-xs text-cyan-600 font-medium">Appraisal Costs</p>
+              <p className="text-lg font-bold text-cyan-900">${metrics.copq.appraisal.toLocaleString()}</p>
+              <p className="text-[10px] text-cyan-500">Inspection, testing, calibration</p>
+            </div>
+            <div className="bg-amber-50 rounded-lg p-3">
+              <p className="text-xs text-amber-600 font-medium">Internal Failure Costs</p>
+              <p className="text-lg font-bold text-amber-900">${metrics.copq.internalFailure.toLocaleString()}</p>
+              <p className="text-[10px] text-amber-500">Scrap, rework, retest, downtime</p>
+            </div>
+            <div className="bg-red-50 rounded-lg p-3">
+              <p className="text-xs text-red-600 font-medium">External Failure Costs</p>
+              <p className="text-lg font-bold text-red-900">${metrics.copq.externalFailure.toLocaleString()}</p>
+              <p className="text-[10px] text-red-500">Warranty, returns, complaints</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-center">
+            {copqData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={copqData} cx="50%" cy="50%" outerRadius={75} innerRadius={45} dataKey="value" paddingAngle={3}>
+                      {copqData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="text-center mt-2">
+                  <p className="text-xs text-slate-500">Conformance: <span className="font-medium text-blue-700">${conformanceCost.toLocaleString()}</span></p>
+                  <p className="text-xs text-slate-500">Non-Conformance: <span className="font-medium text-red-700">${nonConformanceCost.toLocaleString()}</span></p>
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-slate-400 text-sm">No cost data recorded yet</div>
+            )}
+          </div>
+
+          <div>
+            {metrics.copq.monthlyTrend.length > 0 ? (
+              <>
+                <p className="text-xs text-slate-500 mb-2">Monthly COQ Trend</p>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={metrics.copq.monthlyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                    <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                    <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                    <Bar dataKey="prevention" stackId="a" fill={COPQ_COLORS.prevention} name="Prevention" />
+                    <Bar dataKey="appraisal" stackId="a" fill={COPQ_COLORS.appraisal} name="Appraisal" />
+                    <Bar dataKey="internal" stackId="a" fill={COPQ_COLORS.internal} name="Internal Failure" />
+                    <Bar dataKey="external" stackId="a" fill={COPQ_COLORS.external} name="External Failure" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-sm">No monthly cost trend data</div>
+            )}
+          </div>
         </div>
       </div>
     </div>

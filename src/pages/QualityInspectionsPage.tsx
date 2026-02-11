@@ -12,6 +12,7 @@ import Pagination, { usePagination } from '../components/ui/Pagination';
 import QualityAnalyticsDashboard from '../components/quality/QualityAnalyticsDashboard';
 import SupplierQualityRating from '../components/quality/SupplierQualityRating';
 import CAPAManagementPanel from '../components/quality/CAPAManagementPanel';
+import { useNavigation } from '../contexts/NavigationContext';
 
 type TabKey = 'inspections' | 'ncr' | 'templates' | 'capa' | 'analytics' | 'supplier_quality';
 
@@ -122,6 +123,7 @@ const ncrStatusColors: Record<string, string> = {
 
 export default function QualityInspectionsPage() {
   const { profile } = useAuth();
+  const { navigate } = useNavigation();
   const [activeTab, setActiveTab] = useState<TabKey>('inspections');
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [ncrReports, setNCRReports] = useState<NCRReport[]>([]);
@@ -241,9 +243,20 @@ export default function QualityInspectionsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Quality Control</h1>
           <p className="text-sm text-slate-500 mt-1">Inspections, non-conformance reports, and templates</p>
         </div>
-        <button onClick={loadData} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate('/quality-alerts')} className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600">
+            <AlertTriangle className="w-4 h-4" /> Alerts
+          </button>
+          <button onClick={() => navigate('/quality-costs')} className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600">
+            <FileText className="w-4 h-4" /> Costs
+          </button>
+          <button onClick={() => navigate('/sampling-plans')} className="flex items-center gap-2 px-3 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600">
+            <ListChecks className="w-4 h-4" /> Sampling
+          </button>
+          <button onClick={loadData} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">

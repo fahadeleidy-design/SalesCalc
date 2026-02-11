@@ -64,6 +64,9 @@ import ProjectTimelinePage from './pages/ProjectTimelinePage';
 import TimesheetsPage from './pages/TimesheetsPage';
 import ProjectBudgetPage from './pages/ProjectBudgetPage';
 import ResourceUtilizationPage from './pages/ResourceUtilizationPage';
+import QualityCostsPage from './pages/QualityCostsPage';
+import SamplingPlansPage from './pages/SamplingPlansPage';
+import QualityAlertsPage from './pages/QualityAlertsPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -229,7 +232,13 @@ function AppContent() {
       case '/stock-movements':
         return hasAccess(['purchasing', 'admin']) ? <StockMovementsPage /> : <UnauthorizedPage />;
       case '/quality-inspections':
-        return hasAccess(['purchasing', 'engineering', 'project_manager', 'manager', 'admin']) ? <QualityInspectionsPage /> : <UnauthorizedPage />;
+        return hasAccess(['purchasing', 'engineering', 'project_manager', 'manager', 'admin', 'ceo', 'finance']) ? <QualityInspectionsPage /> : <UnauthorizedPage />;
+      case '/quality-costs':
+        return hasAccess(['purchasing', 'engineering', 'project_manager', 'admin', 'finance', 'ceo']) ? <QualityCostsPage /> : <UnauthorizedPage />;
+      case '/sampling-plans':
+        return hasAccess(['purchasing', 'engineering', 'project_manager', 'admin']) ? <SamplingPlansPage /> : <UnauthorizedPage />;
+      case '/quality-alerts':
+        return hasAccess(['purchasing', 'engineering', 'project_manager', 'admin', 'manager', 'ceo']) ? <QualityAlertsPage /> : <UnauthorizedPage />;
       case '/shipments':
         return hasAccess(['purchasing', 'project_manager', 'manager', 'admin']) ? <ShipmentsPage /> : <UnauthorizedPage />;
       case '/logistics':
