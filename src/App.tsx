@@ -67,6 +67,9 @@ import ResourceUtilizationPage from './pages/ResourceUtilizationPage';
 import QualityCostsPage from './pages/QualityCostsPage';
 import SamplingPlansPage from './pages/SamplingPlansPage';
 import QualityAlertsPage from './pages/QualityAlertsPage';
+import ProductionDashboard from './pages/ProductionDashboard';
+import QualityDashboard from './pages/QualityDashboard';
+import WarehouseManagerDashboard from './pages/WarehouseManagerDashboard';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -128,6 +131,14 @@ function AppContent() {
         return <ProjectManagerDashboard />;
       case 'purchasing':
         return <PurchasingDashboard />;
+      case 'production':
+        return <ProductionDashboard />;
+      case 'logistics':
+        return <LogisticsDashboard />;
+      case 'quality':
+        return <QualityDashboard />;
+      case 'warehouse':
+        return <WarehouseManagerDashboard />;
       default:
         return <SalesDashboard />;
     }
@@ -225,30 +236,30 @@ function AppContent() {
         return hasAccess(['purchasing']) ? <SuppliersPage /> : <UnauthorizedPage />;
       case '/goods-receiving':
         return hasAccess(['purchasing']) ? <GoodsReceivingPage /> : <UnauthorizedPage />;
-      case '/production':
-        return hasAccess(['purchasing', 'engineering', 'project_manager', 'manager']) ? <ProductionBoardPage /> : <UnauthorizedPage />;
-      case '/warehouse':
-        return hasAccess(['purchasing', 'engineering', 'admin']) ? <WarehouseInventoryPage /> : <UnauthorizedPage />;
+      case '/production-board':
+        return hasAccess(['production', 'purchasing', 'engineering', 'project_manager', 'manager', 'quality', 'admin', 'ceo']) ? <ProductionBoardPage /> : <UnauthorizedPage />;
+      case '/warehouse-inventory':
+        return hasAccess(['warehouse', 'logistics', 'production', 'purchasing', 'engineering', 'admin', 'manager', 'ceo']) ? <WarehouseInventoryPage /> : <UnauthorizedPage />;
       case '/stock-movements':
-        return hasAccess(['purchasing', 'admin']) ? <StockMovementsPage /> : <UnauthorizedPage />;
+        return hasAccess(['warehouse', 'logistics', 'purchasing', 'admin', 'manager']) ? <StockMovementsPage /> : <UnauthorizedPage />;
       case '/quality-inspections':
-        return hasAccess(['purchasing', 'engineering', 'project_manager', 'manager', 'admin', 'ceo', 'finance']) ? <QualityInspectionsPage /> : <UnauthorizedPage />;
+        return hasAccess(['quality', 'production', 'purchasing', 'engineering', 'project_manager', 'manager', 'admin', 'ceo', 'finance']) ? <QualityInspectionsPage /> : <UnauthorizedPage />;
       case '/quality-costs':
-        return hasAccess(['purchasing', 'engineering', 'project_manager', 'admin', 'finance', 'ceo']) ? <QualityCostsPage /> : <UnauthorizedPage />;
+        return hasAccess(['quality', 'purchasing', 'engineering', 'project_manager', 'admin', 'finance', 'ceo', 'manager']) ? <QualityCostsPage /> : <UnauthorizedPage />;
       case '/sampling-plans':
-        return hasAccess(['purchasing', 'engineering', 'project_manager', 'admin']) ? <SamplingPlansPage /> : <UnauthorizedPage />;
+        return hasAccess(['quality', 'purchasing', 'engineering', 'project_manager', 'admin', 'manager']) ? <SamplingPlansPage /> : <UnauthorizedPage />;
       case '/quality-alerts':
-        return hasAccess(['purchasing', 'engineering', 'project_manager', 'admin', 'manager', 'ceo']) ? <QualityAlertsPage /> : <UnauthorizedPage />;
+        return hasAccess(['quality', 'production', 'purchasing', 'engineering', 'project_manager', 'admin', 'manager', 'ceo']) ? <QualityAlertsPage /> : <UnauthorizedPage />;
       case '/shipments':
-        return hasAccess(['purchasing', 'project_manager', 'manager', 'admin']) ? <ShipmentsPage /> : <UnauthorizedPage />;
+        return hasAccess(['logistics', 'warehouse', 'purchasing', 'project_manager', 'manager', 'admin', 'ceo']) ? <ShipmentsPage /> : <UnauthorizedPage />;
       case '/logistics':
-        return hasAccess(['purchasing', 'project_manager', 'manager', 'admin']) ? <LogisticsDashboard /> : <UnauthorizedPage />;
+        return hasAccess(['logistics', 'warehouse', 'purchasing', 'project_manager', 'manager', 'admin', 'ceo']) ? <LogisticsDashboard /> : <UnauthorizedPage />;
       case '/fleet-management':
-        return hasAccess(['purchasing', 'project_manager', 'manager', 'admin']) ? <FleetManagementPage /> : <UnauthorizedPage />;
+        return hasAccess(['logistics', 'purchasing', 'project_manager', 'manager', 'admin']) ? <FleetManagementPage /> : <UnauthorizedPage />;
       case '/route-planning':
-        return hasAccess(['purchasing', 'project_manager', 'manager', 'admin']) ? <RoutePlanningPage /> : <UnauthorizedPage />;
+        return hasAccess(['logistics', 'purchasing', 'project_manager', 'manager', 'admin']) ? <RoutePlanningPage /> : <UnauthorizedPage />;
       case '/warehouse-operations':
-        return hasAccess(['purchasing', 'project_manager', 'engineering', 'manager', 'admin']) ? <WarehouseOperationsPage /> : <UnauthorizedPage />;
+        return hasAccess(['warehouse', 'logistics', 'purchasing', 'project_manager', 'engineering', 'manager', 'admin']) ? <WarehouseOperationsPage /> : <UnauthorizedPage />;
       case '/invoice-matching':
         return hasAccess(['purchasing', 'finance', 'ceo', 'admin']) ? <InvoiceMatchingPage /> : <UnauthorizedPage />;
       case '/purchase-contracts':
