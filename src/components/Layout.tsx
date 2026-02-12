@@ -39,6 +39,8 @@ import {
   CalendarRange,
   Timer,
   Calculator,
+  MapPin,
+  Car,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -350,6 +352,24 @@ const navigationItems: NavItem[] = [
     icon: BarChart,
     path: '/logistics',
     roles: ['logistics', 'warehouse', 'purchasing', 'project_manager', 'manager', 'admin', 'ceo'],
+  },
+  {
+    labelKey: 'installations',
+    icon: Wrench,
+    path: '/installations',
+    roles: ['logistics', 'warehouse', 'project_manager', 'manager', 'admin', 'ceo'],
+  },
+  {
+    labelKey: 'fleetManagement',
+    icon: Car,
+    path: '/fleet-management',
+    roles: ['logistics', 'purchasing', 'project_manager', 'manager', 'admin'],
+  },
+  {
+    labelKey: 'routePlanning',
+    icon: MapPin,
+    path: '/route-planning',
+    roles: ['logistics', 'purchasing', 'project_manager', 'manager', 'admin'],
   },
   {
     labelKey: 'integrations',

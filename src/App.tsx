@@ -70,6 +70,7 @@ import QualityAlertsPage from './pages/QualityAlertsPage';
 import ProductionDashboard from './pages/ProductionDashboard';
 import QualityDashboard from './pages/QualityDashboard';
 import WarehouseManagerDashboard from './pages/WarehouseManagerDashboard';
+import InstallationTrackingPage from './pages/InstallationTrackingPage';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -254,6 +255,8 @@ function AppContent() {
         return hasAccess(['logistics', 'warehouse', 'purchasing', 'project_manager', 'manager', 'admin', 'ceo']) ? <ShipmentsPage /> : <UnauthorizedPage />;
       case '/logistics':
         return hasAccess(['logistics', 'warehouse', 'purchasing', 'project_manager', 'manager', 'admin', 'ceo']) ? <LogisticsDashboard /> : <UnauthorizedPage />;
+      case '/installations':
+        return hasAccess(['logistics', 'warehouse', 'project_manager', 'manager', 'admin', 'ceo']) ? <InstallationTrackingPage /> : <UnauthorizedPage />;
       case '/fleet-management':
         return hasAccess(['logistics', 'purchasing', 'project_manager', 'manager', 'admin']) ? <FleetManagementPage /> : <UnauthorizedPage />;
       case '/route-planning':

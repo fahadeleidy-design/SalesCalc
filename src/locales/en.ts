@@ -95,6 +95,9 @@ export const en = {
     qualityAlerts: 'Quality Alerts',
     shipments: 'Shipments',
     logisticsDashboard: 'Logistics',
+    installations: 'Installations',
+    fleetManagement: 'Fleet Management',
+    routePlanning: 'Route Planning',
     integrations: 'Integrations',
   },
   auth: {
