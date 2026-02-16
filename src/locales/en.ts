@@ -490,6 +490,28 @@ export const en = {
     saveError: 'Failed to save',
     deleteError: 'Failed to delete',
   },
+  projectManagement: {
+    title: 'Project Management',
+    portfolio: 'Portfolio Dashboard',
+    risks: 'Risk Register',
+    issues: 'Issue Tracker',
+    stakeholders: 'Stakeholders',
+    resources: 'Resource Planning',
+    evm: 'Earned Value Management',
+    ccb: 'Change Control Board',
+    lessons: 'Lessons Learned',
+    riskAdded: 'Risk added to register',
+    issueLogged: 'Issue logged successfully',
+    stakeholderAdded: 'Stakeholder added',
+    allocationCreated: 'Resource allocated',
+    evmSnapshotCreated: 'EVM snapshot created',
+    changeRequestSubmitted: 'Change request submitted to CCB',
+    riskClosed: 'Risk closed',
+    issueResolved: 'Issue resolved',
+    issueEscalated: 'Issue escalated',
+    changeApproved: 'Change request approved',
+    changeRejected: 'Change request rejected',
+  },
 };
 
 export type TranslationKeys = typeof en;

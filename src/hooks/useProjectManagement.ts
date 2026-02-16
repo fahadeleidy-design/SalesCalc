@@ -353,3 +353,440 @@ export function useProjectBudgets(jobOrderId?: string) {
 
   return { budgets, loading, createBudgetItem, updateBudgetItem, reload: loadBudgets };
 }
+
+// === WORLD-CLASS PM ENHANCEMENTS ===
+
+// Risk Management
+export interface ProjectRisk {
+  id: string;
+  job_order_id: string;
+  risk_id: string;
+  title: string;
+  description: string;
+  category: string;
+  probability: string;
+  impact: string;
+  risk_score: number;
+  status: string;
+  mitigation_plan: string;
+  contingency_plan: string;
+  owner_id: string | null;
+  target_date: string | null;
+  actual_closure_date: string | null;
+  last_reviewed_date: string | null;
+  review_notes: string;
+  created_at: string;
+  owner?: { full_name: string } | null;
+}
+
+export function useRisks(jobOrderId?: string) {
+  const [risks, setRisks] = useState<ProjectRisk[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadRisks = useCallback(async () => {
+    if (!jobOrderId) { setRisks([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('project_risks')
+        .select('*, owner:profiles!project_risks_owner_id_fkey(full_name)')
+        .eq('job_order_id', jobOrderId)
+        .order('risk_score', { ascending: false });
+      if (error) throw error;
+      setRisks(data || []);
+    } catch (err: any) {
+      console.error('Failed to load risks:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [jobOrderId]);
+
+  useEffect(() => { loadRisks(); }, [loadRisks]);
+
+  const createRisk = useCallback(async (data: Partial<ProjectRisk>) => {
+    const { error } = await supabase.from('project_risks').insert(data);
+    if (error) { toast.error('Failed to create risk'); throw error; }
+    toast.success('Risk added to register');
+    loadRisks();
+  }, [loadRisks]);
+
+  const updateRisk = useCallback(async (id: string, data: Partial<ProjectRisk>) => {
+    const { error } = await supabase.from('project_risks').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { toast.error('Failed to update risk'); throw error; }
+    toast.success('Risk updated');
+    loadRisks();
+  }, [loadRisks]);
+
+  const closeRisk = useCallback(async (id: string, notes: string) => {
+    const { error } = await supabase.from('project_risks').update({
+      status: 'closed',
+      actual_closure_date: new Date().toISOString(),
+      review_notes: notes,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) { toast.error('Failed to close risk'); throw error; }
+    toast.success('Risk closed');
+    loadRisks();
+  }, [loadRisks]);
+
+  return { risks, loading, createRisk, updateRisk, closeRisk, reload: loadRisks };
+}
+
+// Issue Management
+export interface ProjectIssue {
+  id: string;
+  job_order_id: string;
+  issue_id: string;
+  title: string;
+  description: string;
+  category: string;
+  priority: string;
+  severity: string;
+  status: string;
+  assigned_to: string | null;
+  reported_by: string | null;
+  escalated_to: string | null;
+  escalation_date: string | null;
+  escalation_reason: string | null;
+  target_resolution_date: string | null;
+  actual_resolution_date: string | null;
+  resolution_notes: string;
+  impact_description: string;
+  action_taken: string;
+  sla_breach: boolean;
+  created_at: string;
+  assigned?: { full_name: string } | null;
+  reporter?: { full_name: string } | null;
+}
+
+export function useIssues(jobOrderId?: string) {
+  const [issues, setIssues] = useState<ProjectIssue[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadIssues = useCallback(async () => {
+    if (!jobOrderId) { setIssues([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('project_issues')
+        .select('*, assigned:profiles!project_issues_assigned_to_fkey(full_name), reporter:profiles!project_issues_reported_by_fkey(full_name)')
+        .eq('job_order_id', jobOrderId)
+        .order('priority', { ascending: false });
+      if (error) throw error;
+      setIssues(data || []);
+    } catch (err: any) {
+      console.error('Failed to load issues:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [jobOrderId]);
+
+  useEffect(() => { loadIssues(); }, [loadIssues]);
+
+  const createIssue = useCallback(async (data: Partial<ProjectIssue>) => {
+    const { error } = await supabase.from('project_issues').insert(data);
+    if (error) { toast.error('Failed to create issue'); throw error; }
+    toast.success('Issue logged');
+    loadIssues();
+  }, [loadIssues]);
+
+  const updateIssue = useCallback(async (id: string, data: Partial<ProjectIssue>) => {
+    const { error } = await supabase.from('project_issues').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { toast.error('Failed to update issue'); throw error; }
+    toast.success('Issue updated');
+    loadIssues();
+  }, [loadIssues]);
+
+  const escalateIssue = useCallback(async (id: string, escalateTo: string, reason: string) => {
+    const { error } = await supabase.from('project_issues').update({
+      status: 'escalated',
+      escalated_to: escalateTo,
+      escalation_date: new Date().toISOString(),
+      escalation_reason: reason,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) { toast.error('Failed to escalate issue'); throw error; }
+    toast.success('Issue escalated');
+    loadIssues();
+  }, [loadIssues]);
+
+  const resolveIssue = useCallback(async (id: string, resolutionNotes: string) => {
+    const { error } = await supabase.from('project_issues').update({
+      status: 'resolved',
+      actual_resolution_date: new Date().toISOString(),
+      resolution_notes: resolutionNotes,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) { toast.error('Failed to resolve issue'); throw error; }
+    toast.success('Issue resolved');
+    loadIssues();
+  }, [loadIssues]);
+
+  return { issues, loading, createIssue, updateIssue, escalateIssue, resolveIssue, reload: loadIssues };
+}
+
+// Stakeholder Management
+export interface ProjectStakeholder {
+  id: string;
+  job_order_id: string;
+  name: string;
+  role_title: string;
+  organization: string;
+  email: string | null;
+  phone: string | null;
+  stakeholder_type: string;
+  influence_level: string;
+  interest_level: string;
+  engagement_strategy: string;
+  communication_frequency: string;
+  preferred_communication_method: string;
+  last_contacted_date: string | null;
+  notes: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export function useStakeholders(jobOrderId?: string) {
+  const [stakeholders, setStakeholders] = useState<ProjectStakeholder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadStakeholders = useCallback(async () => {
+    if (!jobOrderId) { setStakeholders([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('project_stakeholders')
+        .select('*')
+        .eq('job_order_id', jobOrderId)
+        .eq('is_active', true)
+        .order('influence_level', { ascending: false });
+      if (error) throw error;
+      setStakeholders(data || []);
+    } catch (err: any) {
+      console.error('Failed to load stakeholders:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [jobOrderId]);
+
+  useEffect(() => { loadStakeholders(); }, [loadStakeholders]);
+
+  const createStakeholder = useCallback(async (data: Partial<ProjectStakeholder>) => {
+    const { error } = await supabase.from('project_stakeholders').insert(data);
+    if (error) { toast.error('Failed to add stakeholder'); throw error; }
+    toast.success('Stakeholder added');
+    loadStakeholders();
+  }, [loadStakeholders]);
+
+  const updateStakeholder = useCallback(async (id: string, data: Partial<ProjectStakeholder>) => {
+    const { error } = await supabase.from('project_stakeholders').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { toast.error('Failed to update stakeholder'); throw error; }
+    toast.success('Stakeholder updated');
+    loadStakeholders();
+  }, [loadStakeholders]);
+
+  return { stakeholders, loading, createStakeholder, updateStakeholder, reload: loadStakeholders };
+}
+
+// Resource Allocations
+export interface ResourceAllocation {
+  id: string;
+  job_order_id: string;
+  task_id: string | null;
+  phase_id: string | null;
+  resource_id: string;
+  allocation_percentage: number;
+  start_date: string;
+  end_date: string;
+  planned_hours: number;
+  actual_hours: number;
+  hourly_rate: number | null;
+  role_required: string | null;
+  skills_required: string[];
+  notes: string;
+  status: string;
+  created_at: string;
+  resource?: { full_name: string; role: string } | null;
+  task?: { title: string } | null;
+  phase?: { phase_name: string } | null;
+}
+
+export function useResourceAllocations(jobOrderId?: string) {
+  const [allocations, setAllocations] = useState<ResourceAllocation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadAllocations = useCallback(async () => {
+    if (!jobOrderId) { setAllocations([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('project_resource_allocations')
+        .select('*, resource:profiles!project_resource_allocations_resource_id_fkey(full_name, role), task:project_tasks(title), phase:project_phases(phase_name)')
+        .eq('job_order_id', jobOrderId)
+        .order('start_date');
+      if (error) throw error;
+      setAllocations(data || []);
+    } catch (err: any) {
+      console.error('Failed to load resource allocations:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [jobOrderId]);
+
+  useEffect(() => { loadAllocations(); }, [loadAllocations]);
+
+  const createAllocation = useCallback(async (data: Partial<ResourceAllocation>) => {
+    const { error } = await supabase.from('project_resource_allocations').insert(data);
+    if (error) { toast.error('Failed to allocate resource'); throw error; }
+    toast.success('Resource allocated');
+    loadAllocations();
+  }, [loadAllocations]);
+
+  const updateAllocation = useCallback(async (id: string, data: Partial<ResourceAllocation>) => {
+    const { error } = await supabase.from('project_resource_allocations').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { toast.error('Failed to update allocation'); throw error; }
+    toast.success('Allocation updated');
+    loadAllocations();
+  }, [loadAllocations]);
+
+  return { allocations, loading, createAllocation, updateAllocation, reload: loadAllocations };
+}
+
+// Earned Value Management
+export interface EarnedValueSnapshot {
+  id: string;
+  job_order_id: string;
+  snapshot_date: string;
+  planned_value: number;
+  earned_value: number;
+  actual_cost: number;
+  schedule_variance: number;
+  cost_variance: number;
+  schedule_performance_index: number;
+  cost_performance_index: number;
+  estimate_at_completion: number | null;
+  estimate_to_complete: number | null;
+  variance_at_completion: number | null;
+  to_complete_performance_index: number | null;
+  completion_percentage: number;
+  notes: string;
+  created_at: string;
+}
+
+export function useEarnedValue(jobOrderId?: string) {
+  const [snapshots, setSnapshots] = useState<EarnedValueSnapshot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadSnapshots = useCallback(async () => {
+    if (!jobOrderId) { setSnapshots([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('project_earned_value')
+        .select('*')
+        .eq('job_order_id', jobOrderId)
+        .order('snapshot_date', { ascending: false });
+      if (error) throw error;
+      setSnapshots(data || []);
+    } catch (err: any) {
+      console.error('Failed to load EVM data:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [jobOrderId]);
+
+  useEffect(() => { loadSnapshots(); }, [loadSnapshots]);
+
+  const createSnapshot = useCallback(async (data: Partial<EarnedValueSnapshot>) => {
+    const { error } = await supabase.from('project_earned_value').insert(data);
+    if (error) { toast.error('Failed to create EVM snapshot'); throw error; }
+    toast.success('EVM snapshot created');
+    loadSnapshots();
+  }, [loadSnapshots]);
+
+  return { snapshots, loading, createSnapshot, reload: loadSnapshots };
+}
+
+// Scope Changes / CCB
+export interface ScopeChange {
+  id: string;
+  job_order_id: string;
+  change_request_id: string;
+  title: string;
+  description: string;
+  change_type: string;
+  justification: string;
+  impact_analysis: any;
+  cost_impact: number;
+  schedule_impact_days: number;
+  resource_impact: string;
+  priority: string;
+  status: string;
+  requested_by: string | null;
+  reviewed_by: string | null;
+  approved_by: string | null;
+  approval_date: string | null;
+  rejection_reason: string | null;
+  implementation_date: string | null;
+  implementation_notes: string;
+  created_at: string;
+  requester?: { full_name: string } | null;
+}
+
+export function useScopeChanges(jobOrderId?: string) {
+  const [changes, setChanges] = useState<ScopeChange[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadChanges = useCallback(async () => {
+    if (!jobOrderId) { setChanges([]); setLoading(false); return; }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('project_scope_changes')
+        .select('*, requester:profiles!project_scope_changes_requested_by_fkey(full_name)')
+        .eq('job_order_id', jobOrderId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setChanges(data || []);
+    } catch (err: any) {
+      console.error('Failed to load scope changes:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [jobOrderId]);
+
+  useEffect(() => { loadChanges(); }, [loadChanges]);
+
+  const createChange = useCallback(async (data: Partial<ScopeChange>) => {
+    const { error } = await supabase.from('project_scope_changes').insert(data);
+    if (error) { toast.error('Failed to create change request'); throw error; }
+    toast.success('Change request submitted to CCB');
+    loadChanges();
+  }, [loadChanges]);
+
+  const approveChange = useCallback(async (id: string, approverId: string) => {
+    const { error } = await supabase.from('project_scope_changes').update({
+      status: 'approved',
+      approved_by: approverId,
+      approval_date: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) { toast.error('Failed to approve change'); throw error; }
+    toast.success('Change request approved');
+    loadChanges();
+  }, [loadChanges]);
+
+  const rejectChange = useCallback(async (id: string, reviewerId: string, reason: string) => {
+    const { error } = await supabase.from('project_scope_changes').update({
+      status: 'rejected',
+      reviewed_by: reviewerId,
+      rejection_reason: reason,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) { toast.error('Failed to reject change'); throw error; }
+    toast.success('Change request rejected');
+    loadChanges();
+  }, [loadChanges]);
+
+  return { changes, loading, createChange, approveChange, rejectChange, reload: loadChanges };
+}
