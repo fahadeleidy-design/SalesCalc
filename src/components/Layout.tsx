@@ -41,6 +41,7 @@ import {
   Calculator,
   MapPin,
   Car,
+  Mail,
 } from 'lucide-react';
 import { UserRole } from '../lib/database.types';
 import GlobalSearch from './GlobalSearch';
@@ -201,6 +202,12 @@ const navigationItems: NavItem[] = [
     labelKey: 'users',
     icon: Users,
     path: '/users',
+    roles: ['admin'],
+  },
+  {
+    labelKey: 'emailConfig',
+    icon: Mail,
+    path: '/email-config',
     roles: ['admin'],
   },
   {

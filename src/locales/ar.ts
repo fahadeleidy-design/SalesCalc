@@ -68,6 +68,7 @@ export const ar: TranslationKeys = {
     reports: 'التقارير',
     customReports: 'التقارير المخصصة',
     users: 'المستخدمين',
+    emailConfig: 'إعدادات البريد الإلكتروني',
     approvals: 'الموافقات',
     notifications: 'الإشعارات',
     settings: 'الإعدادات',

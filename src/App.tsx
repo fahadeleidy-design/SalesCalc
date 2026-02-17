@@ -29,6 +29,8 @@ import NotificationsPage from './pages/NotificationsPage';
 import ReportsPage from './pages/ReportsPage';
 import UsersPage from './pages/UsersPage';
 import CollectionPage from './pages/CollectionPage';
+import { EmailConfigPage } from './pages/EmailConfigPage';
+import { EmailLogsPage } from './pages/EmailLogsPage';
 import CustomReportsPage from './pages/CustomReportsPage';
 import ProjectProfitabilityPage from './pages/ProjectProfitabilityPage';
 import DemoTrackerPage from './pages/DemoTrackerPage';
@@ -198,6 +200,10 @@ function AppContent() {
         return hasAccess(['admin', 'manager', 'group_ceo', 'ceo_commercial', 'ceo_manufacturing']) ? <ReportsPage /> : <UnauthorizedPage />;
       case '/users':
         return hasAccess(['admin']) ? <UsersPage /> : <UnauthorizedPage />;
+      case '/email-config':
+        return hasAccess(['admin']) ? <EmailConfigPage /> : <UnauthorizedPage />;
+      case '/email-logs':
+        return hasAccess(['admin']) ? <EmailLogsPage /> : <UnauthorizedPage />;
       case '/purchase-orders':
         return hasAccess(['finance', 'group_ceo', 'ceo_commercial', 'admin', 'engineering', 'solution_consultant', 'purchasing']) ? <PurchasingOrdersPage /> : <UnauthorizedPage />;
       case '/collection':

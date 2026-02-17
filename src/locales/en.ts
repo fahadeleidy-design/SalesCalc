@@ -66,6 +66,7 @@ export const en = {
     reports: 'Reports',
     customReports: 'Custom Reports',
     users: 'Users',
+    emailConfig: 'Email Configuration',
     approvals: 'Approvals',
     notifications: 'Notifications',
     settings: 'Settings',
