@@ -99,7 +99,7 @@ export function useCreateQuotation() {
 
   return useMutation({
     mutationFn: async (quotation: Partial<Quotation>) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('quotations')
         .insert([quotation])
         .select()
@@ -126,7 +126,7 @@ export function useUpdateQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Quotation> }) => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('quotations')
         .update(updates)
         .eq('id', id)
@@ -200,7 +200,7 @@ export function useApproveQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, comments }: { id: string; comments?: string }) => {
-      const { data, error } = await (supabase as any).rpc('approve_quotation', {
+      const { data, error } = await supabase.rpc('approve_quotation', {
         quotation_id: id,
         approver_comments: comments || '',
       });
@@ -226,7 +226,7 @@ export function useRejectQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const { data, error } = await (supabase as any).rpc('reject_quotation', {
+      const { data, error } = await supabase.rpc('reject_quotation', {
         quotation_id: id,
         rejection_reason: reason,
       });
@@ -252,7 +252,7 @@ export function useAmendQuotation() {
 
   return useMutation({
     mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
-      const { data, error } = await (supabase as any).rpc('amend_quotation', {
+      const { data, error } = await supabase.rpc('amend_quotation', {
         p_quotation_id: id,
         p_user_id: userId,
       });

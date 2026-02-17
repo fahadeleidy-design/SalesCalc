@@ -31,6 +31,20 @@ export function useSalesTeam() {
 
       // Managers can also see their team members
       if (profile.role === 'manager') {
+        // First get teams managed by this user
+        const { data: teams, error: teamsError } = await supabase
+          .from('sales_teams')
+          .select('id')
+          .eq('manager_id', profile.id);
+
+        if (teamsError) throw teamsError;
+
+        const teamIds = teams?.map(t => t.id) || [];
+
+        // If no teams, return empty array
+        if (teamIds.length === 0) return [];
+
+        // Then get team members for those teams
         const { data, error } = await supabase
           .from('sales_team_members')
           .select(`
@@ -41,12 +55,7 @@ export function useSalesTeam() {
               role
             )
           `)
-          .in('team_id', (
-            await supabase
-              .from('sales_teams')
-              .select('id')
-              .eq('manager_id', profile.id)
-          ).data?.map(t => t.id) || [])
+          .in('team_id', teamIds)
           .eq('is_active', true);
 
         if (error) throw error;

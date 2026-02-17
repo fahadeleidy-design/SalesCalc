@@ -44,13 +44,16 @@ export function useCollectionSummary() {
           .select('total')
           .in('status', ['approved', 'finance_approved'])
           .not('submitted_to_customer_at', 'is', null),
-        (supabase.from('down_payments_due') as any)
+        supabase
+          .from('down_payments_due')
           .select('down_payment_amount'),
-        (supabase.from('payment_schedules') as any)
+        supabase
+          .from('payment_schedules')
           .select('amount')
           .in('status', ['pending', 'partial', 'overdue'])
           .not('milestone_name', 'ilike', '%down%payment%'),
-        (supabase.from('invoices') as any)
+        supabase
+          .from('invoices')
           .select('total')
           .in('status', ['issued', 'sent', 'partial', 'overdue']),
       ]);
@@ -121,7 +124,7 @@ export function useDownPaymentPending() {
     queryFn: async () => {
       // Use the new down_payments_due view
       const { data, error } = await (supabase
-        .from('down_payments_due') as any)
+        .from('down_payments_due'))
         .select('*')
         .order('days_pending', { ascending: false });
 
@@ -150,7 +153,7 @@ export function useWorkInProgress() {
     queryKey: ['work-in-progress'],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from('payment_schedules') as any)
+        .from('payment_schedules'))
         .select(`
           *,
           quotation:quotations(
@@ -174,7 +177,7 @@ export function useIssuedInvoices() {
     queryKey: ['issued-invoices'],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from('invoices') as any)
+        .from('invoices'))
         .select(`
           *,
           customer:customers(id, company_name),
@@ -197,7 +200,7 @@ export function usePaymentSchedules(quotationId?: string) {
     queryKey: ['payment-schedules', quotationId],
     queryFn: async () => {
       let query = (supabase
-        .from('payment_schedules') as any)
+        .from('payment_schedules'))
         .select('*')
         .order('due_date', { ascending: true });
 
@@ -218,7 +221,7 @@ export function useCollectionNotes(filters?: { customerId?: string; quotationId?
     queryKey: ['collection-notes', filters],
     queryFn: async () => {
       let query = (supabase
-        .from('collection_notes') as any)
+        .from('collection_notes'))
         .select(`
           *,
           creator:profiles!collection_notes_created_by_fkey(full_name)
@@ -248,7 +251,7 @@ export function useCreatePaymentSchedule() {
   return useMutation({
     mutationFn: async (schedule: Omit<PaymentSchedule, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await (supabase
-        .from('payment_schedules') as any)
+        .from('payment_schedules'))
         .insert([schedule])
         .select()
         .single();
@@ -270,7 +273,7 @@ export function useCreateInvoice() {
   return useMutation({
     mutationFn: async (invoice: any) => {
       const { data, error } = await (supabase
-        .from('invoices') as any)
+        .from('invoices'))
         .insert([invoice])
         .select()
         .single();
@@ -291,7 +294,7 @@ export function useRecordPayment() {
   return useMutation({
     mutationFn: async (payment: any) => {
       const { data, error } = await (supabase
-        .from('payments') as any)
+        .from('payments'))
         .insert([payment])
         .select()
         .single();
@@ -315,7 +318,7 @@ export function useCreateCollectionNote() {
   return useMutation({
     mutationFn: async (note: any) => {
       const { data, error } = await (supabase
-        .from('collection_notes') as any)
+        .from('collection_notes'))
         .insert([note])
         .select()
         .single();
@@ -334,7 +337,7 @@ export function usePaymentScheduleTemplates() {
     queryKey: ['payment-schedule-templates'],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from('payment_schedule_templates') as any)
+        .from('payment_schedule_templates'))
         .select('*')
         .order('is_default', { ascending: false });
 
@@ -350,7 +353,7 @@ export function useCreatePaymentScheduleTemplate() {
   return useMutation({
     mutationFn: async (template: any) => {
       const { data, error } = await (supabase
-        .from('payment_schedule_templates') as any)
+        .from('payment_schedule_templates'))
         .insert([template])
         .select()
         .single();
@@ -370,7 +373,7 @@ export function useUpdatePaymentScheduleTemplate() {
   return useMutation({
     mutationFn: async ({ id, ...template }: any) => {
       const { data, error } = await (supabase
-        .from('payment_schedule_templates') as any)
+        .from('payment_schedule_templates'))
         .update(template)
         .eq('id', id)
         .select()
@@ -391,7 +394,7 @@ export function useDeletePaymentScheduleTemplate() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await (supabase
-        .from('payment_schedule_templates') as any)
+        .from('payment_schedule_templates'))
         .delete()
         .eq('id', id);
 
@@ -409,7 +412,7 @@ export function useCollectionSettings() {
     queryKey: ['collection-settings'],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from('system_settings') as any)
+        .from('system_settings'))
         .select('*')
         .eq('key', 'collection_configuration')
         .maybeSingle();
@@ -431,7 +434,7 @@ export function useUpdateCollectionSettings() {
   return useMutation({
     mutationFn: async (settings: any) => {
       const { data, error } = await (supabase
-        .from('system_settings') as any)
+        .from('system_settings'))
         .upsert({
           key: 'collection_configuration',
           value: settings,
@@ -454,7 +457,7 @@ export function useGeneratePaymentSchedule() {
 
   return useMutation({
     mutationFn: async ({ quotationId, templateId }: { quotationId: string; templateId: string }) => {
-      const { data, error } = await (supabase as any).rpc('generate_payment_schedule_from_template', {
+      const { data, error } = await supabase.rpc('generate_payment_schedule_from_template', {
         p_quotation_id: quotationId,
         p_template_id: templateId,
       });
@@ -475,7 +478,7 @@ export function useCollectionReminders(filters?: { customerId?: string; status?:
     queryKey: ['collection-reminders', filters],
     queryFn: async () => {
       let query = (supabase
-        .from('collection_reminders') as any)
+        .from('collection_reminders'))
         .select(`
           *,
           customer:customers(company_name),
@@ -504,7 +507,7 @@ export function useCreateReminder() {
   return useMutation({
     mutationFn: async (reminder: any) => {
       const { data, error } = await (supabase
-        .from('collection_reminders') as any)
+        .from('collection_reminders'))
         .insert([reminder])
         .select()
         .single();
@@ -523,7 +526,7 @@ export function useCustomerPaymentHistory(customerId?: string) {
     queryKey: ['customer-payment-history', customerId],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from('customer_payment_history') as any)
+        .from('customer_payment_history'))
         .select('*')
         .eq('customer_id', customerId!)
         .maybeSingle();
@@ -540,7 +543,7 @@ export function useCollectionAgingReport() {
     queryKey: ['collection-aging-report'],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from('collection_aging_report') as any)
+        .from('collection_aging_report'))
         .select('*')
         .order('days_overdue', { ascending: false });
 
@@ -555,7 +558,7 @@ export function usePaymentReceipts(filters?: { customerId?: string; paymentId?: 
     queryKey: ['payment-receipts', filters],
     queryFn: async () => {
       let query = (supabase
-        .from('payment_receipts') as any)
+        .from('payment_receipts'))
         .select(`
           *,
           customer:customers(company_name),
@@ -583,7 +586,7 @@ export function useCreatePaymentReceipt() {
   return useMutation({
     mutationFn: async (receipt: any) => {
       const { data, error } = await (supabase
-        .from('payment_receipts') as any)
+        .from('payment_receipts'))
         .insert([receipt])
         .select()
         .single();
@@ -602,7 +605,7 @@ export function useCreateOverdueReminders() {
 
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await (supabase as any).rpc('create_overdue_reminders');
+      const { data, error } = await supabase.rpc('create_overdue_reminders');
       if (error) throw error;
       return data;
     },
@@ -634,8 +637,8 @@ export function useUpdateCollectionStatus() {
         updates.notes = promise_to_pay_date ? `Promise to pay by: ${promise_to_pay_date}` : null;
       }
 
-      const { data, error } = await (supabase
-        .from(table) as any)
+      const { data, error } = await supabase
+        .from(table)
         .update(updates)
         .eq('id', id)
         .select()
@@ -658,7 +661,7 @@ export function useCollectionActivityHistory() {
       // Fetch both notes and reminders to create a unified history
       const [notesRes, remindersRes] = await Promise.all([
         (supabase
-          .from('collection_notes') as any)
+          .from('collection_notes'))
           .select(`
             id,
             created_at,
@@ -671,7 +674,7 @@ export function useCollectionActivityHistory() {
           .order('created_at', { ascending: false })
           .limit(50),
         (supabase
-          .from('collection_reminders') as any)
+          .from('collection_reminders'))
           .select(`
             id,
             sent_at,
@@ -704,16 +707,16 @@ export function useCustomerLedger(customerId: string) {
       // Fetch all relevant financial records for the customer
       const [quotationsRes, invoicesRes, paymentsRes] = await Promise.all([
         (supabase
-          .from('quotations') as any)
+          .from('quotations'))
           .select('quotation_number, total, created_at, status')
           .eq('customer_id', customerId)
           .in('status', ['deal_won', 'finance_approved', 'approved']),
         (supabase
-          .from('invoices') as any)
+          .from('invoices'))
           .select('invoice_number, total, due_date, status, created_at')
           .eq('customer_id', customerId),
         (supabase
-          .from('payments') as any)
+          .from('payments'))
           .select('amount, payment_method, payment_reference, created_at, status')
           .eq('customer_id', customerId)
       ]);

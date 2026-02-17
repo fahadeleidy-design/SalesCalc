@@ -42,7 +42,7 @@ export function useLeadScoring() {
       const { data: { user } } = await supabase.auth.getUser();
 
       const { data, error } = await (supabase
-        .from('lead_scoring_rules') as any)
+        .from('lead_scoring_rules'))
         .insert({
           ...rule,
           created_by: user?.id,
@@ -65,7 +65,7 @@ export function useLeadScoring() {
   const updateScoringRule = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<LeadScoringRule> & { id: string }) => {
       const { data, error } = await (supabase
-        .from('lead_scoring_rules') as any)
+        .from('lead_scoring_rules'))
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -104,7 +104,7 @@ export function useLeadScoring() {
   const createAssignmentRule = useMutation({
     mutationFn: async (rule: Omit<LeadAssignmentRule, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await (supabase
-        .from('lead_assignment_rules') as any)
+        .from('lead_assignment_rules'))
         .insert(rule)
         .select()
         .single();
@@ -124,7 +124,7 @@ export function useLeadScoring() {
   const updateAssignmentRule = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<LeadAssignmentRule> & { id: string }) => {
       const { data, error } = await (supabase
-        .from('lead_assignment_rules') as any)
+        .from('lead_assignment_rules'))
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -162,7 +162,7 @@ export function useLeadScoring() {
 
   const calculateLeadScore = useMutation({
     mutationFn: async (leadId: string) => {
-      const { data, error } = await (supabase.rpc as any)('calculate_lead_score', {
+      const { data, error } = await supabase.rpc('calculate_lead_score', {
         p_lead_id: leadId,
       });
 
@@ -180,7 +180,7 @@ export function useLeadScoring() {
 
   const autoAssignLead = useMutation({
     mutationFn: async (leadId: string) => {
-      const { data, error } = await (supabase.rpc as any)('auto_assign_lead', {
+      const { data, error } = await supabase.rpc('auto_assign_lead', {
         p_lead_id: leadId,
       });
 
@@ -217,7 +217,7 @@ export function useLeadScoring() {
     mutationFn: async (leadIds: string[]) => {
       const results = await Promise.allSettled(
         leadIds.map(leadId =>
-          (supabase.rpc as any)('calculate_lead_score', { p_lead_id: leadId })
+          supabase.rpc('calculate_lead_score', { p_lead_id: leadId })
         )
       );
 
@@ -239,7 +239,7 @@ export function useLeadScoring() {
     mutationFn: async (leadIds: string[]) => {
       const results = await Promise.allSettled(
         leadIds.map(leadId =>
-          (supabase.rpc as any)('auto_assign_lead', { p_lead_id: leadId })
+          supabase.rpc('auto_assign_lead', { p_lead_id: leadId })
         )
       );
 
@@ -259,7 +259,7 @@ export function useLeadScoring() {
 
   const autoAssignLeadPredictive = useMutation({
     mutationFn: async (leadId: string) => {
-      const { data, error } = await (supabase.rpc as any)('auto_assign_lead_predictive', {
+      const { data, error } = await supabase.rpc('auto_assign_lead_predictive', {
         p_lead_id: leadId,
       });
 

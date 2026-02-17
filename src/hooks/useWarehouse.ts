@@ -191,10 +191,16 @@ export function useGoodsReceipts() {
   };
 
   const loadItems = async (grnId: string): Promise<GRNItem[]> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('grn_items')
       .select('*, product:products(name, sku), location:warehouse_locations(location_code, location_name)')
       .eq('grn_id', grnId);
+
+    if (error) {
+      toast.error('Failed to load receipt items');
+      return [];
+    }
+
     return (data as any) || [];
   };
 

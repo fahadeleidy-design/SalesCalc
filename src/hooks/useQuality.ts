@@ -127,7 +127,11 @@ export function useQualityAlerts() {
   };
 
   const markRead = async (alertId: string) => {
-    await supabase.from('quality_alerts').update({ is_read: true }).eq('id', alertId);
+    const { error } = await supabase.from('quality_alerts').update({ is_read: true }).eq('id', alertId);
+    if (error) {
+      toast.error('Failed to mark alert as read');
+      return;
+    }
     loadAlerts();
   };
 

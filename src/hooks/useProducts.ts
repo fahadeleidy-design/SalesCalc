@@ -129,12 +129,17 @@ export function useLowStockProducts() {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .lte('stock_quantity', supabase.raw('min_stock_level'))
         .eq('status', 'active')
         .order('stock_quantity', { ascending: true });
 
       if (error) throw error;
-      return data as Product[];
+
+      // Filter client-side for column-to-column comparison
+      const lowStockProducts = (data as Product[]).filter(
+        p => p.stock_quantity <= (p.min_stock_level || 0)
+      );
+
+      return lowStockProducts;
     },
   });
 }
