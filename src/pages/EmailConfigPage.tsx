@@ -16,6 +16,8 @@ interface EmailConfig {
   from_name: string;
   smtp_host: string;
   smtp_port: number;
+  smtp_username: string | null;
+  smtp_password: string | null;
   use_oauth: boolean;
   is_active: boolean;
   test_mode: boolean;
@@ -70,6 +72,8 @@ export const EmailConfigPage: React.FC = () => {
           from_name: 'SalesCalc System',
           smtp_host: 'smtp.office365.com',
           smtp_port: 587,
+          smtp_username: null,
+          smtp_password: null,
           use_oauth: true,
           is_active: true,
           test_mode: true,
@@ -113,6 +117,8 @@ export const EmailConfigPage: React.FC = () => {
             from_name: config.from_name,
             smtp_host: config.smtp_host,
             smtp_port: config.smtp_port,
+            smtp_username: config.smtp_username,
+            smtp_password: config.smtp_password,
             use_oauth: config.use_oauth,
             test_mode: config.test_mode,
           })
@@ -130,6 +136,8 @@ export const EmailConfigPage: React.FC = () => {
             from_name: config.from_name,
             smtp_host: config.smtp_host,
             smtp_port: config.smtp_port,
+            smtp_username: config.smtp_username,
+            smtp_password: config.smtp_password,
             use_oauth: config.use_oauth,
             test_mode: config.test_mode,
             is_active: true,
@@ -344,6 +352,61 @@ export const EmailConfigPage: React.FC = () => {
                     onChange={(e) => setConfig({ ...config, client_secret: e.target.value })}
                     placeholder="Enter client secret"
                   />
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">SMTP Configuration (Alternative to OAuth2)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      SMTP Server
+                    </label>
+                    <Input
+                      value={config.smtp_host}
+                      onChange={(e) => setConfig({ ...config, smtp_host: e.target.value })}
+                      placeholder="smtp.office365.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      SMTP Port
+                    </label>
+                    <Input
+                      type="number"
+                      value={config.smtp_port}
+                      onChange={(e) => setConfig({ ...config, smtp_port: parseInt(e.target.value) || 587 })}
+                      placeholder="587"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      SMTP Username (Email)
+                    </label>
+                    <Input
+                      type="email"
+                      value={config.smtp_username || ''}
+                      onChange={(e) => setConfig({ ...config, smtp_username: e.target.value })}
+                      placeholder="your-email@company.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      SMTP Password (App Password)
+                    </label>
+                    <Input
+                      type="password"
+                      value={config.smtp_password || ''}
+                      onChange={(e) => setConfig({ ...config, smtp_password: e.target.value })}
+                      placeholder="Enter SMTP password"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 text-sm text-gray-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p><strong>Note:</strong> For Office365, you may need to create an App Password in your Microsoft account security settings. Regular passwords may not work due to multi-factor authentication.</p>
                 </div>
               </div>
 

@@ -24,6 +24,8 @@ interface EmailConfig {
   from_name: string;
   smtp_host: string;
   smtp_port: number;
+  smtp_username?: string | null;
+  smtp_password?: string | null;
   use_oauth: boolean;
   client_id?: string;
   client_secret?: string;
@@ -121,7 +123,6 @@ async function sendViaGraphAPI(
 
 /**
  * Send email via SMTP (Office365)
- * Note: Uses native fetch API for basic SMTP authentication
  */
 async function sendViaSMTP(
   config: EmailConfig,
@@ -132,15 +133,111 @@ async function sendViaSMTP(
   bcc?: string[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // For SMTP, we recommend using Microsoft Graph API instead
-    // This is a fallback that logs but doesn't actually send
-    console.log('SMTP sending is not fully implemented. Use OAuth2 with Microsoft Graph API instead.');
-    console.log('To enable, configure Office365 OAuth2 credentials in email_config table.');
+    if (!config.smtp_username || !config.smtp_password) {
+      return {
+        success: false,
+        error: 'SMTP username and password are required. Please configure in email settings.'
+      };
+    }
 
-    return {
-      success: false,
-      error: 'SMTP sending requires OAuth2 configuration. Please set up Microsoft 365 app registration.'
+    // Create MIME email message
+    const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const encodedSubject = `=?UTF-8?B?${btoa(subject)}?=`;
+
+    const recipients = [to];
+    if (cc && cc.length > 0) recipients.push(...cc);
+    if (bcc && bcc.length > 0) recipients.push(...bcc);
+
+    const mimeMessage = [
+      `From: ${config.from_name} <${config.from_email}>`,
+      `To: ${to}`,
+      cc && cc.length > 0 ? `Cc: ${cc.join(', ')}` : '',
+      `Subject: ${encodedSubject}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/plain; charset="UTF-8"`,
+      `Content-Transfer-Encoding: quoted-printable`,
+      ``,
+      html.replace(/<[^>]*>/g, ''),
+      ``,
+      `--${boundary}`,
+      `Content-Type: text/html; charset="UTF-8"`,
+      `Content-Transfer-Encoding: quoted-printable`,
+      ``,
+      html,
+      ``,
+      `--${boundary}--`,
+    ].filter(line => line !== null).join('\r\n');
+
+    // Encode credentials
+    const authString = btoa(`\0${config.smtp_username}\0${config.smtp_password}`);
+
+    // Connect to SMTP server
+    const conn = await Deno.connect({
+      hostname: config.smtp_host,
+      port: config.smtp_port,
+    });
+
+    // Upgrade to TLS
+    const tlsConn = await Deno.startTls(conn, { hostname: config.smtp_host });
+
+    const textDecoder = new TextDecoder();
+    const textEncoder = new TextEncoder();
+
+    // Helper functions
+    const read = async () => {
+      const buffer = new Uint8Array(1024);
+      const n = await tlsConn.read(buffer);
+      return textDecoder.decode(buffer.subarray(0, n || 0));
     };
+
+    const write = async (data: string) => {
+      await tlsConn.write(textEncoder.encode(data + '\r\n'));
+    };
+
+    // SMTP conversation
+    await read(); // Read server greeting
+
+    await write(`EHLO ${config.smtp_host}`);
+    await read(); // Read EHLO response
+
+    await write('AUTH LOGIN');
+    await read(); // Read AUTH prompt
+
+    await write(btoa(config.smtp_username));
+    await read(); // Read username acknowledgment
+
+    await write(btoa(config.smtp_password));
+    const authResponse = await read(); // Read auth response
+
+    if (!authResponse.startsWith('235')) {
+      tlsConn.close();
+      return { success: false, error: 'SMTP authentication failed' };
+    }
+
+    await write(`MAIL FROM:<${config.from_email}>`);
+    await read();
+
+    for (const recipient of recipients) {
+      await write(`RCPT TO:<${recipient}>`);
+      await read();
+    }
+
+    await write('DATA');
+    await read();
+
+    await write(mimeMessage);
+    await write('.');
+    await read();
+
+    await write('QUIT');
+    await read();
+
+    tlsConn.close();
+
+    return { success: true };
   } catch (error: any) {
     console.error('Error in sendViaSMTP:', error);
     return { success: false, error: error.message };
