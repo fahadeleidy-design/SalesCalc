@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  ArrowUpDown, Search, X, Save, ArrowRight, RotateCcw, Download, Calendar, BarChart3, TrendingUp
+  ArrowUpDown, Search, X, Save, ArrowRight, RotateCcw, Download, Calendar, BarChart3, TrendingUp,
+  FileText, Scale, AlertTriangle, CheckCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,8 +27,19 @@ const reasonOptions = [
   { value: 'correction', label: 'Correction' },
 ];
 
-type ViewMode = 'table' | 'analytics';
+type ViewMode = 'table' | 'analytics' | 'reconciliation';
 type FormType = 'adjustment' | 'transfer' | null;
+
+interface ReconciliationItem {
+  product_id: string;
+  product_name: string;
+  sku: string;
+  system_qty: number;
+  inbound_total: number;
+  outbound_total: number;
+  net_movement: number;
+  variance: number;
+}
 
 export default function StockMovementsPage() {
   const { profile } = useAuth();
@@ -45,6 +57,8 @@ export default function StockMovementsPage() {
   const [dateTo, setDateTo] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [reconciliation, setReconciliation] = useState<ReconciliationItem[]>([]);
+  const [reconSearch, setReconSearch] = useState('');
 
   const loadData = useCallback(async () => {
     try {
@@ -61,6 +75,41 @@ export default function StockMovementsPage() {
       setMovements(movs);
       setProducts(prodRes.data || []);
       setLocations(locRes.data || []);
+
+      const invRes = await supabase.from('product_inventory').select('product_id, quantity_available, product:products(name, sku)');
+      const invData = invRes.data || [];
+      const reconMap = new Map<string, ReconciliationItem>();
+
+      invData.forEach((inv: any) => {
+        reconMap.set(inv.product_id, {
+          product_id: inv.product_id,
+          product_name: inv.product?.name || 'Unknown',
+          sku: inv.product?.sku || '',
+          system_qty: Number(inv.quantity_available) || 0,
+          inbound_total: 0,
+          outbound_total: 0,
+          net_movement: 0,
+          variance: 0,
+        });
+      });
+
+      const inboundTypes = ['goods_received', 'production_output', 'return'];
+      const outboundTypes = ['production_consume', 'scrap'];
+
+      movs.forEach((m: any) => {
+        const item = reconMap.get(m.product_id);
+        if (!item) return;
+        const qty = Math.abs(Number(m.quantity) || 0);
+        if (inboundTypes.includes(m.movement_type)) item.inbound_total += qty;
+        else if (outboundTypes.includes(m.movement_type)) item.outbound_total += qty;
+      });
+
+      reconMap.forEach(item => {
+        item.net_movement = item.inbound_total - item.outbound_total;
+        item.variance = item.system_qty - item.net_movement;
+      });
+
+      setReconciliation(Array.from(reconMap.values()).sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance)));
 
       const today = new Date().toISOString().split('T')[0];
       const todayMovs = movs.filter((m: any) => m.performed_at?.startsWith(today));
@@ -234,6 +283,12 @@ export default function StockMovementsPage() {
             >
               <BarChart3 className="w-3.5 h-3.5 inline mr-1" />Analytics
             </button>
+            <button
+              onClick={() => setViewMode('reconciliation')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'reconciliation' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              <Scale className="w-3.5 h-3.5 inline mr-1" />Reconciliation
+            </button>
           </div>
           <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50">
             <Download className="w-4 h-4" /> Export
@@ -393,6 +448,89 @@ export default function StockMovementsPage() {
             </div>
           )}
         </>
+      )}
+
+      {viewMode === 'reconciliation' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <p className="text-xs text-slate-500 font-medium">Products Tracked</p>
+              <p className="text-xl font-bold text-slate-700 mt-1">{reconciliation.length}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <p className="text-xs text-slate-500 font-medium">With Variance</p>
+              <p className="text-xl font-bold text-amber-600 mt-1">{reconciliation.filter(r => r.variance !== 0).length}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <p className="text-xs text-slate-500 font-medium">Positive Variance</p>
+              <p className="text-xl font-bold text-emerald-600 mt-1">{reconciliation.filter(r => r.variance > 0).length}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <p className="text-xs text-slate-500 font-medium">Negative Variance</p>
+              <p className="text-xl font-bold text-red-600 mt-1">{reconciliation.filter(r => r.variance < 0).length}</p>
+            </div>
+          </div>
+
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" placeholder="Search products..." value={reconSearch} onChange={e => setReconSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-200 flex items-center gap-2 bg-slate-50">
+              <Scale className="w-4 h-4 text-blue-600" />
+              <h3 className="text-sm font-semibold text-slate-900">Inventory Reconciliation</h3>
+              <span className="text-xs text-slate-500 ml-2">System qty vs movement totals</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="text-left px-4 py-3 font-medium text-slate-600">Product</th>
+                    <th className="text-right px-4 py-3 font-medium text-slate-600">System Qty</th>
+                    <th className="text-right px-4 py-3 font-medium text-slate-600">Inbound</th>
+                    <th className="text-right px-4 py-3 font-medium text-slate-600">Outbound</th>
+                    <th className="text-right px-4 py-3 font-medium text-slate-600">Net Movement</th>
+                    <th className="text-right px-4 py-3 font-medium text-slate-600">Variance</th>
+                    <th className="text-center px-4 py-3 font-medium text-slate-600">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {reconciliation
+                    .filter(r => !reconSearch || r.product_name.toLowerCase().includes(reconSearch.toLowerCase()) || r.sku.toLowerCase().includes(reconSearch.toLowerCase()))
+                    .slice(0, 50)
+                    .map(item => (
+                    <tr key={item.product_id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-slate-900">{item.product_name}</p>
+                        <p className="text-[10px] text-slate-400">{item.sku}</p>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-900">{item.system_qty.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-emerald-600">+{item.inbound_total.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-red-600">-{item.outbound_total.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right font-medium text-slate-700">{item.net_movement.toLocaleString()}</td>
+                      <td className={`px-4 py-3 text-right font-bold ${item.variance === 0 ? 'text-slate-400' : item.variance > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                        {item.variance > 0 ? '+' : ''}{item.variance.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {item.variance === 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                            <CheckCircle className="w-3 h-3" /> Match
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                            <AlertTriangle className="w-3 h-3" /> Variance
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
 
       {formType === 'adjustment' && (

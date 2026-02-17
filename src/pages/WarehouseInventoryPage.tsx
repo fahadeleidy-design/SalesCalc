@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Search, Plus, X, Save, Edit3, MapPin, Package, AlertTriangle,
   Eye, Box, Layers, Download, PackageCheck, ClipboardList, Truck,
-  BarChart3, Grid3X3, TrendingDown, DollarSign, RefreshCw
+  BarChart3, Grid3X3, TrendingDown, DollarSign, RefreshCw, ArrowDownToLine, Activity
 } from 'lucide-react';
 import LotTrackingPanel from '../components/warehouse/LotTrackingPanel';
 import CycleCountingPanel from '../components/warehouse/CycleCountingPanel';
 import PickingPackingPanel from '../components/warehouse/PickingPackingPanel';
+import PutawayRulesPanel from '../components/warehouse/PutawayRulesPanel';
+import WarehouseAnalyticsDashboard from '../components/warehouse/WarehouseAnalyticsDashboard';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useWarehouseZones, useInventoryValuations } from '../hooks/useWarehouse';
@@ -15,7 +17,7 @@ import toast from 'react-hot-toast';
 import Pagination, { usePagination } from '../components/ui/Pagination';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-type TabKey = 'inventory' | 'locations' | 'zones' | 'abc_analysis' | 'lot_tracking' | 'cycle_counting' | 'picking_packing';
+type TabKey = 'inventory' | 'locations' | 'zones' | 'abc_analysis' | 'lot_tracking' | 'cycle_counting' | 'picking_packing' | 'putaway_rules' | 'analytics';
 
 const locationTypeConfig: Record<string, { label: string; bg: string; text: string }> = {
   raw_material: { label: 'Raw Material', bg: 'bg-amber-100', text: 'text-amber-700' },
@@ -280,6 +282,8 @@ export default function WarehouseInventoryPage() {
           { key: 'lot_tracking' as TabKey, icon: PackageCheck, label: 'Lot Tracking' },
           { key: 'cycle_counting' as TabKey, icon: ClipboardList, label: 'Cycle Count' },
           { key: 'picking_packing' as TabKey, icon: Truck, label: 'Pick & Pack' },
+          { key: 'putaway_rules' as TabKey, icon: ArrowDownToLine, label: 'Putaway Rules' },
+          { key: 'analytics' as TabKey, icon: Activity, label: 'Analytics' },
         ].map(tab => (
           <button key={tab.key} onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
             className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${activeTab === tab.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}>
@@ -339,6 +343,8 @@ export default function WarehouseInventoryPage() {
       {activeTab === 'lot_tracking' && <LotTrackingPanel />}
       {activeTab === 'cycle_counting' && <CycleCountingPanel />}
       {activeTab === 'picking_packing' && <PickingPackingPanel />}
+      {activeTab === 'putaway_rules' && <PutawayRulesPanel />}
+      {activeTab === 'analytics' && <WarehouseAnalyticsDashboard />}
 
       {showLocationForm && (
         <LocationFormModal form={locationForm} setForm={setLocationForm} editing={!!editingLocationId}
