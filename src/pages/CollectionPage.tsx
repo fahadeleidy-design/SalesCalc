@@ -139,7 +139,8 @@ export default function CollectionPage() {
     }
 
     const method = prompt('Method (bank_transfer/cash/cheque):', 'bank_transfer');
-    const ref = prompt('Reference:');
+    if (!method) return;
+    const ref = prompt('Reference:') || '';
 
     try {
       const rpcName = type === 'milestone' ? 'collect_milestone_payment' : 'collect_invoice_payment';
@@ -165,7 +166,6 @@ export default function CollectionPage() {
         customer_id: customerId,
         quotation_id: quotationId,
         invoice_id: invoiceId,
-        quotation_number: quotationNumber,
         note,
         created_by: profile?.id
       });

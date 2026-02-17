@@ -95,17 +95,15 @@ export default function Login() {
             requested_role: signupData.requested_role,
             account_status: 'pending',
           })
-          .eq('id', authData.user.id);
+          .eq('user_id', authData.user.id);
 
         if (profileError) {
           console.error('Profile update error:', profileError);
           // Don't throw error here - profile was created by trigger
         }
 
-        // Success message
-        toast.success('Account created successfully! Waiting for admin approval.', { duration: 5000 });
+        const submittedEmail = signupData.email;
 
-        // Reset form and switch to login
         setSignupData({
           email: '',
           password: '',
@@ -116,21 +114,17 @@ export default function Login() {
           department: '',
         });
         setShowSignup(false);
-        setEmail(signupData.email);
+        setEmail(submittedEmail);
 
-        alert(
-          '✅ Account Registration Submitted!\n\n' +
-          'Your account has been created and is pending admin approval.\n\n' +
-          'You will be notified once an administrator reviews and approves your account.\n\n' +
-          'Email: ' + signupData.email
-        );
+        toast.success('Account created successfully! Waiting for admin approval.', { duration: 6000 });
       }
     } catch (err: any) {
       console.error('Signup error:', err);
-      if (err.message.includes('already registered') || err.message.includes('already been registered')) {
+      const msg = err?.message || String(err);
+      if (msg.includes('already registered') || msg.includes('already been registered')) {
         setError('This email is already registered. Please use the login form or try a different email.');
       } else {
-        setError(`Registration failed: ${err.message}`);
+        setError(`Registration failed: ${msg}`);
       }
     } finally {
       setLoading(false);

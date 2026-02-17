@@ -38,13 +38,41 @@ export function useCollectionSummary() {
   return useQuery<CollectionSummary>({
     queryKey: ['collection-summary'],
     queryFn: async () => {
-      const { data, error } = await (supabase
-        .from('collection_summary') as any)
-        .select('*')
-        .single();
+      const [expectedRes, downPaymentRes, wipRes, invoicesRes] = await Promise.all([
+        supabase
+          .from('quotations')
+          .select('total')
+          .in('status', ['approved', 'finance_approved'])
+          .not('submitted_to_customer_at', 'is', null),
+        (supabase.from('down_payments_due') as any)
+          .select('down_payment_amount'),
+        (supabase.from('payment_schedules') as any)
+          .select('amount')
+          .in('status', ['pending', 'partial', 'overdue'])
+          .not('milestone_name', 'ilike', '%down%payment%'),
+        (supabase.from('invoices') as any)
+          .select('total')
+          .in('status', ['issued', 'sent', 'partial', 'overdue']),
+      ]);
 
-      if (error) throw error;
-      return data;
+      const expectedSales = expectedRes.data || [];
+      const downPayments = downPaymentRes.data || [];
+      const wip = wipRes.data || [];
+      const invoices = invoicesRes.data || [];
+
+      const summary: CollectionSummary = {
+        expected_sales_total: expectedSales.reduce((s: number, q: any) => s + (q.total || 0), 0),
+        expected_sales_count: expectedSales.length,
+        down_payment_pending_total: downPayments.reduce((s: number, d: any) => s + (d.down_payment_amount || 0), 0),
+        down_payment_pending_count: downPayments.length,
+        wip_pending_total: wip.reduce((s: number, w: any) => s + (w.amount || 0), 0),
+        wip_pending_count: wip.length,
+        invoices_pending_total: invoices.reduce((s: number, i: any) => s + (i.total || 0), 0),
+        invoices_pending_count: invoices.length,
+        total_pipeline: 0,
+      };
+      summary.total_pipeline = summary.expected_sales_total + summary.down_payment_pending_total + summary.wip_pending_total + summary.invoices_pending_total;
+      return summary;
     },
   });
 }
@@ -106,10 +134,9 @@ export function useDownPaymentPending() {
         customer_name: item.customer_name || 'N/A',
         customer_id: item.customer_id,
         amount: item.down_payment_amount,
-        due_date: item.po_received_date,
-        po_number: item.po_number,
+        due_date: item.approved_at,
         days_pending: item.days_pending,
-        priority: item.priority,
+        priority: item.urgency_level || 'normal',
         status: 'pending',
         days_overdue: item.days_pending || 0,
         sales_rep_name: item.sales_rep_name || 'N/A',
@@ -603,7 +630,9 @@ export function useUpdateCollectionStatus() {
       const table = type === 'schedule' ? 'payment_schedules' : 'invoices';
       const updates: any = {};
       if (status) updates.status = status;
-      if (promise_to_pay_date !== undefined) updates.promise_to_pay_date = promise_to_pay_date;
+      if (promise_to_pay_date !== undefined) {
+        updates.notes = promise_to_pay_date ? `Promise to pay by: ${promise_to_pay_date}` : null;
+      }
 
       const { data, error } = await (supabase
         .from(table) as any)
@@ -635,9 +664,9 @@ export function useCollectionActivityHistory() {
             created_at,
             note,
             created_by,
+            quotation_id,
             creator:profiles!collection_notes_created_by_fkey(full_name),
-            customer:customers(company_name),
-            quotation_number
+            customer:customers(company_name)
           `)
           .order('created_at', { ascending: false })
           .limit(50),

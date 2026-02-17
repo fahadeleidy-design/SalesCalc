@@ -116,7 +116,7 @@ export default function LotTrackingPanel() {
             *,
             product:products(name, sku, shelf_life_days),
             location:warehouse_locations(location_code, location_name),
-            supplier:suppliers(name),
+            supplier:suppliers(supplier_name),
             purchase_order:purchase_orders(po_number)
           `)
           .order('created_at', { ascending: false }),

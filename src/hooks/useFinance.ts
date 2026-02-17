@@ -653,7 +653,7 @@ export function useDebitNotes(supplierId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('debit_notes')
-        .select('*, supplier:suppliers(name)')
+        .select('*, supplier:suppliers(supplier_name)')
         .order('debit_note_date', { ascending: false });
 
       if (supplierId) {

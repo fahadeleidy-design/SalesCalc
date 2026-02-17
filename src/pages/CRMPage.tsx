@@ -31,6 +31,21 @@ import {
   Lightbulb,
   DollarSign,
   Edit2,
+  GitBranch,
+  Megaphone,
+  LifeBuoy,
+  History,
+  Mic,
+  LineChart,
+  Brain,
+  Zap,
+  Workflow,
+  GraduationCap,
+  Puzzle,
+  Globe,
+  Star,
+  Trash2,
+  X,
 } from 'lucide-react';
 import CRMAnalyticsDashboard from '../components/crm/CRMAnalyticsDashboard';
 import TasksManager from '../components/crm/TasksManager';
@@ -463,8 +478,8 @@ function StatsCard({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
       <div className="flex items-center justify-between mb-3">
-        <div className={`p - 3 rounded - lg ${iconBg} `}>
-          <Icon className={`h - 6 w - 6 ${iconColor} `} />
+        <div className={`p-3 rounded-lg ${iconBg}`}>
+          <Icon className={`h-6 w-6 ${iconColor}`} />
         </div>
       </div>
       <h3 className="text-sm font-medium text-slate-600 mb-1">{title}</h3>
@@ -729,14 +744,14 @@ function LeadsView() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline - flex items - center px - 2.5 py - 0.5 rounded - full text - xs font - medium ${lead.lead_status === 'qualified'
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${lead.lead_status === 'qualified'
                         ? 'bg-green-100 text-green-800'
                         : lead.lead_status === 'new'
                           ? 'bg-blue-100 text-blue-800'
                           : lead.lead_status === 'contacted'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-slate-100 text-slate-800'
-                        } `}>
+                        }`}>
                         {lead.lead_status}
                       </span>
                     </td>

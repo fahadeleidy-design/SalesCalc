@@ -41,7 +41,7 @@ export function useUserQuotations(userId: string) {
       const { data, error } = await supabase
         .from('quotations')
         .select('*')
-        .eq('created_by', userId)
+        .eq('sales_rep_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -81,8 +81,7 @@ export function usePendingApprovals(userId: string) {
       const { data, error } = await supabase
         .from('quotations')
         .select('*')
-        .eq('current_approver', userId)
-        .eq('approval_status', 'pending')
+        .in('status', ['pending_manager', 'pending_ceo', 'pending_finance'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
