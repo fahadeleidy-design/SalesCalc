@@ -636,7 +636,7 @@ export default function QuotationViewModal({ quotationId, onClose, onDelete }: Q
               </div>
 
               {/* Profitability Card - Manager/Admin Only */}
-              {['manager', 'ceo', 'admin'].includes(profile?.role || '') && (
+              {['manager', 'group_ceo', 'ceo_commercial', 'admin'].includes(profile?.role || '') && (
                 <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 border border-slate-200">
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="w-5 h-5 text-slate-600" />

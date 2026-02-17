@@ -68,8 +68,8 @@ export async function predictApprovalRoute(
           Approval rules:
           - Under $10,000: Sales Manager only
           - $10,000-$50,000: Sales Manager → Finance Manager
-          - $50,000-$100,000: Sales Manager → Finance Manager → CEO
-          - Over $100,000: Sales Manager → Engineering → Finance Manager → CEO
+          - $50,000-$100,000: Sales Manager → Finance Manager → Executive
+          - Over $100,000: Sales Manager → Engineering → Finance Manager → Executive
           - High complexity (>0.7): Add Engineering review
           - High discount (>15%): Requires Finance approval
           - Custom items: Requires Engineering approval`,
@@ -154,12 +154,12 @@ function getRuleBasedRoute(quotation: Quotation): ApprovalRoute {
     priority = 'medium';
     reasoning = 'Medium value quotation - Manager and Finance approval';
   } else if (value < 100000) {
-    approvers = ['Manager', 'Finance', 'CEO'];
+    approvers = ['Manager', 'Finance', 'Executive'];
     estimatedTime = 48;
     priority = 'high';
     reasoning = 'High value quotation - Full approval chain';
   } else {
-    approvers = ['Manager', 'Engineering', 'Finance', 'CEO'];
+    approvers = ['Manager', 'Engineering', 'Finance', 'Executive'];
     estimatedTime = 72;
     priority = 'urgent';
     reasoning = 'Very high value quotation - Complete approval process';

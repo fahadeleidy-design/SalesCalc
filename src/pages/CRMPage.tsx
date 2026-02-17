@@ -145,7 +145,7 @@ export default function CRMPage() {
     queryFn: async () => {
       const userId = profile?.id;
       const isManager = profile?.role === 'manager';
-      const isCEO = profile?.role === 'ceo';
+      const isCEO = profile?.role === 'group_ceo' || profile?.role === 'ceo_commercial';
 
       // Get leads
       let leadsQuery = supabase.from('crm_leads').select('*', { count: 'exact', head: true });
@@ -266,7 +266,7 @@ export default function CRMPage() {
     enabled: !!profile?.id,
   });
 
-  if (!profile || !['sales', 'manager', 'ceo'].includes(profile.role)) {
+  if (!profile || !['sales', 'manager', 'group_ceo', 'ceo_commercial'].includes(profile.role)) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
         <div className="text-center">
@@ -613,7 +613,7 @@ function LeadsView() {
           </select>
           <div className="flex gap-2">
             {/* Only managers, CEO, and admins can import/export */}
-            {['manager', 'ceo', 'admin'].includes(profile?.role || '') && (
+            {['manager', 'group_ceo', 'ceo_commercial', 'admin'].includes(profile?.role || '') && (
               <>
                 <button
                   onClick={handleExport}
@@ -880,7 +880,7 @@ function LeadModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }
   const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const { data: teamMembers } = useSalesTeam();
-  const canAssign = ['manager', 'ceo', 'admin'].includes(profile?.role || '');
+  const canAssign = ['manager', 'group_ceo', 'ceo_commercial', 'admin'].includes(profile?.role || '');
 
   const [formData, setFormData] = useState({
     company_name: lead?.company_name || '',
@@ -1409,7 +1409,7 @@ function OpportunitiesView() {
           </select>
           <div className="flex gap-2">
             {/* Only managers, CEO, and admins can import/export */}
-            {['manager', 'ceo', 'admin'].includes(profile?.role || '') && (
+            {['manager', 'group_ceo', 'ceo_commercial', 'admin'].includes(profile?.role || '') && (
               <>
                 <button
                   onClick={handleExport}
@@ -1717,7 +1717,7 @@ function OpportunityModal({
   const { t, isRTL } = useLanguage();
   const queryClient = useQueryClient();
   const { data: teamMembers } = useSalesTeam();
-  const canAssign = ['manager', 'ceo', 'admin'].includes(profile?.role || '');
+  const canAssign = ['manager', 'group_ceo', 'ceo_commercial', 'admin'].includes(profile?.role || '');
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [formData, setFormData] = useState({
     name: opportunity?.name || '',

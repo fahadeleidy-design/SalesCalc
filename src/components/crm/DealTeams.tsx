@@ -191,7 +191,7 @@ function AddTeamMemberModal({
       const { data, error } = await (supabase as any)
         .from('profiles')
         .select('id, full_name, email, role')
-        .in('role', ['sales', 'manager', 'ceo'])
+        .in('role', ['sales', 'manager', 'group_ceo', 'ceo_commercial'])
         .order('full_name');
 
       if (error) throw error;

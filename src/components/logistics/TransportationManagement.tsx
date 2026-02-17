@@ -51,7 +51,7 @@ const serviceTypes = [
 
 export default function TransportationManagement() {
   const { profile } = useAuth();
-  const canManage = ['admin', 'ceo', 'purchasing'].includes(profile?.role || '');
+  const canManage = ['admin', 'group_ceo', 'ceo_manufacturing', 'purchasing'].includes(profile?.role || '');
   const [activeTab, setActiveTab] = useState<'carriers' | 'rates'>('carriers');
   const [carriers, setCarriers] = useState<Carrier[]>([]);
   const [rates, setRates] = useState<CarrierRate[]>([]);

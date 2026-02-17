@@ -40,7 +40,7 @@ export default function CRMAnalyticsDashboard() {
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['crm-analytics', profile?.id],
     queryFn: async () => {
-      const _isCEO = profile?.role === 'ceo';
+      const _isCEO = profile?.role === 'group_ceo' || profile?.role === 'ceo_commercial';
       const isManager = profile?.role === 'manager';
       const isSales = profile?.role === 'sales';
 

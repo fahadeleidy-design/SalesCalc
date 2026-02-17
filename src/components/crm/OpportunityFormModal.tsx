@@ -27,7 +27,7 @@ export default function OpportunityFormModal({ opportunity, onClose }: Opportuni
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const { data: teamMembers } = useSalesTeam();
-  const canAssign = ['manager', 'ceo', 'admin'].includes(profile?.role || '');
+  const canAssign = ['manager', 'group_ceo', 'ceo_commercial', 'admin'].includes(profile?.role || '');
 
   const [formData, setFormData] = useState({
     name: opportunity?.name || '',

@@ -12,7 +12,9 @@ const roleColors: Record<string, string> = {
   engineering: 'bg-teal-100 text-teal-700',
   solution_consultant: 'bg-indigo-100 text-indigo-700',
   manager: 'bg-purple-100 text-purple-700',
-  ceo: 'bg-red-100 text-red-700',
+  group_ceo: 'bg-red-100 text-red-700',
+  ceo_commercial: 'bg-rose-100 text-rose-700',
+  ceo_manufacturing: 'bg-orange-100 text-orange-700',
   finance: 'bg-green-100 text-green-700',
   admin: 'bg-slate-100 text-slate-700',
   project_manager: 'bg-blue-100 text-blue-700',
@@ -25,7 +27,7 @@ const roleColors: Record<string, string> = {
 
 export default function UsersPage() {
   const { profile } = useAuth();
-  const canManage = ['admin', 'ceo'].includes(profile?.role || '');
+  const canManage = ['admin', 'group_ceo'].includes(profile?.role || '');
 
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,7 +275,7 @@ export default function UsersPage() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
-        {(['sales', 'engineering', 'solution_consultant', 'manager', 'ceo', 'finance', 'admin', 'project_manager', 'purchasing', 'production', 'logistics', 'quality', 'warehouse'] as UserRole[]).map(
+        {(['sales', 'engineering', 'solution_consultant', 'manager', 'group_ceo', 'ceo_commercial', 'ceo_manufacturing', 'finance', 'admin', 'project_manager', 'purchasing', 'production', 'logistics', 'quality', 'warehouse'] as UserRole[]).map(
           (role) => (
             <div key={role} className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
               <div className="flex items-center justify-between mb-2">
@@ -461,7 +463,9 @@ export default function UsersPage() {
                   <option value="engineering">Engineering</option>
                   <option value="solution_consultant">Solution Consultant</option>
                   <option value="manager">Manager</option>
-                  <option value="ceo">CEO</option>
+                  <option value="group_ceo">Group CEO</option>
+                  <option value="ceo_commercial">CEO Commercial</option>
+                  <option value="ceo_manufacturing">CEO Manufacturing</option>
                   <option value="finance">Finance</option>
                   <option value="admin">Admin</option>
                   <option value="project_manager">Project Manager</option>

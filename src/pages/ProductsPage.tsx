@@ -33,7 +33,7 @@ export default function ProductsPage() {
   const [uploading, setUploading] = useState(false);
 
   const canEditCost = profile?.role === 'finance' || profile?.role === 'admin';
-  const canViewCost = profile?.role === 'finance' || profile?.role === 'admin' || profile?.role === 'ceo';
+  const canViewCost = profile?.role === 'finance' || profile?.role === 'admin' || profile?.role === 'group_ceo' || profile?.role === 'ceo_commercial' || profile?.role === 'ceo_manufacturing';
 
   useEffect(() => {
     loadProducts();

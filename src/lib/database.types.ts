@@ -6,7 +6,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type UserRole = 'sales' | 'engineering' | 'manager' | 'ceo' | 'finance' | 'admin' | 'solution_consultant' | 'project_manager' | 'purchasing' | 'production' | 'logistics' | 'quality' | 'warehouse';
+export type UserRole = 'sales' | 'engineering' | 'manager' | 'group_ceo' | 'ceo_commercial' | 'ceo_manufacturing' | 'finance' | 'admin' | 'solution_consultant' | 'project_manager' | 'purchasing' | 'production' | 'logistics' | 'quality' | 'warehouse';
 
 export type QuotationStatus =
   | 'draft'

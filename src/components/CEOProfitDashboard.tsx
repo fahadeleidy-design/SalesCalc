@@ -47,7 +47,7 @@ export default function CEOProfitDashboard() {
   const [timeframe, setTimeframe] = useState(30);
 
   useEffect(() => {
-    if (profile?.role === 'ceo') {
+    if (profile?.role === 'group_ceo' || profile?.role === 'ceo_commercial') {
       loadMetrics();
     }
   }, [profile, timeframe]);
@@ -73,7 +73,7 @@ export default function CEOProfitDashboard() {
     }
   };
 
-  if (profile?.role !== 'ceo') {
+  if (profile?.role !== 'group_ceo' && profile?.role !== 'ceo_commercial') {
     return null;
   }
 

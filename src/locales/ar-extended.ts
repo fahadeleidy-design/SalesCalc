@@ -324,7 +324,7 @@ export const arExtended = {
       draft: 'مسودة',
       pending_manager: 'في انتظار موافقة المدير',
       pending_engineering: 'في انتظار المراجعة الهندسية',
-      pending_ceo: 'في انتظار موافقة الرئيس التنفيذي',
+      pending_ceo: 'بانتظار الموافقة التنفيذية',
       pending_finance: 'في انتظار الموافقة المالية',
       approved: 'موافق عليه',
       finance_approved: 'موافقة مالية',
@@ -499,7 +499,7 @@ export const arExtended = {
     requiresApproval: 'يتطلب موافقة',
     discountThreshold: 'تجاوز حد الخصم',
     managerApproval: 'موافقة المدير مطلوبة',
-    ceoApproval: 'موافقة الرئيس التنفيذي مطلوبة',
+    ceoApproval: 'الموافقة التنفيذية مطلوبة',
     financeApproval: 'موافقة مالية مطلوبة',
   },
 

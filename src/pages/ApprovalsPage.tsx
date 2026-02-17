@@ -66,7 +66,7 @@ export default function ApprovalsPage() {
 
       if (profile.role === 'manager') {
         statusFilter = ['pending_manager'];
-      } else if (profile.role === 'ceo') {
+      } else if (profile.role === 'group_ceo' || profile.role === 'ceo_commercial') {
         statusFilter = ['pending_ceo'];
       } else if (profile.role === 'finance') {
         statusFilter = ['pending_finance'];
@@ -141,7 +141,7 @@ export default function ApprovalsPage() {
     setComments('');
   };
 
-  if (!profile || !['manager', 'ceo', 'finance'].includes(profile.role)) {
+  if (!profile || !['manager', 'group_ceo', 'ceo_commercial', 'finance'].includes(profile.role)) {
     return (
       <div className="text-center py-12">
         <p className="text-slate-600">You don't have permission to access this page.</p>
@@ -358,9 +358,9 @@ export default function ApprovalsPage() {
                   <p className="text-sm text-green-800">
                     {profile?.role === 'manager'
                       ? (calculateQuotationTotal(selectedQuotation) > highValueThreshold || selectedQuotation.discount_percentage > 10
-                        ? 'This quotation will be forwarded for CEO/Finance approval.'
+                        ? 'This quotation will be forwarded for Executive/Finance approval.'
                         : 'This quotation will be fully approved and ready for the customer.')
-                      : (profile?.role === 'ceo'
+                      : (profile?.role === 'group_ceo' || profile?.role === 'ceo_commercial'
                         ? 'This quotation will be forwarded to Finance for final check.'
                         : 'This quotation will be fully approved.')}
                   </p>

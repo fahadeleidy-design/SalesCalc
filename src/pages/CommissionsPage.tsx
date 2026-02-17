@@ -23,7 +23,8 @@ export default function CommissionsPage() {
     case 'manager':
       return <ManagerCommissionDashboard />;
     
-    case 'ceo':
+    case 'group_ceo':
+    case 'ceo_commercial':
     case 'finance':
       return <CommissionOverviewDashboard />;
     

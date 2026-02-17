@@ -87,7 +87,7 @@ export default function CommandPalette() {
       action: () => navigate('/approvals'),
       category: 'navigation',
       keywords: ['review', 'pending'],
-      roles: ['manager', 'ceo', 'finance'],
+      roles: ['manager', 'group_ceo', 'ceo_commercial', 'finance'],
     },
     {
       id: 'nav-commissions',
@@ -97,7 +97,7 @@ export default function CommandPalette() {
       action: () => navigate('/commissions'),
       category: 'navigation',
       keywords: ['earnings', 'bonus'],
-      roles: ['sales', 'manager', 'ceo', 'finance', 'admin'],
+      roles: ['sales', 'manager', 'group_ceo', 'ceo_commercial', 'finance', 'admin'],
     },
     {
       id: 'nav-targets',
@@ -107,7 +107,7 @@ export default function CommandPalette() {
       action: () => navigate('/targets'),
       category: 'navigation',
       keywords: ['goals', 'objectives'],
-      roles: ['manager', 'ceo'],
+      roles: ['manager', 'group_ceo', 'ceo_commercial'],
     },
     {
       id: 'nav-reports',
@@ -117,7 +117,7 @@ export default function CommandPalette() {
       action: () => navigate('/reports'),
       category: 'navigation',
       keywords: ['analytics', 'statistics'],
-      roles: ['admin', 'manager', 'ceo'],
+      roles: ['admin', 'manager', 'group_ceo', 'ceo_commercial', 'ceo_manufacturing'],
     },
     {
       id: 'nav-custom-items',

@@ -35,9 +35,9 @@ export default function ManagerDashboard() {
     let pendingStatus = 'pending_manager';
     let approverRole = 'manager';
 
-    if (profile.role === 'ceo') {
+    if (profile.role === 'group_ceo' || profile.role === 'ceo_commercial') {
       pendingStatus = 'pending_ceo';
-      approverRole = 'ceo';
+      approverRole = profile.role;
     } else if (profile.role === 'finance') {
       pendingStatus = 'pending_finance';
       approverRole = 'finance';
@@ -121,8 +121,9 @@ export default function ManagerDashboard() {
 
   const getDashboardTitle = () => {
     switch (profile?.role) {
-      case 'ceo':
-        return 'CEO Dashboard';
+      case 'group_ceo':
+      case 'ceo_commercial':
+        return 'Executive Dashboard';
       case 'finance':
         return 'Finance Dashboard';
       case 'manager':
@@ -133,7 +134,8 @@ export default function ManagerDashboard() {
 
   const getDashboardSubtitle = () => {
     switch (profile?.role) {
-      case 'ceo':
+      case 'group_ceo':
+      case 'ceo_commercial':
         return 'Executive overview and final approvals';
       case 'finance':
         return 'Financial review and approval oversight';

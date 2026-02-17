@@ -479,7 +479,7 @@ export default function CustomersPage() {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      {['admin', 'manager', 'ceo'].includes(profile?.role || '') && (
+                      {['admin', 'manager', 'group_ceo', 'ceo_commercial'].includes(profile?.role || '') && (
                         <button
                           onClick={() => handleDelete(customer.id)}
                           className="p-1.5 text-red-600 hover:bg-red-50 rounded"
@@ -600,7 +600,7 @@ export default function CustomersPage() {
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            {['admin', 'manager', 'ceo'].includes(profile?.role || '') && (
+                            {['admin', 'manager', 'group_ceo', 'ceo_commercial'].includes(profile?.role || '') && (
                               <button
                                 onClick={() => handleDelete(customer.id)}
                                 className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
@@ -682,7 +682,7 @@ export default function CustomersPage() {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      {['admin', 'manager', 'ceo'].includes(profile?.role || '') && (
+                      {['admin', 'manager', 'group_ceo', 'ceo_commercial'].includes(profile?.role || '') && (
                         <button
                           onClick={() => handleDelete(customer.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"

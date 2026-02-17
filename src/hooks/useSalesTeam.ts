@@ -18,7 +18,7 @@ export function useSalesTeam() {
       if (!profile) return [];
 
       // Manager, CEO and Admin can see all sales reps
-      if (profile.role === 'manager' || profile.role === 'ceo' || profile.role === 'admin') {
+      if (profile.role === 'manager' || profile.role === 'group_ceo' || profile.role === 'ceo_commercial' || profile.role === 'ceo_manufacturing' || profile.role === 'admin') {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, email, role')

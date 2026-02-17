@@ -100,17 +100,12 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">
-          {profile?.role === 'ceo' ? 'CEO Dashboard' : 'Admin Dashboard'}
+          Admin Dashboard
         </h1>
         <p className="text-slate-600 mt-1">
-          {profile?.role === 'ceo' ? 'Financial insights and performance metrics' : 'System management and configuration'}
+          System management and configuration
         </p>
       </div>
-
-      {/* CEO Profit Dashboard */}
-      {profile?.role === 'ceo' && (
-        <CEOProfitDashboard />
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">

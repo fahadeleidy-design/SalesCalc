@@ -80,7 +80,7 @@ export default function CEODashboard() {
   const [viewingQuotationId, setViewingQuotationId] = useState<string>();
 
   useEffect(() => {
-    if (profile?.role === 'ceo') {
+    if (profile?.role === 'group_ceo' || profile?.role === 'ceo_commercial') {
       loadDashboardData();
     }
   }, [profile, timeframe]);
@@ -267,7 +267,7 @@ export default function CEODashboard() {
     return date.toISOString();
   };
 
-  if (!profile || profile.role !== 'ceo') {
+  if (!profile || (profile.role !== 'group_ceo' && profile.role !== 'ceo_commercial')) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">

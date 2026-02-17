@@ -40,7 +40,7 @@ export default function TargetsPage() {
     return <ManagerTargetsView profile={profile} />;
   }
 
-  if (profile.role === 'ceo') {
+  if (profile.role === 'group_ceo' || profile.role === 'ceo_commercial') {
     return <CEOTargetsView />;
   }
 

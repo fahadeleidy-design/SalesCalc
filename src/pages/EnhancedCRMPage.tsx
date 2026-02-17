@@ -97,7 +97,7 @@ export default function EnhancedCRMPage() {
   const queryClient = useQueryClient();
 
   // State Management
-  const showLeadsTab = ['sales', 'manager', 'ceo', 'admin'].includes(profile?.role || '');
+  const showLeadsTab = ['sales', 'manager', 'group_ceo', 'ceo_commercial', 'admin'].includes(profile?.role || '');
   const [activeTab, setActiveTab] = useState<TabType>(
     showLeadsTab ? 'leads' : 'opportunities'
   );
@@ -552,7 +552,7 @@ export default function EnhancedCRMPage() {
     toast.success('Opportunities exported successfully');
   };
 
-  const canImportExport = ['manager', 'ceo', 'admin'].includes(profile?.role || '');
+  const canImportExport = ['manager', 'group_ceo', 'ceo_commercial', 'admin'].includes(profile?.role || '');
 
   const isLoading = leadsLoading || opportunitiesLoading;
 

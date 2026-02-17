@@ -21,7 +21,7 @@ const statusColors: Record<string, string> = {
 
 export default function GoodsReceivingPage() {
   const { profile } = useAuth();
-  const canManage = ['purchasing', 'admin', 'ceo'].includes(profile?.role || '');
+  const canManage = ['purchasing', 'admin', 'group_ceo', 'ceo_manufacturing'].includes(profile?.role || '');
   const [receipts, setReceipts] = useState<any[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

@@ -288,16 +288,18 @@ async function createNotificationsForSubmission(
     targetRole = 'manager';
     title = 'New Quotation Pending Your Approval';
   } else if (status === 'pending_ceo') {
-    targetRole = 'ceo';
-    title = 'New Quotation Requires CEO Approval';
+    targetRole = 'group_ceo';
+    title = 'New Quotation Requires Executive Approval';
   } else {
     return;
   }
 
-  const { data: approvers } = await (supabase
-    .from('profiles')
-    .select('id')
-    .eq('role', targetRole) as any);
+  const query = supabase.from('profiles').select('id');
+  const { data: approvers } = await (
+    status === 'pending_ceo'
+      ? query.in('role', ['group_ceo', 'ceo_commercial'])
+      : query.eq('role', targetRole)
+  ) as any;
 
   if (approvers && approvers.length > 0) {
     const notifications = approvers.map((approver: any) => ({
@@ -357,9 +359,9 @@ export async function approveQuotation(
       // Discount ≤10% and low value, manager can approve fully
       nextStatus = 'approved';
     }
-  } else if (approverRole === 'ceo') {
-    // CEO can approve any discount, send to finance if needed OR if total value is high
-    // Actually, for consistency, CEO approval always flows to finance review
+  } else if (approverRole === 'group_ceo' || approverRole === 'ceo_commercial') {
+    // Executive can approve any discount, send to finance if needed OR if total value is high
+    // For consistency, executive approval always flows to finance review
     nextStatus = 'pending_finance';
   } else if (approverRole === 'finance') {
     // Finance final approval
@@ -422,7 +424,7 @@ export async function approveQuotation(
   }
 
   // Notify finance team when CEO approves
-  if (approverRole === 'ceo' && nextStatus === 'pending_finance') {
+  if ((approverRole === 'group_ceo' || approverRole === 'ceo_commercial') && nextStatus === 'pending_finance') {
     const { data: financeUsers } = await (supabase
       .from('profiles')
       .select('user_id')

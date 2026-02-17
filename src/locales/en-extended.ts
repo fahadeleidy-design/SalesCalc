@@ -324,7 +324,7 @@ export const enExtended = {
       draft: 'Draft',
       pending_manager: 'Pending Manager Approval',
       pending_engineering: 'Pending Engineering Review',
-      pending_ceo: 'Pending CEO Approval',
+      pending_ceo: 'Pending Executive Approval',
       pending_finance: 'Pending Finance Approval',
       approved: 'Approved',
       finance_approved: 'Finance Approved',
@@ -499,7 +499,7 @@ export const enExtended = {
     requiresApproval: 'Requires Approval',
     discountThreshold: 'Discount Threshold Exceeded',
     managerApproval: 'Manager Approval Required',
-    ceoApproval: 'CEO Approval Required',
+    ceoApproval: 'Executive Approval Required',
     financeApproval: 'Finance Approval Required',
   },
 
