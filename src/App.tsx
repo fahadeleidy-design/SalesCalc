@@ -71,6 +71,7 @@ import ProductionDashboard from './pages/ProductionDashboard';
 import QualityDashboard from './pages/QualityDashboard';
 import WarehouseManagerDashboard from './pages/WarehouseManagerDashboard';
 import InstallationTrackingPage from './pages/InstallationTrackingPage';
+import ManufacturingHub from './components/manufacturing/ManufacturingHub';
 
 import { SkeletonDashboard } from './components/ui/SkeletonLoader';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -271,6 +272,8 @@ function AppContent() {
         return hasAccess(['purchasing', 'finance', 'ceo', 'admin', 'manager']) ? <SpendAnalyticsPage /> : <UnauthorizedPage />;
       case '/automated-reorder':
         return hasAccess(['purchasing', 'admin']) ? <AutomatedReorderPage /> : <UnauthorizedPage />;
+      case '/manufacturing':
+        return hasAccess(['production', 'quality', 'warehouse', 'logistics', 'purchasing', 'engineering', 'project_manager', 'manager', 'admin', 'ceo']) ? <ManufacturingHub /> : <UnauthorizedPage />;
       case '/integrations':
         return hasAccess(['admin']) ? <IntegrationsPage /> : <UnauthorizedPage />;
 

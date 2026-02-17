@@ -99,6 +99,7 @@ export const en = {
     fleetManagement: 'Fleet Management',
     routePlanning: 'Route Planning',
     integrations: 'Integrations',
+    manufacturingHub: 'Manufacturing Hub',
   },
   auth: {
     email: 'Email',

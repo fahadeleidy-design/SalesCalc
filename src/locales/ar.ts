@@ -101,6 +101,7 @@ export const ar: TranslationKeys = {
     fleetManagement: 'إدارة الأسطول',
     routePlanning: 'تخطيط المسارات',
     integrations: 'التكاملات',
+    manufacturingHub: 'مركز التصنيع',
   },
   auth: { email: 'البريد الإلكتروني', password: 'كلمة المرور', signIn: 'تسجيل الدخول', signOut: 'تسجيل الخروج', dontHaveAccount: 'ليس لديك حساب؟', requestAccount: 'طلب إنشاء حساب', fillForm: 'املأ النموذج وسيوافق المسؤول', accountRequest: 'طلب حساب', backToLogin: 'العودة للدخول', fullName: 'الاسم الكامل', phone: 'رقم الهاتف', department: 'القسم', requestedRole: 'الدور المطلوب', confirmPassword: 'تأكيد كلمة المرور', submitRequest: 'إرسال الطلب', adminWillReview: 'سيقوم المسؤول بالمراجعة', accountWillBeReviewed: 'ستتم مراجعة حسابك', passwordMinLength: 'الحد الأدنى 6 أحرف', reenterPassword: 'إعادة إدخل كلمة المرور' },
   roles: { admin: 'مسؤول النظام', sales: 'مندوب مبيعات', manager: 'مدير المبيعات', engineering: 'فريق الهندسة', finance: 'فريق المالية', ceo: 'المدير التنفيذي', solution_consultant: 'مستشار الحلول', project_manager: 'مدير المشاريع', purchasing: 'المشتريات' },

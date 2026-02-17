@@ -372,6 +372,12 @@ const navigationItems: NavItem[] = [
     roles: ['logistics', 'purchasing', 'project_manager', 'manager', 'admin'],
   },
   {
+    labelKey: 'manufacturingHub',
+    icon: Factory,
+    path: '/manufacturing',
+    roles: ['production', 'quality', 'warehouse', 'logistics', 'purchasing', 'engineering', 'project_manager', 'manager', 'admin', 'ceo'],
+  },
+  {
     labelKey: 'integrations',
     icon: Plug,
     path: '/integrations',
