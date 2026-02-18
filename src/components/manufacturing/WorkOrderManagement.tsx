@@ -78,8 +78,8 @@ const WorkOrderManagement: React.FC = () => {
   const [showNew, setShowNew] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [newForm, setNewForm] = useState({
-    product_id: '', bom_id: '', quantity_ordered: '', priority: 'medium' as WorkOrder['priority'],
-    work_center_id: '', planned_start_date: '', planned_end_date: '', notes: '',
+    product_id: '', bom_id: '', planned_quantity: '', priority: 'medium' as WorkOrder['priority'],
+    assigned_work_center_id: '', planned_start_date: '', planned_end_date: '', notes: '',
   });
 
   const filters = useMemo<WorkOrderFilters | undefined>(() => {
@@ -101,7 +101,7 @@ const WorkOrderManagement: React.FC = () => {
     if (!search) return workOrders;
     const q = search.toLowerCase();
     return workOrders.filter(wo =>
-      wo.order_number.toLowerCase().includes(q) ||
+      wo.work_order_number.toLowerCase().includes(q) ||
       wo.product?.name?.toLowerCase().includes(q) ||
       wo.work_center?.work_center_name?.toLowerCase().includes(q)
     );
@@ -117,27 +117,27 @@ const WorkOrderManagement: React.FC = () => {
   }), [workOrders]);
 
   const handleCreate = () => {
-    if (!newForm.product_id || !newForm.quantity_ordered) return;
+    if (!newForm.product_id || !newForm.planned_quantity) return;
     createWorkOrder.mutate({
-      order_number: `WO-${Date.now()}`,
+      work_order_number: `WO-${Date.now()}`,
       product_id: newForm.product_id,
       bom_id: newForm.bom_id || null,
-      work_center_id: newForm.work_center_id || null,
-      quantity_ordered: Number(newForm.quantity_ordered),
-      quantity_produced: 0,
-      quantity_rejected: 0,
+      assigned_work_center_id: newForm.assigned_work_center_id || null,
+      planned_quantity: Number(newForm.planned_quantity),
+      completed_quantity: 0,
+      scrapped_quantity: 0,
       status: 'draft',
       priority: newForm.priority,
       planned_start_date: newForm.planned_start_date || null,
       planned_end_date: newForm.planned_end_date || null,
       actual_start_date: null,
       actual_end_date: null,
-      assigned_to: null,
+      supervisor_id: null,
       notes: newForm.notes || null,
     }, {
       onSuccess: () => {
         setShowNew(false);
-        setNewForm({ product_id: '', bom_id: '', quantity_ordered: '', priority: 'medium', work_center_id: '', planned_start_date: '', planned_end_date: '', notes: '' });
+        setNewForm({ product_id: '', bom_id: '', planned_quantity: '', priority: 'medium', assigned_work_center_id: '', planned_start_date: '', planned_end_date: '', notes: '' });
       },
     });
   };
@@ -147,7 +147,7 @@ const WorkOrderManagement: React.FC = () => {
   };
 
   const progressPct = (wo: WorkOrder) =>
-    wo.quantity_ordered > 0 ? Math.round((wo.quantity_produced / wo.quantity_ordered) * 100) : 0;
+    wo.planned_quantity > 0 ? Math.round((wo.completed_quantity / wo.planned_quantity) * 100) : 0;
 
   const renderDetailModal = () => {
     if (!selectedWO) return null;
@@ -161,7 +161,7 @@ const WorkOrderManagement: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">{wo.order_number}</h2>
+              <h2 className="text-lg font-bold text-slate-900">{wo.work_order_number}</h2>
               <p className="text-sm text-slate-500">{wo.product?.name || 'Unknown Product'}</p>
             </div>
             <div className="flex items-center gap-3">
@@ -198,9 +198,9 @@ const WorkOrderManagement: React.FC = () => {
                   {([
                     ['Priority', wo.priority.charAt(0).toUpperCase() + wo.priority.slice(1)],
                     ['Work Center', wo.work_center?.work_center_name || 'Unassigned'],
-                    ['Quantity Ordered', wo.quantity_ordered],
-                    ['Quantity Produced', wo.quantity_produced],
-                    ['Quantity Rejected', wo.quantity_rejected],
+                    ['Planned Quantity', wo.planned_quantity],
+                    ['Completed Quantity', wo.completed_quantity],
+                    ['Scrapped Quantity', wo.scrapped_quantity],
                     ['Product SKU', wo.product?.sku || 'N/A'],
                     ['Planned Start', formatDate(wo.planned_start_date)],
                     ['Planned End', formatDate(wo.planned_end_date)],
@@ -243,8 +243,8 @@ const WorkOrderManagement: React.FC = () => {
                       <td className="py-2.5 text-slate-600 capitalize">{r.shift}</td>
                       <td className="py-2.5"><Badge cfg={runStatusCfg[r.status] || runStatusCfg.pending} label={r.status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())} /></td>
                       <td className="py-2.5">{r.planned_quantity}</td>
-                      <td className="py-2.5 font-medium">{r.produced_quantity}</td>
-                      <td className="py-2.5">{r.rejected_quantity > 0 ? <span className="text-red-600">{r.rejected_quantity}</span> : '0'}</td>
+                      <td className="py-2.5 font-medium">{r.good_quantity}</td>
+                      <td className="py-2.5">{r.reject_quantity > 0 ? <span className="text-red-600">{r.reject_quantity}</span> : '0'}</td>
                       <td className="py-2.5 text-slate-600">{formatDateTime(r.start_time)}</td>
                       <td className="py-2.5">{r.operator?.full_name || 'N/A'}</td>
                     </tr>
@@ -260,7 +260,7 @@ const WorkOrderManagement: React.FC = () => {
               ) : (
                 <table className="w-full text-sm">
                   <thead><tr className="text-left text-slate-500 border-b border-slate-200">
-                    <th className="pb-2 font-medium">Material</th><th className="pb-2 font-medium">SKU</th><th className="pb-2 font-medium">Required</th><th className="pb-2 font-medium">Available</th><th className="pb-2 font-medium">Shortage</th><th className="pb-2 font-medium">Unit</th><th className="pb-2 font-medium">Status</th><th className="pb-2 font-medium">Required By</th>
+                    <th className="pb-2 font-medium">Material</th><th className="pb-2 font-medium">SKU</th><th className="pb-2 font-medium">Required</th><th className="pb-2 font-medium">Available</th><th className="pb-2 font-medium">Shortage</th><th className="pb-2 font-medium">Status</th><th className="pb-2 font-medium">Required By</th>
                   </tr></thead>
                   <tbody>{materials.map(m => (
                     <tr key={m.id} className="border-b border-slate-100">
@@ -269,9 +269,8 @@ const WorkOrderManagement: React.FC = () => {
                       <td className="py-2.5">{m.required_quantity}</td>
                       <td className="py-2.5">{m.available_quantity}</td>
                       <td className="py-2.5">{m.shortage_quantity > 0 ? <span className="text-red-600 font-medium">{m.shortage_quantity}</span> : '0'}</td>
-                      <td className="py-2.5 text-slate-500">{m.unit}</td>
                       <td className="py-2.5"><Badge cfg={materialStatusCfg[m.status] || materialStatusCfg.pending} label={m.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} /></td>
-                      <td className="py-2.5 text-slate-600">{formatDate(m.required_date)}</td>
+                      <td className="py-2.5 text-slate-600">{formatDate(m.requirement_date)}</td>
                     </tr>
                   ))}</tbody>
                 </table>
@@ -303,12 +302,12 @@ const WorkOrderManagement: React.FC = () => {
               <select value={newForm.bom_id} onChange={e => setNewForm(p => ({ ...p, bom_id: e.target.value }))}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                 <option value="">Select BOM</option>
-                {boms.map(b => <option key={b.id} value={b.id}>{b.name} (v{b.version})</option>)}
+                {boms.map(b => <option key={b.id} value={b.id}>{b.bom_name} (v{b.version_number})</option>)}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Quantity</label>
-              <input type="number" value={newForm.quantity_ordered} onChange={e => setNewForm(p => ({ ...p, quantity_ordered: e.target.value }))}
+              <input type="number" value={newForm.planned_quantity} onChange={e => setNewForm(p => ({ ...p, planned_quantity: e.target.value }))}
                 placeholder="0" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
             <div>
@@ -330,7 +329,7 @@ const WorkOrderManagement: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Work Center</label>
-              <select value={newForm.work_center_id} onChange={e => setNewForm(p => ({ ...p, work_center_id: e.target.value }))}
+              <select value={newForm.assigned_work_center_id} onChange={e => setNewForm(p => ({ ...p, assigned_work_center_id: e.target.value }))}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                 <option value="">Select Work Center</option>
                 {workCenters.filter(wc => wc.status === 'active').map(wc => <option key={wc.id} value={wc.id}>{wc.work_center_name} ({wc.work_center_code})</option>)}
@@ -344,7 +343,7 @@ const WorkOrderManagement: React.FC = () => {
           </div>
           <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200">
             <button onClick={() => setShowNew(false)} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">Cancel</button>
-            <button onClick={handleCreate} disabled={createWorkOrder.isPending || !newForm.product_id || !newForm.quantity_ordered}
+            <button onClick={handleCreate} disabled={createWorkOrder.isPending || !newForm.product_id || !newForm.planned_quantity}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2">
               {createWorkOrder.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               Create Work Order
@@ -457,11 +456,11 @@ const WorkOrderManagement: React.FC = () => {
                   return (
                     <tr key={wo.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
                       onClick={() => { setSelectedWO(wo); setActiveTab(0); }}>
-                      <td className="px-4 py-3 font-semibold text-blue-600">{wo.order_number}</td>
+                      <td className="px-4 py-3 font-semibold text-blue-600">{wo.work_order_number}</td>
                       <td className="px-4 py-3 text-slate-900">{wo.product?.name || 'N/A'}</td>
                       <td className="px-4 py-3 text-slate-700">
-                        <span className="font-medium">{wo.quantity_produced}</span>
-                        <span className="text-slate-400">/{wo.quantity_ordered}</span>
+                        <span className="font-medium">{wo.completed_quantity}</span>
+                        <span className="text-slate-400">/{wo.planned_quantity}</span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">

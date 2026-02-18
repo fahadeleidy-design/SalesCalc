@@ -229,21 +229,21 @@ const LogisticsOperationsDashboard = () => {
                           className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
                           onClick={() => setExpandedRow(expandedRow === s.id ? null : s.id)}
                         >
-                          <td className="py-3 px-4 font-medium text-blue-600">{s.order_number}</td>
-                          <td className="py-3 px-4 text-slate-700">{s.customers?.company_name || s.ship_to_name}</td>
+                          <td className="py-3 px-4 font-medium text-blue-600">{s.shipping_order_number}</td>
+                          <td className="py-3 px-4 text-slate-700">{s.customers?.company_name || s.destination_address}</td>
                           <td className="py-3 px-4">
                             <span className="flex items-center gap-1 text-slate-700">
-                              <MapPin className="w-3.5 h-3.5 text-slate-400" />{s.ship_to_city}, {s.ship_to_country}
+                              <MapPin className="w-3.5 h-3.5 text-slate-400" />{s.destination_city}, {s.destination_country}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-slate-700">{s.carriers?.carrier_name || "-"}</td>
+                          <td className="py-3 px-4 text-slate-700">{s.carrier_name || "-"}</td>
                           <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityStyles[s.priority] || ""}`}>
-                              {s.priority}
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityStyles[s.shipping_type] || ""}`}>
+                              {s.shipping_type || "-"}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-slate-600">{formatDate(s.ship_date)}</td>
-                          <td className="py-3 px-4 text-slate-600">{formatDate(s.expected_delivery_date)}</td>
+                          <td className="py-3 px-4 text-slate-600">{formatDate(s.planned_ship_date)}</td>
+                          <td className="py-3 px-4 text-slate-600">{formatDate(s.estimated_delivery_date)}</td>
                           <td className="py-3 px-4">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusStyles[s.status] || ""}`}>
                               {s.status.replace(/_/g, " ")}

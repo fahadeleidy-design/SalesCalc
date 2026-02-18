@@ -43,7 +43,7 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: string) => void }) {
     const totalWO = workOrders?.length ?? 0;
     const activeWO = workOrders?.filter(wo => wo.status === 'in_progress').length ?? 0;
     const avgOEE = oeeMetrics?.length
-      ? (oeeMetrics.reduce((s, m) => s + m.oee, 0) / oeeMetrics.length * 100).toFixed(1) + '%'
+      ? (oeeMetrics.reduce((s, m) => s + m.oee_percentage, 0) / oeeMetrics.length).toFixed(1) + '%'
       : '--';
     const openNCRs = ncrs?.filter(n => n.status !== 'closed').length ?? 0;
     const activeCAPAs = capas?.filter(c => !['closed', 'cancelled'].includes(c.status)).length ?? 0;

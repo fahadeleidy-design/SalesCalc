@@ -5,59 +5,62 @@ import toast from 'react-hot-toast';
 export interface SupplierScorecard {
   id: string;
   supplier_id: string;
-  period_start: string;
-  period_end: string;
+  evaluation_period_start: string;
+  evaluation_period_end: string;
   quality_score: number;
   delivery_score: number;
   price_score: number;
   responsiveness_score: number;
+  compliance_score?: number;
   overall_score: number;
-  total_orders: number;
-  on_time_deliveries: number;
-  rejected_items: number;
-  total_items: number;
-  average_lead_time_days: number;
-  cost_variance_percentage: number;
+  total_orders?: number;
+  on_time_deliveries?: number;
+  rejected_lots?: number;
+  total_lots_received?: number;
+  average_lead_time_days?: number;
+  rating?: string;
   notes?: string;
-  scored_by?: string;
+  evaluated_by?: string;
   created_at: string;
-  updated_at: string;
-  suppliers?: { supplier_name: string };
 }
 
 export interface SupplierScorecardCreate {
   supplier_id: string;
-  period_start: string;
-  period_end: string;
+  evaluation_period_start: string;
+  evaluation_period_end: string;
   quality_score: number;
   delivery_score: number;
   price_score: number;
   responsiveness_score: number;
+  compliance_score?: number;
   overall_score: number;
   total_orders?: number;
   on_time_deliveries?: number;
-  rejected_items?: number;
-  total_items?: number;
+  rejected_lots?: number;
+  total_lots_received?: number;
   average_lead_time_days?: number;
-  cost_variance_percentage?: number;
+  rating?: string;
   notes?: string;
-  scored_by?: string;
+  evaluated_by?: string;
 }
 
 export interface RFQ {
   id: string;
   rfq_number: string;
-  title: string;
+  rfq_title: string;
   description?: string;
-  status: 'draft' | 'open' | 'closed' | 'awarded' | 'cancelled';
-  rfq_type: 'standard' | 'urgent' | 'blanket';
-  issue_date: string;
-  closing_date: string;
-  required_delivery_date?: string;
+  status: string;
+  rfq_type: string;
+  issued_date?: string;
+  response_deadline: string;
+  required_by_date?: string;
   currency: string;
-  budget_estimate?: number;
+  delivery_terms?: string;
+  payment_terms?: string;
   evaluation_criteria?: string;
-  terms_and_conditions?: string;
+  invited_suppliers?: string[];
+  awarded_supplier_id?: string;
+  awarded_date?: string;
   created_by?: string;
   approved_by?: string;
   notes?: string;
@@ -67,17 +70,18 @@ export interface RFQ {
 
 export interface RFQCreate {
   rfq_number: string;
-  title: string;
+  rfq_title: string;
   description?: string;
   status?: string;
   rfq_type?: string;
-  issue_date: string;
-  closing_date: string;
-  required_delivery_date?: string;
+  issued_date?: string;
+  response_deadline: string;
+  required_by_date?: string;
   currency?: string;
-  budget_estimate?: number;
+  delivery_terms?: string;
+  payment_terms?: string;
   evaluation_criteria?: string;
-  terms_and_conditions?: string;
+  invited_suppliers?: string[];
   created_by?: string;
   notes?: string;
 }
@@ -100,19 +104,20 @@ export interface RFQResponse {
   rfq_id: string;
   supplier_id: string;
   response_date: string;
-  unit_price: number;
-  total_price: number;
+  total_amount: number;
   lead_time_days: number;
-  warranty_terms?: string;
   payment_terms?: string;
-  validity_period_days: number;
-  technical_compliance: boolean;
+  delivery_terms?: string;
+  validity_days: number;
+  technical_compliance?: boolean;
+  commercial_score?: number;
+  technical_score?: number;
+  overall_score?: number;
+  is_selected?: boolean;
+  line_items?: Record<string, unknown>;
   notes?: string;
-  status: 'submitted' | 'under_review' | 'shortlisted' | 'awarded' | 'rejected';
-  score?: number;
   created_at: string;
   updated_at: string;
-  suppliers?: { supplier_name: string };
 }
 
 export interface PurchaseRequisition {
@@ -157,29 +162,25 @@ export interface SupplierContract {
   contract_number: string;
   contract_name: string;
   supplier_id?: string;
-  contract_type: 'fixed_price' | 'blanket' | 'framework' | 'service_level';
-  status: 'draft' | 'active' | 'expired' | 'terminated' | 'renewed';
+  contract_type: string;
+  status: string;
   start_date: string;
   end_date: string;
-  auto_renew: boolean;
-  renewal_notice_days: number;
-  currency: string;
   total_value?: number;
-  committed_spend: number;
-  actual_spend: number;
-  remaining_value: number;
-  min_order_value?: number;
-  max_order_value?: number;
-  payment_terms: string;
+  consumed_value?: number;
+  remaining_value?: number;
+  currency: string;
+  payment_terms?: string;
   delivery_terms?: string;
   quality_requirements?: string;
-  warranty_terms?: string;
   penalty_clause?: string;
+  renewal_terms?: string;
+  auto_renew?: boolean;
+  signed_by?: string;
+  signed_date?: string;
   notes?: string;
-  created_by?: string;
   created_at: string;
   updated_at: string;
-  suppliers?: { supplier_name: string };
 }
 
 export interface SupplierContractCreate {
@@ -190,18 +191,15 @@ export interface SupplierContractCreate {
   status?: string;
   start_date: string;
   end_date: string;
-  auto_renew?: boolean;
-  renewal_notice_days?: number;
-  currency?: string;
   total_value?: number;
-  committed_spend?: number;
-  payment_terms: string;
+  currency?: string;
+  payment_terms?: string;
   delivery_terms?: string;
   quality_requirements?: string;
-  warranty_terms?: string;
   penalty_clause?: string;
+  renewal_terms?: string;
+  auto_renew?: boolean;
   notes?: string;
-  created_by?: string;
 }
 
 export interface GoodsReceiptNote {
@@ -210,21 +208,20 @@ export interface GoodsReceiptNote {
   purchase_order_id?: string;
   supplier_id?: string;
   received_by?: string;
-  received_date: string;
-  status: 'draft' | 'pending_inspection' | 'inspected' | 'accepted' | 'partial' | 'rejected';
-  total_items: number;
-  items_accepted: number;
-  items_rejected: number;
-  vehicle_number?: string;
-  driver_name?: string;
-  delivery_note_ref?: string;
-  warehouse_id?: string;
+  receipt_date: string;
+  delivery_note_number?: string;
+  invoice_number?: string;
+  warehouse_location?: string;
+  status: string;
+  total_items?: number;
+  total_quantity?: number;
   inspection_required: boolean;
+  inspection_status?: string;
+  inspected_by?: string;
+  inspected_at?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
-  suppliers?: { supplier_name: string };
-  purchase_orders?: { po_number: string };
 }
 
 export interface GoodsReceiptNoteCreate {
@@ -232,13 +229,13 @@ export interface GoodsReceiptNoteCreate {
   purchase_order_id?: string;
   supplier_id?: string;
   received_by?: string;
-  received_date: string;
+  receipt_date: string;
+  delivery_note_number?: string;
+  invoice_number?: string;
+  warehouse_location?: string;
   status?: string;
   total_items?: number;
-  vehicle_number?: string;
-  driver_name?: string;
-  delivery_note_ref?: string;
-  warehouse_id?: string;
+  total_quantity?: number;
   inspection_required?: boolean;
   notes?: string;
 }
@@ -265,65 +262,60 @@ export interface GRNItem {
 
 export interface ShippingOrder {
   id: string;
-  order_number: string;
+  shipping_order_number: string;
   customer_id?: string;
-  sales_order_id?: string;
-  carrier_id?: string;
-  ship_from_warehouse_id?: string;
-  shipping_method: string;
-  status: 'draft' | 'confirmed' | 'picking' | 'packed' | 'shipped' | 'in_transit' | 'delivered' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'express';
-  ship_date: string;
-  expected_delivery_date?: string;
+  job_order_id?: string;
+  work_order_id?: string;
+  shipping_type?: string;
+  carrier_name?: string;
+  carrier_tracking_number?: string;
+  shipping_method?: string;
+  origin_warehouse?: string;
+  destination_address?: string;
+  destination_city?: string;
+  destination_country?: string;
+  planned_ship_date?: string;
+  actual_ship_date?: string;
+  estimated_delivery_date?: string;
   actual_delivery_date?: string;
-  tracking_number?: string;
-  shipping_cost: number;
-  insurance_cost: number;
-  total_weight_kg: number;
-  total_volume_cbm: number;
-  packages_count: number;
-  ship_to_name: string;
-  ship_to_address: string;
-  ship_to_city: string;
-  ship_to_state?: string;
-  ship_to_country: string;
-  ship_to_postal_code?: string;
-  ship_to_phone?: string;
+  total_weight_kg?: number;
+  total_volume_cbm?: number;
+  total_packages?: number;
+  shipping_cost?: number;
+  insurance_value?: number;
+  customs_declaration_number?: string;
+  status: string;
+  delivery_confirmation?: boolean;
+  proof_of_delivery_path?: string;
   special_instructions?: string;
-  notes?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
   customers?: { company_name: string };
-  carriers?: { carrier_name: string };
 }
 
 export interface ShippingOrderCreate {
-  order_number: string;
+  shipping_order_number: string;
   customer_id?: string;
-  sales_order_id?: string;
-  carrier_id?: string;
-  ship_from_warehouse_id?: string;
-  shipping_method: string;
-  status?: string;
-  priority?: string;
-  ship_date: string;
-  expected_delivery_date?: string;
-  tracking_number?: string;
-  shipping_cost?: number;
-  insurance_cost?: number;
+  job_order_id?: string;
+  work_order_id?: string;
+  shipping_type?: string;
+  carrier_name?: string;
+  carrier_tracking_number?: string;
+  shipping_method?: string;
+  origin_warehouse?: string;
+  destination_address?: string;
+  destination_city?: string;
+  destination_country?: string;
+  planned_ship_date?: string;
   total_weight_kg?: number;
   total_volume_cbm?: number;
-  packages_count?: number;
-  ship_to_name: string;
-  ship_to_address: string;
-  ship_to_city: string;
-  ship_to_state?: string;
-  ship_to_country: string;
-  ship_to_postal_code?: string;
-  ship_to_phone?: string;
+  total_packages?: number;
+  shipping_cost?: number;
+  insurance_value?: number;
+  customs_declaration_number?: string;
+  status?: string;
   special_instructions?: string;
-  notes?: string;
   created_by?: string;
 }
 
@@ -348,24 +340,22 @@ export interface Carrier {
   id: string;
   carrier_code: string;
   carrier_name: string;
-  carrier_type: 'freight' | 'express' | 'courier' | 'ltl' | 'ftl' | 'ocean' | 'air';
-  contact_name?: string;
-  contact_email?: string;
+  carrier_type: string;
+  contact_person?: string;
   contact_phone?: string;
-  website?: string;
-  account_number?: string;
-  tax_id?: string;
-  is_active: boolean;
-  rating: number;
-  on_time_percentage: number;
-  damage_rate_percentage: number;
-  base_rate?: number;
-  fuel_surcharge_percentage: number;
-  insurance_coverage?: number;
-  max_weight_kg?: number;
-  max_volume_cbm?: number;
+  contact_email?: string;
   service_areas?: string[];
-  transit_time_days?: number;
+  transit_time_days_avg?: number;
+  cost_per_kg?: number;
+  cost_per_shipment?: number;
+  insurance_coverage?: number;
+  tracking_capable: boolean;
+  performance_rating?: number;
+  on_time_delivery_rate?: number;
+  damage_rate?: number;
+  is_active: boolean;
+  contract_number?: string;
+  contract_expiry?: string;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -375,20 +365,18 @@ export interface CarrierCreate {
   carrier_code: string;
   carrier_name: string;
   carrier_type: string;
-  contact_name?: string;
-  contact_email?: string;
+  contact_person?: string;
   contact_phone?: string;
-  website?: string;
-  account_number?: string;
-  tax_id?: string;
-  is_active?: boolean;
-  base_rate?: number;
-  fuel_surcharge_percentage?: number;
-  insurance_coverage?: number;
-  max_weight_kg?: number;
-  max_volume_cbm?: number;
+  contact_email?: string;
   service_areas?: string[];
-  transit_time_days?: number;
+  transit_time_days_avg?: number;
+  cost_per_kg?: number;
+  cost_per_shipment?: number;
+  insurance_coverage?: number;
+  tracking_capable?: boolean;
+  is_active?: boolean;
+  contract_number?: string;
+  contract_expiry?: string;
   notes?: string;
 }
 
@@ -646,8 +634,8 @@ export function useSupplierScorecards(supplierId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('mfg_supplier_scorecards')
-        .select('*, suppliers:mfg_suppliers(supplier_name)')
-        .order('period_start', { ascending: false });
+        .select('*')
+        .order('evaluation_period_start', { ascending: false });
 
       if (supplierId) {
         query = query.eq('supplier_id', supplierId);
@@ -689,7 +677,7 @@ export function useRFQs(filters?: RFQFilters) {
     queryKey: ['mfg-rfqs', filters],
     queryFn: async () => {
       let query = supabase
-        .from('mfg_rfqs')
+        .from('mfg_rfq_headers')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -727,9 +715,9 @@ export function useRFQResponses(rfqId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('mfg_rfq_responses')
-        .select('*, suppliers:mfg_suppliers(supplier_name)')
+        .select('*')
         .eq('rfq_id', rfqId)
-        .order('total_price', { ascending: true });
+        .order('total_amount', { ascending: true });
 
       if (error) throw error;
       return data as RFQResponse[];
@@ -744,7 +732,7 @@ export function useCreateRFQ() {
   return useMutation({
     mutationFn: async (rfq: RFQCreate) => {
       const { data, error } = await supabase
-        .from('mfg_rfqs')
+        .from('mfg_rfq_headers')
         .insert(rfq)
         .select()
         .single();
@@ -768,7 +756,7 @@ export function useUpdateRFQ() {
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<RFQ> }) => {
       const { data, error } = await supabase
-        .from('mfg_rfqs')
+        .from('mfg_rfq_headers')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -870,7 +858,7 @@ export function useSupplierContracts(filters?: SupplierContractFilters) {
     queryFn: async () => {
       let query = supabase
         .from('mfg_supplier_contracts')
-        .select('*, suppliers:mfg_suppliers(supplier_name)')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (filters?.status) {
@@ -917,8 +905,8 @@ export function useGoodsReceiptNotes(filters?: GoodsReceiptNoteFilters) {
     queryFn: async () => {
       let query = supabase
         .from('mfg_goods_receipt_notes')
-        .select('*, suppliers:mfg_suppliers(supplier_name), purchase_orders:mfg_purchase_orders(po_number)')
-        .order('received_date', { ascending: false });
+        .select('*')
+        .order('receipt_date', { ascending: false });
 
       if (filters?.status) {
         query = query.eq('status', filters.status);
@@ -1018,7 +1006,7 @@ export function useShippingOrders(filters?: ShippingOrderFilters) {
     queryFn: async () => {
       let query = supabase
         .from('mfg_shipping_orders')
-        .select('*, customers:mfg_customers(company_name), carriers:mfg_carriers(carrier_name)')
+        .select('*, customers:customers(company_name)')
         .order('created_at', { ascending: false });
 
       if (filters?.status) {
@@ -1110,7 +1098,7 @@ export function useCarriers() {
     queryKey: ['mfg-carriers'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('mfg_carriers')
+        .from('mfg_carrier_management')
         .select('*')
         .order('carrier_name', { ascending: true });
 
@@ -1126,7 +1114,7 @@ export function useCreateCarrier() {
   return useMutation({
     mutationFn: async (carrier: CarrierCreate) => {
       const { data, error } = await supabase
-        .from('mfg_carriers')
+        .from('mfg_carrier_management')
         .insert(carrier)
         .select()
         .single();

@@ -144,7 +144,7 @@ export default function SupplyChainDashboard() {
     const pendingRequisitions = requisitions.filter(
       (r) => r.status === "pending_approval"
     ).length;
-    const totalSpend = contracts.reduce((sum, c) => sum + c.actual_spend, 0);
+    const totalSpend = contracts.reduce((sum, c) => sum + (c.consumed_value ?? 0), 0);
     const avgRating =
       scorecards.length > 0
         ? scorecards.reduce((sum, s) => sum + s.overall_score, 0) / scorecards.length
@@ -391,14 +391,14 @@ export default function SupplyChainDashboard() {
                     return (
                       <tr key={rfq.id} className="border-b border-slate-100 hover:bg-slate-50">
                         <td className="py-3 px-3 font-mono text-xs font-medium text-blue-600">{rfq.rfq_number}</td>
-                        <td className="py-3 px-3 font-medium text-slate-900">{rfq.title}</td>
+                        <td className="py-3 px-3 font-medium text-slate-900">{rfq.rfq_title}</td>
                         <td className="py-3 px-3">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tp.bg} ${tp.text}`}>{rfq.rfq_type}</span>
                         </td>
-                        <td className="py-3 px-3 text-slate-700">{format(parseISO(rfq.issue_date), "MMM d, yyyy")}</td>
-                        <td className="py-3 px-3 text-slate-700">{format(parseISO(rfq.closing_date), "MMM d, yyyy")}</td>
+                        <td className="py-3 px-3 text-slate-700">{rfq.issued_date ? format(parseISO(rfq.issued_date), "MMM d, yyyy") : "--"}</td>
+                        <td className="py-3 px-3 text-slate-700">{rfq.response_deadline ? format(parseISO(rfq.response_deadline), "MMM d, yyyy") : "--"}</td>
                         <td className="py-3 px-3 text-right text-slate-700">
-                          {rfq.budget_estimate ? `${formatCurrency(rfq.budget_estimate)} ${rfq.currency}` : "--"}
+                          {"--"}
                         </td>
                         <td className="py-3 px-3">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.bg} ${st.text}`}>{st.label}</span>
@@ -482,12 +482,12 @@ export default function SupplyChainDashboard() {
                       <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
                         <td className="py-3 px-3 font-mono text-xs font-medium text-blue-600">{c.contract_number}</td>
                         <td className="py-3 px-3 font-medium text-slate-900">{c.contract_name}</td>
-                        <td className="py-3 px-3 text-slate-700">{c.suppliers?.supplier_name || "--"}</td>
+                        <td className="py-3 px-3 text-slate-700">{"--"}</td>
                         <td className="py-3 px-3 text-slate-700 text-xs">
                           {format(parseISO(c.start_date), "MMM d, yyyy")} - {format(parseISO(c.end_date), "MMM d, yyyy")}
                         </td>
                         <td className="py-3 px-3 text-right text-slate-700">{c.total_value ? `${formatCurrency(c.total_value)} SAR` : "--"}</td>
-                        <td className="py-3 px-3 text-right text-slate-700">{formatCurrency(c.actual_spend)} SAR</td>
+                        <td className="py-3 px-3 text-right text-slate-700">{formatCurrency(c.consumed_value ?? 0)} SAR</td>
                         <td className="py-3 px-3 text-right text-slate-700">{formatCurrency(c.remaining_value)} SAR</td>
                         <td className="py-3 px-3">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${st.bg} ${st.text}`}>{st.label}</span>
@@ -523,18 +523,19 @@ export default function SupplyChainDashboard() {
                 <tbody>
                   {grns.map((grn) => {
                     const st = grnStatusConfig[grn.status] || { bg: "bg-gray-100", text: "text-gray-600", label: grn.status };
-                    const acceptRate = grn.total_items > 0 ? ((grn.items_accepted / grn.total_items) * 100) : 0;
+                    const totalQty = grn.total_quantity ?? 0;
+                    const acceptRate = totalQty > 0 ? 100 : 0;
                     return (
                       <tr key={grn.id} className="border-b border-slate-100 hover:bg-slate-50">
                         <td className="py-3 px-3 font-mono text-xs font-medium text-blue-600">{grn.grn_number}</td>
-                        <td className="py-3 px-3 font-medium text-slate-900">{grn.suppliers?.supplier_name || "--"}</td>
-                        <td className="py-3 px-3 text-slate-700">{format(parseISO(grn.received_date), "MMM d, yyyy")}</td>
-                        <td className="py-3 px-3 text-center text-slate-700">{grn.total_items}</td>
+                        <td className="py-3 px-3 font-medium text-slate-900">{grn.warehouse_location || "--"}</td>
+                        <td className="py-3 px-3 text-slate-700">{grn.receipt_date ? format(parseISO(grn.receipt_date), "MMM d, yyyy") : "--"}</td>
+                        <td className="py-3 px-3 text-center text-slate-700">{grn.total_items ?? 0}</td>
                         <td className="py-3 px-3 text-center">
-                          <span className="text-emerald-600 font-medium">{grn.items_accepted}</span>
+                          <span className="text-emerald-600 font-medium">{grn.total_quantity ?? 0}</span>
                         </td>
                         <td className="py-3 px-3 text-center">
-                          <span className={grn.items_rejected > 0 ? "text-red-600 font-medium" : "text-slate-500"}>{grn.items_rejected}</span>
+                          <span className="text-slate-500">--</span>
                         </td>
                         <td className="py-3 px-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">

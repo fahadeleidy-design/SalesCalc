@@ -4,20 +4,30 @@ import toast from 'react-hot-toast';
 
 export interface WorkOrder {
   id: string;
-  order_number: string;
+  work_order_number: string;
   product_id: string;
-  work_center_id: string | null;
+  assigned_work_center_id: string | null;
   bom_id: string | null;
-  quantity_ordered: number;
-  quantity_produced: number;
-  quantity_rejected: number;
+  routing_id: string | null;
+  job_order_id: string | null;
+  order_type: string | null;
+  planned_quantity: number;
+  completed_quantity: number;
+  scrapped_quantity: number;
   status: 'draft' | 'planned' | 'released' | 'in_progress' | 'completed' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   planned_start_date: string | null;
   planned_end_date: string | null;
   actual_start_date: string | null;
   actual_end_date: string | null;
-  assigned_to: string | null;
+  supervisor_id: string | null;
+  planned_labor_hours: number | null;
+  actual_labor_hours: number | null;
+  planned_material_cost: number | null;
+  actual_material_cost: number | null;
+  completion_percentage: number;
+  special_instructions: string | null;
+  created_by: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -28,7 +38,7 @@ export interface WorkOrder {
 export interface WorkOrderFilters {
   status?: WorkOrder['status'];
   priority?: WorkOrder['priority'];
-  work_center_id?: string;
+  assigned_work_center_id?: string;
   product_id?: string;
   date_from?: string;
   date_to?: string;
@@ -56,13 +66,17 @@ export interface WorkCenter {
 export interface BOM {
   id: string;
   product_id: string;
-  version: string;
-  name: string;
-  description: string | null;
-  status: 'draft' | 'active' | 'obsolete';
-  effective_date: string | null;
-  expiry_date: string | null;
-  total_cost: number;
+  bom_code: string;
+  bom_name: string;
+  bom_type: string | null;
+  version_number: string | null;
+  is_active: boolean;
+  effective_from: string | null;
+  effective_to: string | null;
+  total_material_cost: number;
+  total_labor_cost: number;
+  total_overhead_cost: number;
+  notes: string | null;
   created_at: string;
   updated_at: string;
   product?: { id: string; name: string; sku: string };
@@ -71,12 +85,17 @@ export interface BOM {
 export interface BOMItem {
   id: string;
   bom_id: string;
-  product_id: string;
-  quantity: number;
-  unit: string;
-  scrap_rate: number;
+  component_product_id: string | null;
+  item_number: number;
+  component_description: string | null;
+  quantity_per: number;
+  unit_of_measure: string;
+  scrap_percentage: number;
+  item_type: string | null;
   is_critical: boolean;
-  position: number;
+  lead_time_days: number | null;
+  unit_cost: number;
+  extended_cost: number;
   notes: string | null;
   created_at: string;
   product?: { id: string; name: string; sku: string; unit_price: number };
@@ -91,15 +110,16 @@ export interface ProductionRun {
   shift: 'day' | 'evening' | 'night';
   status: 'pending' | 'running' | 'paused' | 'completed' | 'aborted';
   planned_quantity: number;
-  produced_quantity: number;
-  rejected_quantity: number;
+  good_quantity: number;
+  reject_quantity: number;
+  scrap_quantity: number;
   start_time: string | null;
   end_time: string | null;
   cycle_time_seconds: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
-  work_order?: { id: string; order_number: string };
+  work_order?: { id: string; work_order_number: string };
   work_center?: { id: string; work_center_name: string; work_center_code: string };
   operator?: { full_name: string };
 }
@@ -107,17 +127,20 @@ export interface ProductionRun {
 export interface OEEMetric {
   id: string;
   work_center_id: string;
-  recorded_date: string;
+  measurement_date: string;
   shift: 'day' | 'evening' | 'night';
-  planned_production_time_minutes: number;
-  actual_run_time_minutes: number;
+  planned_production_time: number;
+  actual_run_time: number;
   total_count: number;
   good_count: number;
-  ideal_cycle_time_seconds: number;
-  availability: number;
-  performance: number;
-  quality: number;
-  oee: number;
+  reject_count: number;
+  ideal_cycle_time: number;
+  availability_rate: number;
+  performance_rate: number;
+  quality_rate: number;
+  oee_percentage: number;
+  downtime_minutes: number | null;
+  changeover_minutes: number | null;
   notes: string | null;
   created_at: string;
   work_center?: { id: string; work_center_name: string; work_center_code: string };
@@ -126,35 +149,45 @@ export interface OEEMetric {
 export interface DowntimeEvent {
   id: string;
   work_center_id: string;
-  production_run_id: string | null;
-  reason_category: 'mechanical' | 'electrical' | 'material' | 'operator' | 'quality' | 'changeover' | 'planned' | 'other';
-  reason_detail: string | null;
+  work_order_id: string | null;
+  downtime_category: string;
+  root_cause: string | null;
+  description: string | null;
   start_time: string;
   end_time: string | null;
   duration_minutes: number | null;
-  is_planned: boolean;
-  severity: 'minor' | 'moderate' | 'major' | 'critical';
-  resolution: string | null;
+  impact_level: 'low' | 'medium' | 'high' | 'critical';
+  production_loss_quantity: number | null;
+  estimated_cost_impact: number | null;
+  corrective_action: string | null;
   reported_by: string | null;
+  resolved_by: string | null;
+  status: string;
   created_at: string;
+  updated_at: string;
   work_center?: { id: string; work_center_name: string; work_center_code: string };
 }
 
 export interface MachineMaintenance {
   id: string;
   work_center_id: string;
+  maintenance_code: string | null;
   maintenance_type: 'preventive' | 'corrective' | 'predictive' | 'emergency';
-  title: string;
   description: string | null;
+  root_cause: string | null;
+  actions_taken: string | null;
   status: 'scheduled' | 'in_progress' | 'completed' | 'overdue' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'critical';
   scheduled_date: string;
+  actual_date: string | null;
   completed_date: string | null;
   assigned_to: string | null;
-  estimated_duration_hours: number | null;
-  actual_duration_hours: number | null;
-  cost: number | null;
-  parts_used: string | null;
+  completed_by: string | null;
+  downtime_hours: number | null;
+  labor_cost: number | null;
+  parts_cost: number | null;
+  total_cost: number | null;
+  parts_used: any;
   next_scheduled_date: string | null;
   notes: string | null;
   created_at: string;
@@ -167,21 +200,20 @@ export interface ProductionSchedule {
   id: string;
   work_order_id: string | null;
   work_center_id: string;
-  product_id: string;
-  scheduled_date: string;
-  shift: 'day' | 'evening' | 'night';
+  schedule_name: string | null;
+  schedule_period_start: string;
+  schedule_period_end: string;
+  planned_start_time: string | null;
+  planned_end_time: string | null;
   planned_quantity: number;
-  planned_start_time: string;
-  planned_end_time: string;
+  shift: 'day' | 'evening' | 'night';
   status: 'draft' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
-  sequence_order: number;
-  changeover_time_minutes: number;
-  notes: string | null;
+  priority: string | null;
+  constraints_notes: string | null;
   created_at: string;
   updated_at: string;
-  work_order?: { id: string; order_number: string };
+  work_order?: { id: string; work_order_number: string };
   work_center?: { id: string; work_center_name: string; work_center_code: string };
-  product?: { id: string; name: string; sku: string };
 }
 
 export interface ProductionScheduleDateRange {
@@ -196,15 +228,18 @@ export interface MaterialRequirement {
   required_quantity: number;
   available_quantity: number;
   shortage_quantity: number;
-  unit: string;
-  required_date: string;
-  status: 'pending' | 'partially_available' | 'available' | 'ordered' | 'fulfilled';
-  purchase_order_id: string | null;
+  requirement_date: string;
+  planned_order_quantity: number | null;
+  planned_order_date: string | null;
+  lead_time_days: number | null;
+  status: string;
+  priority: string | null;
+  supplier_id: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
-  work_order?: { id: string; order_number: string };
-  product?: { id: string; name: string; sku: string; stock_quantity: number };
+  work_order?: { id: string; work_order_number: string };
+  product?: { id: string; name: string; sku: string };
 }
 
 export function useWorkOrders(filters?: WorkOrderFilters) {
@@ -222,7 +257,7 @@ export function useWorkOrders(filters?: WorkOrderFilters) {
 
       if (filters?.status) query = query.eq('status', filters.status);
       if (filters?.priority) query = query.eq('priority', filters.priority);
-      if (filters?.work_center_id) query = query.eq('work_center_id', filters.work_center_id);
+      if (filters?.assigned_work_center_id) query = query.eq('assigned_work_center_id', filters.assigned_work_center_id);
       if (filters?.product_id) query = query.eq('product_id', filters.product_id);
       if (filters?.date_from) query = query.gte('planned_start_date', filters.date_from);
       if (filters?.date_to) query = query.lte('planned_start_date', filters.date_to);
@@ -316,7 +351,7 @@ export function useWorkCenters() {
       const { data, error } = await supabase
         .from('mfg_work_centers')
         .select('*')
-        .order('name', { ascending: true });
+        .order('work_center_name', { ascending: true });
 
       if (error) throw error;
       return data as WorkCenter[];
@@ -353,7 +388,7 @@ export function useBOMs() {
     queryKey: ['mfg-boms'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('mfg_boms')
+        .from('mfg_bom_headers')
         .select(`
           *,
           product:products(id, name, sku)
@@ -374,10 +409,10 @@ export function useBOMItems(bomId: string) {
         .from('mfg_bom_items')
         .select(`
           *,
-          product:products(id, name, sku, unit_price)
+          product:products!mfg_bom_items_component_product_id_fkey(id, name, sku, unit_price)
         `)
         .eq('bom_id', bomId)
-        .order('position', { ascending: true });
+        .order('item_number', { ascending: true });
 
       if (error) throw error;
       return data as BOMItem[];
@@ -395,7 +430,7 @@ export function useCreateBOM() {
       items?: Omit<BOMItem, 'id' | 'bom_id' | 'created_at' | 'product'>[];
     }) => {
       const { data: bomData, error: bomError } = await supabase
-        .from('mfg_boms')
+        .from('mfg_bom_headers')
         .insert([bom])
         .select()
         .single();
@@ -436,7 +471,7 @@ export function useProductionRuns(workOrderId?: string) {
         .from('mfg_production_runs')
         .select(`
           *,
-          work_order:mfg_work_orders(id, order_number),
+          work_order:mfg_work_orders(id, work_order_number),
           work_center:mfg_work_centers(id, work_center_name, work_center_code),
           operator:profiles!mfg_production_runs_operator_id_fkey(full_name)
         `)
@@ -514,7 +549,7 @@ export function useOEEMetrics(workCenterId?: string) {
           *,
           work_center:mfg_work_centers(id, work_center_name, work_center_code)
         `)
-        .order('recorded_date', { ascending: false });
+        .order('measurement_date', { ascending: false });
 
       if (workCenterId) query = query.eq('work_center_id', workCenterId);
 
@@ -574,7 +609,7 @@ export function useCreateDowntimeEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (event: Omit<DowntimeEvent, 'id' | 'created_at' | 'work_center'>) => {
+    mutationFn: async (event: Omit<DowntimeEvent, 'id' | 'created_at' | 'updated_at' | 'work_center'>) => {
       const { data, error } = await supabase
         .from('mfg_downtime_events')
         .insert([event])
@@ -650,15 +685,13 @@ export function useProductionSchedules(dateRange?: ProductionScheduleDateRange) 
         .from('mfg_production_schedules')
         .select(`
           *,
-          work_order:mfg_work_orders(id, order_number),
-          work_center:mfg_work_centers(id, work_center_name, work_center_code),
-          product:products(id, name, sku)
+          work_order:mfg_work_orders(id, work_order_number),
+          work_center:mfg_work_centers(id, work_center_name, work_center_code)
         `)
-        .order('scheduled_date', { ascending: true })
-        .order('sequence_order', { ascending: true });
+        .order('schedule_period_start', { ascending: true });
 
-      if (dateRange?.from) query = query.gte('scheduled_date', dateRange.from);
-      if (dateRange?.to) query = query.lte('scheduled_date', dateRange.to);
+      if (dateRange?.from) query = query.gte('schedule_period_start', dateRange.from);
+      if (dateRange?.to) query = query.lte('schedule_period_start', dateRange.to);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -671,7 +704,7 @@ export function useCreateSchedule() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (schedule: Omit<ProductionSchedule, 'id' | 'created_at' | 'updated_at' | 'work_order' | 'work_center' | 'product'>) => {
+    mutationFn: async (schedule: Omit<ProductionSchedule, 'id' | 'created_at' | 'updated_at' | 'work_order' | 'work_center'>) => {
       const { data, error } = await supabase
         .from('mfg_production_schedules')
         .insert([schedule])
@@ -700,10 +733,10 @@ export function useMaterialRequirements(workOrderId?: string) {
         .from('mfg_material_requirements')
         .select(`
           *,
-          work_order:mfg_work_orders(id, order_number),
-          product:products(id, name, sku, stock_quantity)
+          work_order:mfg_work_orders(id, work_order_number),
+          product:products(id, name, sku)
         `)
-        .order('required_date', { ascending: true });
+        .order('requirement_date', { ascending: true });
 
       if (workOrderId) query = query.eq('work_order_id', workOrderId);
 

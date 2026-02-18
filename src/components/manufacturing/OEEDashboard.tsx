@@ -117,10 +117,10 @@ export default function OEEDashboard() {
     if (oeeMetrics.length === 0) return { oee: 0, availability: 0, performance: 0, quality: 0 };
     const sum = oeeMetrics.reduce(
       (acc, m) => ({
-        oee: acc.oee + m.oee,
-        availability: acc.availability + m.availability,
-        performance: acc.performance + m.performance,
-        quality: acc.quality + m.quality,
+        oee: acc.oee + m.oee_percentage,
+        availability: acc.availability + m.availability_rate,
+        performance: acc.performance + m.performance_rate,
+        quality: acc.quality + m.quality_rate,
       }),
       { oee: 0, availability: 0, performance: 0, quality: 0 }
     );
@@ -131,13 +131,13 @@ export default function OEEDashboard() {
   const trendData = useMemo(() => {
     const byDate = new Map<string, { availability: number[]; performance: number[]; quality: number[]; oee: number[] }>();
     oeeMetrics.forEach((m) => {
-      const key = m.recorded_date;
+      const key = m.measurement_date;
       if (!byDate.has(key)) byDate.set(key, { availability: [], performance: [], quality: [], oee: [] });
       const entry = byDate.get(key)!;
-      entry.availability.push(m.availability);
-      entry.performance.push(m.performance);
-      entry.quality.push(m.quality);
-      entry.oee.push(m.oee);
+      entry.availability.push(m.availability_rate);
+      entry.performance.push(m.performance_rate);
+      entry.quality.push(m.quality_rate);
+      entry.oee.push(m.oee_percentage);
     });
     const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
     return Array.from(byDate.entries())
@@ -156,7 +156,7 @@ export default function OEEDashboard() {
     oeeMetrics.forEach((m) => {
       const id = m.work_center_id;
       if (!byWc.has(id)) byWc.set(id, { name: m.work_center?.work_center_name ?? id, values: [] });
-      byWc.get(id)!.values.push(m.oee);
+      byWc.get(id)!.values.push(m.oee_percentage);
     });
     return Array.from(byWc.values()).map((entry) => ({
       name: entry.name,
@@ -167,7 +167,7 @@ export default function OEEDashboard() {
   const downtimeByCategory = useMemo(() => {
     const map = new Map<string, number>();
     downtimeEvents.forEach((e) => {
-      map.set(e.reason_category, (map.get(e.reason_category) ?? 0) + (e.duration_minutes ?? 0));
+      map.set(e.downtime_category, (map.get(e.downtime_category) ?? 0) + (e.duration_minutes ?? 0));
     });
     return Array.from(map.entries()).map(([name, value]) => ({
       name,
@@ -214,7 +214,7 @@ export default function OEEDashboard() {
           >
             <option value="">All Work Centers</option>
             {workCenters.map((wc) => (
-              <option key={wc.id} value={wc.id}>{wc.name}</option>
+              <option key={wc.id} value={wc.id}>{wc.work_center_name}</option>
             ))}
           </select>
         </div>
@@ -316,10 +316,10 @@ export default function OEEDashboard() {
                         {evt.duration_minutes != null ? `${(evt.duration_minutes / 60).toFixed(1)} hrs` : 'Ongoing'}
                       </td>
                       <td className="py-2">
-                        <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600 capitalize">{evt.reason_category}</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-600 capitalize">{evt.downtime_category}</span>
                       </td>
                       <td className="py-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${severityBadge(evt.severity)}`}>{evt.severity}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${severityBadge(evt.impact_level)}`}>{evt.impact_level}</span>
                       </td>
                     </tr>
                   ))}
@@ -350,7 +350,7 @@ export default function OEEDashboard() {
               <tbody>
                 {pendingMaintenance.map((m) => (
                   <tr key={m.id} className="border-b border-slate-100 text-slate-700">
-                    <td className="py-2.5 font-medium">{m.title}</td>
+                    <td className="py-2.5 font-medium">{m.maintenance_code ?? m.maintenance_type}</td>
                     <td className="py-2.5">{m.work_center?.work_center_name ?? 'N/A'}</td>
                     <td className="py-2.5 capitalize">{m.maintenance_type}</td>
                     <td className="py-2.5 flex items-center gap-1.5">
