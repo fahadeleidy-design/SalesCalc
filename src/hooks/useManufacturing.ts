@@ -22,7 +22,7 @@ export interface WorkOrder {
   created_at: string;
   updated_at: string;
   product?: { id: string; name: string; sku: string };
-  work_center?: { id: string; name: string; code: string };
+  work_center?: { id: string; work_center_name: string; work_center_code: string };
 }
 
 export interface WorkOrderFilters {
@@ -36,16 +36,19 @@ export interface WorkOrderFilters {
 
 export interface WorkCenter {
   id: string;
-  code: string;
-  name: string;
-  description: string | null;
+  work_center_code: string;
+  work_center_name: string;
+  work_center_type: string | null;
+  department: string | null;
   capacity_per_hour: number;
   cost_per_hour: number;
   setup_time_minutes: number;
   status: 'active' | 'inactive' | 'maintenance';
   location: string | null;
-  manager_id: string | null;
-  is_bottleneck: boolean;
+  efficiency_rating: number | null;
+  last_maintenance_date: string | null;
+  next_maintenance_date: string | null;
+  specifications: any;
   created_at: string;
   updated_at: string;
 }
@@ -97,7 +100,7 @@ export interface ProductionRun {
   created_at: string;
   updated_at: string;
   work_order?: { id: string; order_number: string };
-  work_center?: { id: string; name: string; code: string };
+  work_center?: { id: string; work_center_name: string; work_center_code: string };
   operator?: { full_name: string };
 }
 
@@ -117,7 +120,7 @@ export interface OEEMetric {
   oee: number;
   notes: string | null;
   created_at: string;
-  work_center?: { id: string; name: string; code: string };
+  work_center?: { id: string; work_center_name: string; work_center_code: string };
 }
 
 export interface DowntimeEvent {
@@ -134,7 +137,7 @@ export interface DowntimeEvent {
   resolution: string | null;
   reported_by: string | null;
   created_at: string;
-  work_center?: { id: string; name: string; code: string };
+  work_center?: { id: string; work_center_name: string; work_center_code: string };
 }
 
 export interface MachineMaintenance {
@@ -156,7 +159,7 @@ export interface MachineMaintenance {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  work_center?: { id: string; name: string; code: string };
+  work_center?: { id: string; work_center_name: string; work_center_code: string };
   assignee?: { full_name: string };
 }
 
@@ -177,7 +180,7 @@ export interface ProductionSchedule {
   created_at: string;
   updated_at: string;
   work_order?: { id: string; order_number: string };
-  work_center?: { id: string; name: string; code: string };
+  work_center?: { id: string; work_center_name: string; work_center_code: string };
   product?: { id: string; name: string; sku: string };
 }
 
@@ -213,7 +216,7 @@ export function useWorkOrders(filters?: WorkOrderFilters) {
         .select(`
           *,
           product:products(id, name, sku),
-          work_center:mfg_work_centers(id, name, code)
+          work_center:mfg_work_centers(id, work_center_name, work_center_code)
         `)
         .order('created_at', { ascending: false });
 
@@ -240,7 +243,7 @@ export function useWorkOrder(id: string) {
         .select(`
           *,
           product:products(id, name, sku),
-          work_center:mfg_work_centers(id, name, code)
+          work_center:mfg_work_centers(id, work_center_name, work_center_code)
         `)
         .eq('id', id)
         .maybeSingle();
@@ -434,7 +437,7 @@ export function useProductionRuns(workOrderId?: string) {
         .select(`
           *,
           work_order:mfg_work_orders(id, order_number),
-          work_center:mfg_work_centers(id, name, code),
+          work_center:mfg_work_centers(id, work_center_name, work_center_code),
           operator:profiles!mfg_production_runs_operator_id_fkey(full_name)
         `)
         .order('created_at', { ascending: false });
@@ -509,7 +512,7 @@ export function useOEEMetrics(workCenterId?: string) {
         .from('mfg_oee_metrics')
         .select(`
           *,
-          work_center:mfg_work_centers(id, name, code)
+          work_center:mfg_work_centers(id, work_center_name, work_center_code)
         `)
         .order('recorded_date', { ascending: false });
 
@@ -554,7 +557,7 @@ export function useDowntimeEvents(workCenterId?: string) {
         .from('mfg_downtime_events')
         .select(`
           *,
-          work_center:mfg_work_centers(id, name, code)
+          work_center:mfg_work_centers(id, work_center_name, work_center_code)
         `)
         .order('start_time', { ascending: false });
 
@@ -600,7 +603,7 @@ export function useMachineMaintenance(workCenterId?: string) {
         .from('mfg_machine_maintenance')
         .select(`
           *,
-          work_center:mfg_work_centers(id, name, code),
+          work_center:mfg_work_centers(id, work_center_name, work_center_code),
           assignee:profiles!mfg_machine_maintenance_assigned_to_fkey(full_name)
         `)
         .order('scheduled_date', { ascending: true });
@@ -648,7 +651,7 @@ export function useProductionSchedules(dateRange?: ProductionScheduleDateRange) 
         .select(`
           *,
           work_order:mfg_work_orders(id, order_number),
-          work_center:mfg_work_centers(id, name, code),
+          work_center:mfg_work_centers(id, work_center_name, work_center_code),
           product:products(id, name, sku)
         `)
         .order('scheduled_date', { ascending: true })

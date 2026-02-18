@@ -155,7 +155,7 @@ export default function OEEDashboard() {
     const byWc = new Map<string, { name: string; values: number[] }>();
     oeeMetrics.forEach((m) => {
       const id = m.work_center_id;
-      if (!byWc.has(id)) byWc.set(id, { name: m.work_center?.name ?? id, values: [] });
+      if (!byWc.has(id)) byWc.set(id, { name: m.work_center?.work_center_name ?? id, values: [] });
       byWc.get(id)!.values.push(m.oee);
     });
     return Array.from(byWc.values()).map((entry) => ({
@@ -311,7 +311,7 @@ export default function OEEDashboard() {
                   {topDowntimeEvents.map((evt) => (
                     <tr key={evt.id} className="border-b border-slate-100 text-slate-700">
                       <td className="py-2">{format(parseISO(evt.start_time), 'MMM d, yyyy')}</td>
-                      <td className="py-2">{evt.work_center?.name ?? 'N/A'}</td>
+                      <td className="py-2">{evt.work_center?.work_center_name ?? 'N/A'}</td>
                       <td className="py-2 font-medium text-red-600">
                         {evt.duration_minutes != null ? `${(evt.duration_minutes / 60).toFixed(1)} hrs` : 'Ongoing'}
                       </td>
@@ -351,7 +351,7 @@ export default function OEEDashboard() {
                 {pendingMaintenance.map((m) => (
                   <tr key={m.id} className="border-b border-slate-100 text-slate-700">
                     <td className="py-2.5 font-medium">{m.title}</td>
-                    <td className="py-2.5">{m.work_center?.name ?? 'N/A'}</td>
+                    <td className="py-2.5">{m.work_center?.work_center_name ?? 'N/A'}</td>
                     <td className="py-2.5 capitalize">{m.maintenance_type}</td>
                     <td className="py-2.5 flex items-center gap-1.5">
                       <CalendarClock className="w-3.5 h-3.5 text-slate-400" />

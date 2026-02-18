@@ -103,7 +103,7 @@ const WorkOrderManagement: React.FC = () => {
     return workOrders.filter(wo =>
       wo.order_number.toLowerCase().includes(q) ||
       wo.product?.name?.toLowerCase().includes(q) ||
-      wo.work_center?.name?.toLowerCase().includes(q)
+      wo.work_center?.work_center_name?.toLowerCase().includes(q)
     );
   }, [workOrders, search]);
 
@@ -197,7 +197,7 @@ const WorkOrderManagement: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {([
                     ['Priority', wo.priority.charAt(0).toUpperCase() + wo.priority.slice(1)],
-                    ['Work Center', wo.work_center?.name || 'Unassigned'],
+                    ['Work Center', wo.work_center?.work_center_name || 'Unassigned'],
                     ['Quantity Ordered', wo.quantity_ordered],
                     ['Quantity Produced', wo.quantity_produced],
                     ['Quantity Rejected', wo.quantity_rejected],
@@ -333,7 +333,7 @@ const WorkOrderManagement: React.FC = () => {
               <select value={newForm.work_center_id} onChange={e => setNewForm(p => ({ ...p, work_center_id: e.target.value }))}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                 <option value="">Select Work Center</option>
-                {workCenters.filter(wc => wc.status === 'active').map(wc => <option key={wc.id} value={wc.id}>{wc.name} ({wc.code})</option>)}
+                {workCenters.filter(wc => wc.status === 'active').map(wc => <option key={wc.id} value={wc.id}>{wc.work_center_name} ({wc.work_center_code})</option>)}
               </select>
             </div>
             <div className="col-span-2">
@@ -478,7 +478,7 @@ const WorkOrderManagement: React.FC = () => {
                       </td>
                       <td className="px-4 py-3"><Badge cfg={s} label={s.label} /></td>
                       <td className="px-4 py-3"><Badge cfg={p} label={wo.priority.charAt(0).toUpperCase() + wo.priority.slice(1)} /></td>
-                      <td className="px-4 py-3 text-slate-600">{wo.work_center?.name || 'Unassigned'}</td>
+                      <td className="px-4 py-3 text-slate-600">{wo.work_center?.work_center_name || 'Unassigned'}</td>
                       <td className="px-4 py-3">
                         <button onClick={e => { e.stopPropagation(); setSelectedWO(wo); setActiveTab(0); }}
                           className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-blue-600 transition-colors">
