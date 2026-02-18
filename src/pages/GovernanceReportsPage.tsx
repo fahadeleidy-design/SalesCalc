@@ -19,9 +19,33 @@ import {
   Users,
   Mail,
   Filter,
+  BarChart3,
+  TrendingUp,
+  Star,
+  Search,
+  Tag,
+  Layout,
+  Activity,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { ReportTemplateModal } from '../components/governance/ReportTemplateModal';
+import { ReportScheduleModal } from '../components/governance/ReportScheduleModal';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface ReportTemplate {
   id: string;
@@ -57,21 +81,34 @@ interface ReportDelivery {
 
 export const GovernanceReportsPage: React.FC = () => {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'templates' | 'generations' | 'deliveries' | 'approvals'>('templates');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'templates' | 'generations' | 'deliveries' | 'approvals'>('dashboard');
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [generations, setGenerations] = useState<ReportGeneration[]>([]);
   const [deliveries, setDeliveries] = useState<ReportDelivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [dashboardMetrics, setDashboardMetrics] = useState<any>(null);
+  const [popularReports, setPopularReports] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
     loadData();
   }, [activeTab]);
 
+  useEffect(() => {
+    loadFavorites();
+  }, [profile?.id]);
+
   const loadData = async () => {
     setLoading(true);
     try {
       switch (activeTab) {
+        case 'dashboard':
+          await loadDashboard();
+          break;
         case 'templates':
           await loadTemplates();
           break;
@@ -88,6 +125,25 @@ export const GovernanceReportsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadDashboard = async () => {
+    const [metricsRes, popularRes] = await Promise.all([
+      supabase.from('report_dashboard_metrics').select('*').single(),
+      supabase.rpc('get_popular_reports', { p_limit: 10, p_days: 30 }),
+    ]);
+
+    if (metricsRes.data) setDashboardMetrics(metricsRes.data);
+    if (popularRes.data) setPopularReports(popularRes.data);
+  };
+
+  const loadFavorites = async () => {
+    if (!profile?.id) return;
+    const { data } = await supabase
+      .from('report_favorites')
+      .select('template_id')
+      .eq('user_id', profile.id);
+    if (data) setFavorites(data.map((f) => f.template_id));
   };
 
   const loadTemplates = async () => {
@@ -150,7 +206,45 @@ export const GovernanceReportsPage: React.FC = () => {
     return `${mb.toFixed(2)} MB`;
   };
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'ceo';
+  const toggleFavorite = async (templateId: string) => {
+    if (!profile?.id) return;
+
+    try {
+      if (favorites.includes(templateId)) {
+        await supabase
+          .from('report_favorites')
+          .delete()
+          .eq('user_id', profile.id)
+          .eq('template_id', templateId);
+        setFavorites(favorites.filter((f) => f !== templateId));
+        toast.success('Removed from favorites');
+      } else {
+        await supabase
+          .from('report_favorites')
+          .insert([{ user_id: profile.id, template_id: templateId }]);
+        setFavorites([...favorites, templateId]);
+        toast.success('Added to favorites');
+      }
+    } catch (error) {
+      toast.error('Failed to update favorites');
+    }
+  };
+
+  const logAnalytics = async (templateId: string, eventType: string) => {
+    await supabase.rpc('log_report_analytics', {
+      p_template_id: templateId,
+      p_generation_id: null,
+      p_event_type: eventType,
+    });
+  };
+
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'ceo' || profile?.role === 'group_ceo';
+
+  const filteredTemplates = templates.filter((t) =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.report_type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (!isAdmin) {
     return (
@@ -186,8 +280,9 @@ export const GovernanceReportsPage: React.FC = () => {
         )}
       </div>
 
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-2 border-b border-gray-200 overflow-x-auto">
         {[
+          { key: 'dashboard', label: 'Dashboard', icon: Layout },
           { key: 'templates', label: 'Templates', icon: FileText },
           { key: 'generations', label: 'Generated Reports', icon: Calendar },
           { key: 'deliveries', label: 'Deliveries', icon: Mail },
@@ -196,7 +291,7 @@ export const GovernanceReportsPage: React.FC = () => {
           <button
             key={key}
             onClick={() => setActiveTab(key as any)}
-            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === key
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -217,23 +312,226 @@ export const GovernanceReportsPage: React.FC = () => {
         </Card>
       ) : (
         <>
-          {activeTab === 'templates' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {templates.map((template) => (
-                <Card key={template.id} className="p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-blue-100 rounded-lg">
-                        <FileText className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                        <p className="text-sm text-gray-500">{template.report_type}</p>
+          {activeTab === 'dashboard' && dashboardMetrics && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Total Templates</p>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {dashboardMetrics.total_templates || 0}
+                      </p>
+                      <p className="text-sm text-green-600 mt-1">
+                        {dashboardMetrics.active_templates || 0} active
+                      </p>
+                    </div>
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <FileText className="w-8 h-8 text-blue-600" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Reports Generated</p>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {dashboardMetrics.total_generations || 0}
+                      </p>
+                      <p className="text-sm text-green-600 mt-1">
+                        {dashboardMetrics.successful_generations || 0} successful
+                      </p>
+                    </div>
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <BarChart3 className="w-8 h-8 text-green-600" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Total Deliveries</p>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {dashboardMetrics.total_deliveries || 0}
+                      </p>
+                      <p className="text-sm text-green-600 mt-1">
+                        {dashboardMetrics.successful_deliveries || 0} sent
+                      </p>
+                    </div>
+                    <div className="p-3 bg-purple-100 rounded-lg">
+                      <Mail className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Total Downloads</p>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {dashboardMetrics.total_downloads || 0}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Avg: {parseFloat(dashboardMetrics.avg_downloads_per_report || 0).toFixed(1)}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-orange-100 rounded-lg">
+                      <Download className="w-8 h-8 text-orange-600" />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    Most Popular Reports (Last 30 Days)
+                  </h3>
+                  <div className="space-y-3">
+                    {popularReports.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">No data available</p>
+                    ) : (
+                      popularReports.slice(0, 5).map((report, index) => (
+                        <div
+                          key={report.template_id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full text-blue-600 font-semibold text-sm">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{report.template_name}</p>
+                              <p className="text-sm text-gray-500">{report.report_type}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-gray-900">
+                              {report.view_count} views
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {report.download_count} downloads
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-green-600" />
+                    Delivery Success Rate
+                  </h3>
+                  {dashboardMetrics.total_deliveries > 0 ? (
+                    <div className="space-y-4">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              {
+                                name: 'Successful',
+                                value: dashboardMetrics.successful_deliveries || 0,
+                              },
+                              {
+                                name: 'Failed',
+                                value:
+                                  (dashboardMetrics.total_deliveries || 0) -
+                                  (dashboardMetrics.successful_deliveries || 0),
+                              },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            <Cell fill="#10B981" />
+                            <Cell fill="#EF4444" />
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-green-600">
+                            {(
+                              ((dashboardMetrics.successful_deliveries || 0) /
+                                (dashboardMetrics.total_deliveries || 1)) *
+                              100
+                            ).toFixed(1)}
+                            %
+                          </p>
+                          <p className="text-sm text-gray-600">Success Rate</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-blue-600">
+                            {(
+                              ((dashboardMetrics.opened_reports || 0) /
+                                (dashboardMetrics.total_deliveries || 1)) *
+                              100
+                            ).toFixed(1)}
+                            %
+                          </p>
+                          <p className="text-sm text-gray-600">Open Rate</p>
+                        </div>
                       </div>
                     </div>
-                    {template.is_active && (
-                      <Badge variant="success">Active</Badge>
-                    )}
+                  ) : (
+                    <p className="text-gray-500 text-center py-12">No delivery data yet</p>
+                  )}
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'templates' && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search templates..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTemplates.map((template) => (
+                <Card key={template.id} className="p-6 hover:shadow-lg transition-shadow relative">
+                  <button
+                    onClick={() => toggleFavorite(template.id)}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-yellow-500 transition-colors"
+                  >
+                    <Star
+                      className={`w-5 h-5 ${
+                        favorites.includes(template.id)
+                          ? 'fill-yellow-500 text-yellow-500'
+                          : ''
+                      }`}
+                    />
+                  </button>
+
+                  <div className="flex items-start gap-3 mb-4 pr-8">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <FileText className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                      <p className="text-sm text-gray-500">{template.report_type}</p>
+                      {template.is_active && (
+                        <Badge variant="success" className="mt-1">Active</Badge>
+                      )}
+                    </div>
                   </div>
 
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2">
@@ -249,17 +547,34 @@ export const GovernanceReportsPage: React.FC = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedTemplate(template.id);
+                        setShowTemplateModal(true);
+                      }}
+                    >
                       <Settings className="w-4 h-4 mr-1" />
-                      Configure
+                      Edit
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Users className="w-4 h-4 mr-1" />
-                      Distribution
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedTemplate(template.id);
+                        setShowScheduleModal(true);
+                      }}
+                    >
+                      <Calendar className="w-4 h-4 mr-1" />
+                      Schedule
                     </Button>
                   </div>
                 </Card>
               ))}
+            </div>
             </div>
           )}
 
@@ -436,6 +751,30 @@ export const GovernanceReportsPage: React.FC = () => {
           )}
         </>
       )}
+
+      <ReportTemplateModal
+        isOpen={showTemplateModal}
+        onClose={() => {
+          setShowTemplateModal(false);
+          setSelectedTemplate(null);
+        }}
+        onSuccess={() => {
+          loadData();
+        }}
+        template={selectedTemplate ? templates.find((t) => t.id === selectedTemplate) : undefined}
+      />
+
+      <ReportScheduleModal
+        isOpen={showScheduleModal}
+        onClose={() => {
+          setShowScheduleModal(false);
+          setSelectedTemplate(null);
+        }}
+        onSuccess={() => {
+          loadData();
+        }}
+        templateId={selectedTemplate || undefined}
+      />
     </div>
   );
 };
