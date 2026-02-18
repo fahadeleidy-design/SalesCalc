@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
-import { Mail, CheckCircle, XCircle, Clock, AlertCircle, Search, Filter } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Clock, AlertCircle, Search, Filter, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { Input } from '../components/ui/Input';
 
@@ -37,18 +37,24 @@ export const EmailLogsPage: React.FC = () => {
 
   const loadEmailLogs = async () => {
     try {
-      let query = supabase
+      setLoading(true);
+      const { data, error } = await supabase
         .from('email_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
-      const { data, error } = await query;
+      if (error) {
+        console.error('Error loading email logs:', error);
+        throw error;
+      }
 
-      if (error) throw error;
       setLogs(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading email logs:', error);
+      // Show a user-friendly error message
+      const errorMessage = error?.message || 'Failed to load email logs';
+      console.log('Email logs error details:', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -113,6 +119,14 @@ export const EmailLogsPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Email Logs</h1>
           <p className="text-gray-600 mt-1">View all email notifications sent by the system</p>
         </div>
+        <button
+          onClick={loadEmailLogs}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
 
       {/* Filters */}
@@ -184,8 +198,26 @@ export const EmailLogsPage: React.FC = () => {
                 </tr>
               ) : filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                    No email logs found
+                  <td colSpan={7} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <Mail className="w-12 h-12 text-gray-300" />
+                      <p className="text-gray-500 font-medium">
+                        {searchTerm || statusFilter !== 'all'
+                          ? 'No email logs match your filters'
+                          : 'No email logs found'}
+                      </p>
+                      {(searchTerm || statusFilter !== 'all') && (
+                        <button
+                          onClick={() => {
+                            setSearchTerm('');
+                            setStatusFilter('all');
+                          }}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
