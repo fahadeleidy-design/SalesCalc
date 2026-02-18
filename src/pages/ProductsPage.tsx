@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, Edit2, Trash2, Search, DollarSign, Tag, Upload, Download, Image as ImageIcon, X } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, Search, DollarSign, Tag, Upload, Download, Image as ImageIcon, X, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import { formatCurrency } from '../lib/currencyUtils';
@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { validatePrice } from '../lib/validation';
 import { SkeletonTable } from '../components/ui/SkeletonLoader';
+import { BulkUploadModal } from '../components/admin/BulkUploadModal';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
@@ -31,8 +32,10 @@ export default function ProductsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   const canEditCost = profile?.role === 'finance' || profile?.role === 'admin';
+  const canBulkUpload = profile?.role === 'admin' || profile?.role === 'ceo' || profile?.role === 'group_ceo';
   const canViewCost = profile?.role === 'finance' || profile?.role === 'admin' || profile?.role === 'group_ceo' || profile?.role === 'ceo_commercial' || profile?.role === 'ceo_manufacturing';
 
   useEffect(() => {
@@ -341,6 +344,15 @@ export default function ProductsPage() {
           <p className="text-slate-600 mt-1">{t.products.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
+          {canBulkUpload && (
+            <button
+              onClick={() => setShowBulkUpload(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors"
+            >
+              <FileSpreadsheet className="w-5 h-5" />
+              Bulk Upload
+            </button>
+          )}
           <label className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-lg font-medium cursor-pointer transition-colors">
             <Upload className="w-5 h-5" />
             Import CSV
@@ -368,6 +380,7 @@ export default function ProductsPage() {
                 category: '',
                 unit: 'unit',
                 unit_price: '',
+                cost_price: '',
                 is_active: true,
               });
               setShowModal(true);
@@ -754,6 +767,16 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      <BulkUploadModal
+        isOpen={showBulkUpload}
+        onClose={() => setShowBulkUpload(false)}
+        tableName="products"
+        onSuccess={() => {
+          loadProducts();
+          setShowBulkUpload(false);
+        }}
+      />
     </div>
   );
 }
