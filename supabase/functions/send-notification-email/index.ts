@@ -122,7 +122,7 @@ async function sendViaGraphAPI(
 }
 
 /**
- * Send email via SMTP (Office365)
+ * Send email via SMTP (Office365) using nodemailer
  */
 async function sendViaSMTP(
   config: EmailConfig,
@@ -140,102 +140,33 @@ async function sendViaSMTP(
       };
     }
 
-    // Create MIME email message
-    const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const encodedSubject = `=?UTF-8?B?${btoa(subject)}?=`;
+    const nodemailer = await import('npm:nodemailer@6.9.15');
 
-    const recipients = [to];
-    if (cc && cc.length > 0) recipients.push(...cc);
-    if (bcc && bcc.length > 0) recipients.push(...bcc);
-
-    const mimeMessage = [
-      `From: ${config.from_name} <${config.from_email}>`,
-      `To: ${to}`,
-      cc && cc.length > 0 ? `Cc: ${cc.join(', ')}` : '',
-      `Subject: ${encodedSubject}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/plain; charset="UTF-8"`,
-      `Content-Transfer-Encoding: quoted-printable`,
-      ``,
-      html.replace(/<[^>]*>/g, ''),
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/html; charset="UTF-8"`,
-      `Content-Transfer-Encoding: quoted-printable`,
-      ``,
-      html,
-      ``,
-      `--${boundary}--`,
-    ].filter(line => line !== null).join('\r\n');
-
-    // Encode credentials
-    const authString = btoa(`\0${config.smtp_username}\0${config.smtp_password}`);
-
-    // Connect to SMTP server
-    const conn = await Deno.connect({
-      hostname: config.smtp_host,
+    const transporter = nodemailer.default.createTransport({
+      host: config.smtp_host,
       port: config.smtp_port,
+      secure: false,
+      auth: {
+        user: config.smtp_username,
+        pass: config.smtp_password,
+      },
+      tls: {
+        ciphers: 'SSLv3',
+        rejectUnauthorized: false,
+      },
     });
 
-    // Upgrade to TLS
-    const tlsConn = await Deno.startTls(conn, { hostname: config.smtp_host });
-
-    const textDecoder = new TextDecoder();
-    const textEncoder = new TextEncoder();
-
-    // Helper functions
-    const read = async () => {
-      const buffer = new Uint8Array(1024);
-      const n = await tlsConn.read(buffer);
-      return textDecoder.decode(buffer.subarray(0, n || 0));
+    const mailOptions = {
+      from: `${config.from_name} <${config.from_email}>`,
+      to,
+      cc: cc?.join(', '),
+      bcc: bcc?.join(', '),
+      subject,
+      html,
+      text: html.replace(/<[^>]*>/g, ''),
     };
 
-    const write = async (data: string) => {
-      await tlsConn.write(textEncoder.encode(data + '\r\n'));
-    };
-
-    // SMTP conversation
-    await read(); // Read server greeting
-
-    await write(`EHLO ${config.smtp_host}`);
-    await read(); // Read EHLO response
-
-    await write('AUTH LOGIN');
-    await read(); // Read AUTH prompt
-
-    await write(btoa(config.smtp_username));
-    await read(); // Read username acknowledgment
-
-    await write(btoa(config.smtp_password));
-    const authResponse = await read(); // Read auth response
-
-    if (!authResponse.startsWith('235')) {
-      tlsConn.close();
-      return { success: false, error: 'SMTP authentication failed' };
-    }
-
-    await write(`MAIL FROM:<${config.from_email}>`);
-    await read();
-
-    for (const recipient of recipients) {
-      await write(`RCPT TO:<${recipient}>`);
-      await read();
-    }
-
-    await write('DATA');
-    await read();
-
-    await write(mimeMessage);
-    await write('.');
-    await read();
-
-    await write('QUIT');
-    await read();
-
-    tlsConn.close();
+    await transporter.sendMail(mailOptions);
 
     return { success: true };
   } catch (error: any) {
