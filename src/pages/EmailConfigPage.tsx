@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { EmailTemplateManager } from '../components/admin/EmailTemplateManager';
 import { Save, Send, AlertCircle, CheckCircle, Mail, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -474,50 +475,7 @@ export const EmailConfigPage: React.FC = () => {
       </Card>
 
       {/* Email Templates */}
-      <Card>
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <Mail className="w-6 h-6 text-purple-600" />
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Email Templates</h2>
-              <p className="text-sm text-gray-600">Manage email notification templates</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <div className="space-y-3">
-            {templates.map((template) => (
-              <div
-                key={template.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${template.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <div>
-                      <h3 className="font-medium text-gray-900">{template.name}</h3>
-                      <p className="text-sm text-gray-600">{template.description || template.subject}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                    {template.template_type}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => toggleTemplate(template.id, template.is_active)}
-                  >
-                    {template.is_active ? 'Disable' : 'Enable'}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Card>
+      <EmailTemplateManager onTemplatesChange={loadTemplates} />
 
       {/* Email Logs Link */}
       <Card>
