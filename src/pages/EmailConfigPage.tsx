@@ -69,7 +69,7 @@ export const EmailConfigPage: React.FC = () => {
           client_id: null,
           client_secret: null,
           from_email: '',
-          from_name: 'SalesCalc System',
+          from_name: 'Special Offices ERP',
           smtp_host: 'smtp.office365.com',
           smtp_port: 587,
           smtp_username: null,
@@ -182,18 +182,18 @@ export const EmailConfigPage: React.FC = () => {
         },
         body: JSON.stringify({
           to: testEmail,
-          subject: 'Test Email from SalesCalc',
+          subject: 'Test Email from Special Offices ERP',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div style="background: linear-gradient(to right, #3b82f6, #14b8a6); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
                 <h1>Test Email</h1>
               </div>
               <div style="background: white; padding: 30px; border: 1px solid #e2e8f0;">
-                <p>This is a test email from SalesCalc email system.</p>
+                <p>This is a test email from Special Offices ERP.</p>
                 <p>If you received this email, your Office365 email configuration is working correctly!</p>
               </div>
               <div style="background: #f1f5f9; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; font-size: 12px; color: #64748b;">
-                <p>SalesCalc - Email Test</p>
+                <p>Special Offices ERP - Email Test</p>
               </div>
             </div>
           `,
@@ -316,7 +316,7 @@ export const EmailConfigPage: React.FC = () => {
                   <Input
                     value={config.from_name}
                     onChange={(e) => setConfig({ ...config, from_name: e.target.value })}
-                    placeholder="SalesCalc System"
+                    placeholder="Special Offices ERP"
                   />
                 </div>
 
